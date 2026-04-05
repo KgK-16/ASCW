@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World of Second Fire</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        nav a {
+            color: #aaa;
+            text-decoration: none;
+            padding: 18px 30px;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        nav a:hover {
+            color: #fff;
+            border-bottom: 2px solid #c8a96e;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .hero {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: url('https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.62);
+        }
+
+        .hero-content {
+            position: relative;
+            text-align: center;
+            padding: 64px 52px;
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(200, 169, 110, 0.25);
+            max-width: 720px;
+            width: 90%;
+        }
+
+        .hero-content h1 {
+            font-size: 48px;
+            font-weight: 300;
+            letter-spacing: 10px;
+            text-transform: uppercase;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #c8a96e;
+            margin-bottom: 36px;
+        }
+
+        .divider {
+            width: 50px;
+            height: 1px;
+            background: #c8a96e;
+            margin: 0 auto 36px;
+        }
+
+        .hero-content p {
+            font-size: 15px;
+            line-height: 1.9;
+            color: #b0b0b0;
+            font-style: italic;
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        .enter-btn {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 13px 40px;
+            border: 1px solid #c8a96e;
+            color: #c8a96e;
+            text-decoration: none;
+            letter-spacing: 3px;
+            font-size: 11px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .enter-btn:hover {
+            background: #c8a96e;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="{{ .Site.BaseURL }}docs/factions/">Factions</a>
+        <a href="{{ .Site.BaseURL }}docs/ships/">Ships</a>
+        <a href="{{ .Site.BaseURL }}docs/antrite/">Antrite</a>
+        <a href="{{ .Site.BaseURL }}docs/crew/">Crew</a>
+        <a href="{{ .Site.BaseURL }}docs/timeline/">Timeline</a>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>World of Second Fire</h1>
+            <p class="subtitle">Year 420 &nbsp;·&nbsp; Second Continental War &nbsp;·&nbsp; Dieselpunk</p><div class="divider"></div>
+            <p>Ten years of grinding conflict have consumed every continent. The front between Talmark and Exiar has not moved in four years. The crew of Spear-75 has decided to end the war themselves.</p>
+            <a href="{{ .Site.BaseURL }}docs/" class="enter-btn">Enter the World</a>
+        </div>
+    </section>
+
+</body>
+</html>
