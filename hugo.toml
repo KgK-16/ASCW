@@ -1,4 +1,4 @@
-baseURL = "https://KgK-16.github.io/wsf-world/"
+baseURL = "https://KgK-16.github.io/WSF/"
 languageCode = "en"
 title = "World of Second Fire"
 theme = "hugo-geekdoc"
