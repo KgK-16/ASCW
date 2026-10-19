@@ -1,14 +1,5 @@
 baseURL = "https://KgK-16.github.io/ASCW/"
-languageCode = "en"
 title = "ASCW"
 theme = "hugo-geekdoc"
-
 [params]
-  description = "Work In Progress"
-  geekdocNav = true
-  geekdocSearch = true
-  geekdocSearchPrune = true
-
-[markup]
-  [markup.goldmark.renderer]
-    unsafe = true
+description = "Work In Progress"
