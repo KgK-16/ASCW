@@ -3,7 +3,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ if .IsHome }}ASCW{{ else }}{{ .Title }} · ASCW{{ end }}</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400&family=Inter:wght@300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400&family=Inter:ital,wght@1,300&display=swap" rel="stylesheet">
 <style>
 @font-face{font-family:A;src:url({{ "fonts/airborne.woff2" | relURL }})}
 *{margin:0;box-sizing:border-box}
@@ -24,6 +24,6 @@ ul{list-style:none;padding:0;margin-top:28px;display:flex;flex-direction:column;
 </style>
 <nav>
 <span>Powered by Redfront Strategic Sciences</span>
-<div><a href="{{ "about/" | relURL }}">About Project</a><a href="{{ "docs/" | relURL }}">Archive</a><a href="{{ "map/" | relURL }}">World Map</a></div>
+<div><a href="{{ "about/" | relURL }}">About Project</a><a href="{{ "archive/" | relURL }}">Archive</a><a href="{{ "map/" | relURL }}">World Map</a></div>
 </nav>
 <main><section>
