@@ -1,0 +1,15 @@
+{{ partial "top" . }}
+<style>
+section{padding:0;position:relative}
+#m{flex:1;background:#1b2738}
+.z{position:absolute;left:12px;top:12px;display:flex;flex-direction:column;border:1px solid #6665c04d;z-index:9}
+.z a{width:30px;height:30px;line-height:30px;font-size:18px;text-align:center;background:#020206;cursor:pointer}
+</style>
+<div class="z"><a id="zi">+</a><a id="zo">−</a></div>
+<div id="m"></div>
+</section></main>
+<script src="{{ "osd/openseadragon.min.js" | relURL }}"></script>
+<script>
+OpenSeadragon({id:"m",showNavigationControl:false,zoomInButton:"zi",zoomOutButton:"zo",maxZoomPixelRatio:2,
+tileSources:{width:3840,height:2160,tileSize:256,minLevel:8,maxLevel:12,getTileUrl:function(l,x,y){return"{{ "tiles/" | relURL }}"+(l-8)+"/"+x+"/"+y+".webp"}}})
+</script>
