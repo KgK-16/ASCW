@@ -1,5 +1,3 @@
 baseURL = "https://KgK-16.github.io/ASCW/"
 title = "ASCW"
-theme = "hugo-geekdoc"
-[params]
-description = "Work In Progress"
+disableKinds = ["taxonomy", "term", "RSS"]

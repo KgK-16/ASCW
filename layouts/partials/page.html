@@ -3,5 +3,5 @@
 <h1>{{ .Title }}</h1>
 <hr>
 <i>{{ .Description }}</i>
-{{ .Content }}
+{{ with .Pages }}<ul>{{ range . }}<li><a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ end }}</ul>{{ end }}
 </section></main>

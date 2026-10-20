@@ -1,6 +1,5 @@
 ---
-title: "Timeline"
+title: Timeline
 weight: 5
+description: Timeline of World of Second Fire
 ---
-
-Timeline of World of Second Fire
