@@ -7,5 +7,5 @@ geekdocHidden: true
 - [Factions]({{< relref "/docs/factions" >}})
 - [Ships]({{< relref "/docs/ships" >}})
 - [Anthrite]({{< relref "/docs/anthrite" >}})
-- [Timeline]({{< relref "/docs/crew" >}})
-- [Spear-75]({{< relref "/docs/timeline" >}})
+- [Timeline]({{< relref "/docs/timeline" >}})
+- [Spear-75]({{< relref "/docs/spear-75" >}})

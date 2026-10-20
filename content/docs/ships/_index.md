@@ -1,6 +1,6 @@
 ---
 title: "Ships"
-weight: 1
+weight: 2
 ---
 
 Known models of ships

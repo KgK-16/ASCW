@@ -1,6 +1,6 @@
 ---
-title: "KGK-Spear-75"
-weight: 4
+title: "Timeline"
+weight: 5
 ---
 
-Attack frigate, model Spear V-2, serial number 75.
+Timeline of World of Second Fire

@@ -1,5 +1,5 @@
 ---
-title: "Antrite"
+title: "Anthrite"
 weight: 3
 ---
 
