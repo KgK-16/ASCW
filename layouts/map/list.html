@@ -82,41 +82,38 @@ vec3 c=m*(1.-.5*sh);
 float sea=smoothstep(.02,.07,m.b-m.r)*(1.-smoothstep(.18,.28,m.r));
 c+=vec3(1.,.93,.8)*pow(max(dot(n,normalize(L+V)),0.),70.)*.55*sea*(1.-cd)*day;
 c*=.26+.74*day;
-c=mix(c,vec3(.96,.97,1.)*(.22+.78*day),cd*.62);
+c=mix(c,vec3(.96,.97,1.)*(.22+.78*day),cd*.8);
 float tw=exp(-pow(ndl*3.2,2.));
 c+=vec3(1.,.42,.12)*tw*.14;
-float fr=pow(1.-max(dot(n,V),0.),3.);
-c=mix(c,mix(vec3(.18,.35,.9),vec3(.45,.7,1.),day)*(.35+.65*day)+vec3(1.,.5,.2)*tw*.3,fr*.7);
+float fr=pow(1.-max(dot(n,V),0.),4.);
+c=mix(c,mix(vec3(.18,.35,.9),vec3(.45,.7,1.),day)*(.2+.8*day)+vec3(1.,.5,.2)*tw*.15,fr*.55);
 gl_FragColor=vec4(c*al,al);}`,
 BF=PR+NZ+`uniform vec3 u;uniform vec2 a;varying vec2 n;
 float h2(vec2 p){p=fract(p*vec2(.1031,.103));p+=dot(p,p.yx+33.33);return fract((p.x+p.y)*p.x);}
 void main(){
 const vec3 S=vec3(.30,.17,-.94);
 vec2 tp=vec2(n.x*u.z*u.y,n.y*u.z),sk=tp+a*.15;
-vec3 rd=normalize(vec3(tp,-1.)),col=vec3(.006,.008,.02);
-col+=vec3(.10,.05,.17)*fb(vec3(sk*1.7,3.))*fb(vec3(sk*.8+5.,1.))*1.3+vec3(.02,.05,.10)*fb(vec3(sk*3.,7.))*.5;
+vec3 rd=normalize(vec3(tp,-1.)),col=vec3(0.);
 for(int k=0;k<3;k++){float z=float(k),sc=40.+z*45.;vec2 g=sk*sc+z*17.,id=floor(g),f=fract(g)-.5;
 vec2 of=(vec2(h2(id+7.),h2(id+13.))-.5)*.7;
-float br=step(.93+z*.01,h2(id+z*31.))*smoothstep(.09+.04*(2.-z),0.,length(f-of))*(.4+.6*h2(id+3.));
+float br=step(.96+z*.01,h2(id+z*31.))*smoothstep(.07+.02*(2.-z),0.,length(f-of))*(.4+.6*h2(id+3.));
 col+=mix(vec3(.7,.8,1.),vec3(1.,.82,.6),h2(id+19.))*br*(1.2-.3*z);}
 vec3 o=vec3(0.,0.,u.x);
 vec3 P=o-dot(o,rd)*rd;
 float dist=length(P),ss=max(dot(normalize(P.xy+1e-4),normalize(S.xy)),0.),hh=max(dist-1.,0.);
-col+=mix(vec3(.2,.42,1.),vec3(1.,.62,.3),pow(ss,3.)*.65)*(exp(-hh*22.)*.8+exp(-hh*6.)*.12)*(.3+1.4*ss*ss);
+col+=mix(vec3(.25,.5,1.),vec3(1.,.7,.45),pow(ss,4.)*.4)*exp(-hh*55.)*(.08+1.2*ss*ss);
 vec2 ts=S.xy/-S.z;float ds=length(tp-ts);
-col+=vec3(1.,.95,.85)*smoothstep(.024,.016,ds)*8.;
-col+=vec3(1.,.82,.55)*.028/(ds+.02);
-col+=vec3(1.,.65,.35)*exp(-ds*5.)*.28;
-col+=vec3(1.,.8,.55)*exp(-abs(tp.y-ts.y)*55.)*exp(-abs(tp.x-ts.x)*3.5)*.22;
+col+=vec3(1.,.97,.92)*smoothstep(.012,.009,ds)*9.;
+col+=vec3(1.,.95,.85)*.004/(ds+.004);
 gl_FragColor=vec4(1.-exp(-col*1.4),1.);}`,
 CF=PR+NZ+`void main(){
 vec2 uv=gl_FragCoord.xy/vec2(2048.,1024.);
 float th=(uv.x-.5)*6.2832,ph=(.5-uv.y)*3.1416;
-vec3 p=vec3(cos(ph)*sin(th),sin(ph),cos(ph)*cos(th)),w=p*2.2;
+vec3 p=vec3(cos(ph)*sin(th),sin(ph),cos(ph)*cos(th)),w=p*3.5;
 vec3 q=vec3(fb(w),fb(w+vec3(5.2,1.3,2.8)),fb(w+vec3(1.7,9.2,4.1)));
-float n=fb(p*3.2+4.*(q-.5)),y=p.y;
+float n=fb(p*6.+5.*(q-.5)),y=p.y;
 float fr=exp(-pow((y-.52-.28*(fb(p*2.+9.)-.5))*5.5,2.))+exp(-pow((y+.46-.28*(fb(p*2.+4.)-.5))*5.5,2.))+.6*exp(-pow((y-.1*(fb(p*2.+2.)-.5))*9.,2.));
-float c=n*1.05+fr*.4-.7+(fb(p*16.+q*3.)-.5)*.2,d=smoothstep(0.,.3,c);
+float c=n*1.05+fr*.4-.8+(fb(p*30.+q*3.)-.5)*.25,d=smoothstep(0.,.16,c);
 gl_FragColor=vec4(d,d,d,1.);}`;
 function sh(t,s){var o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o}
 function pg(v,f,a){var p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,v));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,f));a.forEach(function(n,i){gl.bindAttribLocation(p,i,n)});gl.linkProgram(p);return p}
