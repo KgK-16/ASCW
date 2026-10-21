@@ -1,9 +1,9 @@
 {{ partial "top" . }}
 <style>
 section{width:100%;padding:0;border:0;position:relative;overflow:hidden}
-#m{flex:1;position:relative;overflow:hidden;background:#1b2738;touch-action:none;cursor:grab}
+#m{flex:1;position:relative;overflow:hidden;background:#152139;touch-action:none;cursor:grab}
 #c,#c img,#c svg{left:0;top:0}
-#c{position:absolute;width:3840px;height:2160px;transform-origin:0 0}
+#c{position:absolute;width:4096px;height:2048px;transform-origin:0 0}
 #c.t{transition:transform .25s}
 #c img,#c svg{position:absolute;width:100%;height:100%;pointer-events:none}
 #c path{fill:transparent;pointer-events:all;cursor:pointer}
@@ -25,16 +25,16 @@ aside>a{position:absolute;right:14px;top:10px;font-size:20px;cursor:pointer}
 <div class="z"><a id="zg" style="font-size:12px">3D</a><a id="zi">+</a><a id="zo">−</a></div>
 <aside id="p"><a id="pc">×</a><h1 id="pt"></h1><hr><i id="px"></i></aside>
 <div id="g"></div>
-<div id="m"><div id="c"><img id="im" alt=""><svg id="sv" viewBox="0 0 3840 2160"></svg></div></div>
+<div id="m"><div id="c"><img id="im" alt=""><svg id="sv" viewBox="0 0 4096 2048"></svg></div></div>
 </section></main>
 <script>
-var W0=3840,H0=2160,G,ready,gl,gc,tex,tc,tx2,base,bp,pp,tb,pb,eb,ya=0,pa=.15,D=3,SC,AS,dirty,GP={},gm,PP={},A=[],hc=document.createElement("canvas").getContext("2d"),U="{{ "" | relURL }}",W=3840,H=2160,x=0,y=0,k=1,lv=-1,P={},R={},sel,tap=0,mv;
+var W0=4096,H0=2048,G,ready,gl,gc,tex,tc,tx2,base,bp,pp,tb,pb,eb,ya=0,pa=.15,D=3,SC,AS,dirty,GP={},gm,PP={},A=[],hc=document.createElement("canvas").getContext("2d"),U="{{ "" | relURL }}",W=4096,H=2048,x=0,y=0,k=1,lv=-1,P={},R={},sel,tap=0,mv;
 function fit(){return Math.min(m.clientWidth/W,m.clientHeight/H)}
 function set(a){var f=fit(),w=W*k,h=H*k;k=Math.min(Math.max(k,f*.9),2);w=W*k;h=H*k;
 x=w<m.clientWidth?(m.clientWidth-w)/2:Math.min(0,Math.max(m.clientWidth-w,x));
 y=h<m.clientHeight?(m.clientHeight-h)/2:Math.min(0,Math.max(m.clientHeight-h,y));
 c.classList.toggle("t",!!a);c.style.transform="translate("+x+"px,"+y+"px) scale("+k+")";c.style.setProperty("--k",k);
-var n=W*k*devicePixelRatio,l=n>1920?2:n>960?1:0;if(l>lv){lv=l;var i=new Image;i.onload=function(){if(l>=lv)im.src=i.src};i.src=U+"map/"+l+".webp"}}
+var n=W*k*devicePixelRatio,l=n>2000?2:n>1000?1:0;if(l>lv){lv=l;var i=new Image;i.onload=function(){if(l>=lv)im.src=i.src};i.src=U+"map/"+l+".webp"}}
 function zoom(f,px,py,a){var k2=Math.min(Math.max(k*f,fit()*.9),2);x=px-(px-x)*k2/k;y=py-(py-y)*k2/k;k=k2;set(a)}
 function pick(i){if(sel)sel.classList.remove("s");sel=i?document.getElementById("r"+i):null;
 if(sel){sel.classList.add("s");pt.textContent=R[i].name;px.textContent=R[i].text}p.classList.toggle("o",!!sel);if(G)tx()}
