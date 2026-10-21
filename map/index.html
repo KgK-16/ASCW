@@ -23,37 +23,34 @@ vec3 c=m*(1.-.5*sh);
 float sea=smoothstep(.02,.07,m.b-m.r)*(1.-smoothstep(.18,.28,m.r));
 c+=vec3(1.,.93,.8)*pow(max(dot(n,normalize(L+V)),0.),70.)*.55*sea*(1.-cd)*day;
 c*=.26+.74*day;
-c=mix(c,vec3(.96,.97,1.)*(.22+.78*day),cd*.62);
+c=mix(c,vec3(.96,.97,1.)*(.22+.78*day),cd*.8);
 float tw=exp(-pow(ndl*3.2,2.));
 c+=vec3(1.,.42,.12)*tw*.14;
-float fr=pow(1.-max(dot(n,V),0.),3.);
-c=mix(c,mix(vec3(.18,.35,.9),vec3(.45,.7,1.),day)*(.35+.65*day)+vec3(1.,.5,.2)*tw*.3,fr*.7);
+float fr=pow(1.-max(dot(n,V),0.),4.);
+c=mix(c,mix(vec3(.18,.35,.9),vec3(.45,.7,1.),day)*(.2+.8*day)+vec3(1.,.5,.2)*tw*.15,fr*.55);
 gl_FragColor=vec4(c*al,al);}`,BF=PR+NZ+`uniform vec3 u;uniform vec2 a;varying vec2 n;
 float h2(vec2 p){p=fract(p*vec2(.1031,.103));p+=dot(p,p.yx+33.33);return fract((p.x+p.y)*p.x);}
 void main(){
 const vec3 S=vec3(.30,.17,-.94);
 vec2 tp=vec2(n.x*u.z*u.y,n.y*u.z),sk=tp+a*.15;
-vec3 rd=normalize(vec3(tp,-1.)),col=vec3(.006,.008,.02);
-col+=vec3(.10,.05,.17)*fb(vec3(sk*1.7,3.))*fb(vec3(sk*.8+5.,1.))*1.3+vec3(.02,.05,.10)*fb(vec3(sk*3.,7.))*.5;
+vec3 rd=normalize(vec3(tp,-1.)),col=vec3(0.);
 for(int k=0;k<3;k++){float z=float(k),sc=40.+z*45.;vec2 g=sk*sc+z*17.,id=floor(g),f=fract(g)-.5;
 vec2 of=(vec2(h2(id+7.),h2(id+13.))-.5)*.7;
-float br=step(.93+z*.01,h2(id+z*31.))*smoothstep(.09+.04*(2.-z),0.,length(f-of))*(.4+.6*h2(id+3.));
+float br=step(.96+z*.01,h2(id+z*31.))*smoothstep(.07+.02*(2.-z),0.,length(f-of))*(.4+.6*h2(id+3.));
 col+=mix(vec3(.7,.8,1.),vec3(1.,.82,.6),h2(id+19.))*br*(1.2-.3*z);}
 vec3 o=vec3(0.,0.,u.x);
 vec3 P=o-dot(o,rd)*rd;
 float dist=length(P),ss=max(dot(normalize(P.xy+1e-4),normalize(S.xy)),0.),hh=max(dist-1.,0.);
-col+=mix(vec3(.2,.42,1.),vec3(1.,.62,.3),pow(ss,3.)*.65)*(exp(-hh*22.)*.8+exp(-hh*6.)*.12)*(.3+1.4*ss*ss);
+col+=mix(vec3(.25,.5,1.),vec3(1.,.7,.45),pow(ss,4.)*.4)*exp(-hh*55.)*(.08+1.2*ss*ss);
 vec2 ts=S.xy/-S.z;float ds=length(tp-ts);
-col+=vec3(1.,.95,.85)*smoothstep(.024,.016,ds)*8.;
-col+=vec3(1.,.82,.55)*.028/(ds+.02);
-col+=vec3(1.,.65,.35)*exp(-ds*5.)*.28;
-col+=vec3(1.,.8,.55)*exp(-abs(tp.y-ts.y)*55.)*exp(-abs(tp.x-ts.x)*3.5)*.22;
+col+=vec3(1.,.97,.92)*smoothstep(.012,.009,ds)*9.;
+col+=vec3(1.,.95,.85)*.004/(ds+.004);
 gl_FragColor=vec4(1.-exp(-col*1.4),1.);}`,CF=PR+NZ+`void main(){
 vec2 uv=gl_FragCoord.xy/vec2(2048.,1024.);
 float th=(uv.x-.5)*6.2832,ph=(.5-uv.y)*3.1416;
-vec3 p=vec3(cos(ph)*sin(th),sin(ph),cos(ph)*cos(th)),w=p*2.2;
+vec3 p=vec3(cos(ph)*sin(th),sin(ph),cos(ph)*cos(th)),w=p*3.5;
 vec3 q=vec3(fb(w),fb(w+vec3(5.2,1.3,2.8)),fb(w+vec3(1.7,9.2,4.1)));
-float n=fb(p*3.2+4.*(q-.5)),y=p.y;
+float n=fb(p*6.+5.*(q-.5)),y=p.y;
 float fr=exp(-pow((y-.52-.28*(fb(p*2.+9.)-.5))*5.5,2.))+exp(-pow((y+.46-.28*(fb(p*2.+4.)-.5))*5.5,2.))+.6*exp(-pow((y-.1*(fb(p*2.+2.)-.5))*9.,2.));
-float c=n*1.05+fr*.4-.7+(fb(p*16.+q*3.)-.5)*.2,d=smoothstep(0.,.3,c);
+float c=n*1.05+fr*.4-.8+(fb(p*30.+q*3.)-.5)*.25,d=smoothstep(0.,.16,c);
 gl_FragColor=vec4(d,d,d,1.);}`;function sh(e,t){var n=gl.createShader(e);return gl.shaderSource(n,t),gl.compileShader(n),n}function pg(e,t,n){var s=gl.createProgram();return gl.attachShader(s,sh(gl.VERTEX_SHADER,e)),gl.attachShader(s,sh(gl.FRAGMENT_SHADER,t)),n.forEach(function(e,t){gl.bindAttribLocation(s,t,e)}),gl.linkProgram(s),s}function ul(e,t){return gl.getUniformLocation(e,t)}function gi(){if(gc=document.createElement("canvas"),g.appendChild(gc),gl=gc.getContext("webgl",{antialias:!0}),!gl){zg.style.display="none";return}bp=pg(FV,BF,["g"]),pp=pg(PV,PF,["p","t"]),c=pg(FV,CF,["g"]),tb=gl.createBuffer(),gl.bindBuffer(gl.ARRAY_BUFFER,tb),gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);var e,t,n,s,o,i,a,r,c,u,l=[],d=[];for(t=0;t<=48;t++)for(e=0;e<=96;e++)i=(e/96-.5)*6.2832,s=(.5-t/48)*3.1416,l.push(Math.cos(s)*Math.sin(i),Math.sin(s),Math.cos(s)*Math.cos(i),e/96,t/48);for(t=0;t<48;t++)for(e=0;e<96;e++)n=t*97+e,d.push(n,n+1,n+97,n+1,n+98,n+97);return pb=gl.createBuffer(),gl.bindBuffer(gl.ARRAY_BUFFER,pb),gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(l),gl.STATIC_DRAW),eb=gl.createBuffer(),gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,eb),gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(d),gl.STATIC_DRAW),gl.activeTexture(gl.TEXTURE1),a=gl.createTexture(),gl.bindTexture(gl.TEXTURE_2D,a),gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,2048,1024,0,gl.RGBA,gl.UNSIGNED_BYTE,null),gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR),gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT),gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE),u=gl.createFramebuffer(),gl.bindFramebuffer(gl.FRAMEBUFFER,u),gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,a,0),gl.viewport(0,0,2048,1024),gl.useProgram(c),gl.bindBuffer(gl.ARRAY_BUFFER,tb),gl.enableVertexAttribArray(0),gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0),gl.drawArrays(gl.TRIANGLES,0,3),gl.bindFramebuffer(gl.FRAMEBUFFER,null),gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR),gl.generateMipmap(gl.TEXTURE_2D),gl.activeTexture(gl.TEXTURE0),gl.useProgram(pp),gl.uniform1i(ul(pp,"T"),0),gl.uniform1i(ul(pp,"C"),1),r=Math.min(4096,gl.getParameter(gl.MAX_TEXTURE_SIZE)),tc=document.createElement("canvas"),tc.width=r,tc.height=r/2,tx2=tc.getContext("2d"),tex=gl.createTexture(),gl.bindTexture(gl.TEXTURE_2D,tex),gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR),gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT),gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE),o=gl.getExtension("EXT_texture_filter_anisotropic"),o&&gl.texParameterf(gl.TEXTURE_2D,o.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(o.MAX_TEXTURE_MAX_ANISOTROPY_EXT))),g.onpointerdown=function(e){g.setPointerCapture(e.pointerId),GP[e.pointerId]={x:e.clientX,y:e.clientY},gm=0},g.onpointermove=function(e){if(t=GP[e.pointerId],!t)return;var t,n,s=gd(),o=e.clientX-t.x,i=e.clientY-t.y;t.x=e.clientX,t.y=e.clientY,gm+=(o<0?-o:o)+(i<0?-i:i),s?(D=cl(D*s/gd()),gm=99):(n=2*(D-1)*SC/g.clientHeight,ya+=o*n,pa=Math.min(1.4,Math.max(-1.4,pa+i*n))),rq()},g.onpointerup=g.onpointercancel=function(e){var t=Object.keys(GP).length==1;delete GP[e.pointerId],t&&gm<6&&e.type=="pointerup"&&pk(e)},g.onwheel=function(e){e.preventDefault(),D=cl(D*Math.exp(e.deltaY*.0015)),rq()},onresize=function(){set(),rq()},ready=1,1}function gd(){var e=Object.values(GP);return e.length<2?0:Math.hypot(e[0].x-e[1].x,e[0].y-e[1].y)}function rq(){dirty||(dirty=1,requestAnimationFrame(dr))}function dr(){dirty=0;var e=g.clientWidth,n=g.clientHeight,t=devicePixelRatio||1;gc.width!=Math.round(e*t)&&(gc.width=Math.round(e*t),gc.height=Math.round(n*t)),gl.viewport(0,0,gc.width,gc.height),AS=e/n,SC=.364*Math.max(1,1/AS),gl.disable(gl.BLEND),gl.useProgram(bp),gl.bindBuffer(gl.ARRAY_BUFFER,tb),gl.enableVertexAttribArray(0),gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0),gl.disableVertexAttribArray(1),gl.uniform3f(ul(bp,"u"),D,AS,SC),gl.uniform2f(ul(bp,"a"),ya,pa),gl.drawArrays(gl.TRIANGLES,0,3),gl.enable(gl.BLEND),gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA),gl.useProgram(pp),gl.bindBuffer(gl.ARRAY_BUFFER,pb),gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,eb),gl.vertexAttribPointer(0,3,gl.FLOAT,0,20,0),gl.enableVertexAttribArray(1),gl.vertexAttribPointer(1,2,gl.FLOAT,0,20,12);var s=Math.cos(ya),o=Math.sin(ya),i=Math.cos(pa),a=Math.sin(pa),r=.6227,c=.3817,l=.683,u=i*c+a*l,d=-a*c+i*l;gl.uniform3f(ul(pp,"u"),D,AS,SC),gl.uniform2f(ul(pp,"a"),ya,pa),gl.uniform1f(ul(pp,"d"),D),gl.uniform3f(ul(pp,"Lo"),s*r-o*d,u,o*r+s*d),gl.drawElements(gl.TRIANGLES,27648,gl.UNSIGNED_SHORT,0)}function tx(){gl.activeTexture(gl.TEXTURE0);var o,t=tc.width,n=t/2,s=t/W0,i=n/H0,e=tx2;e.clearRect(0,0,t,n),e.drawImage(base,0,0,t,n),sel&&(e.save(),e.scale(s,i),e.fillStyle="#6665c059",e.strokeStyle="#e8e8e0",e.lineWidth=3,o=PP[sel.dataset.i],e.fill(o,"evenodd"),e.stroke(o),e.restore()),e.fillStyle="#e8e8e0d9",e.textAlign="center",e.textBaseline="middle",A.forEach(function(t){e.font=t.s*s+"px A",e.fillText(t.name,t.x*s,t.y*i)}),gl.bindTexture(gl.TEXTURE_2D,tex),gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,tc),gl.generateMipmap(gl.TEXTURE_2D),rq()}function pk(e){var t=g.getBoundingClientRect(),b=(e.clientX-t.left)/t.width*2-1,y=1-(e.clientY-t.top)/t.height*2,o=b*SC*AS,i=y*SC,p=o*o+i*i+1,n=-2*D,C=D*D-1,l=n*n-4*p*C;if(l<0)return pick();var c,s=(-n-l**.5)/(2*p),u=o*s,h=i*s,a=D-s,f=Math.cos(pa),r=Math.sin(pa),v=Math.cos(ya),m=Math.sin(ya),j=f*h+r*a,d=-r*h+f*a,_=v*u-m*d,w=m*u+v*d,O=(Math.atan2(_,w)/6.2832+.5)*W0,x=(.5-Math.asin(j)/3.1416)*H0;for(c in PP)if(hc.isPointInPath(PP[c],O,x,"evenodd"))return pick(c);pick()}function sw(){G=!G,document.body.classList.toggle("g",G),zg.textContent=G?"2D":"3D",G&&(tx(),rq())}zg.onclick=function(){if(ready)return sw();var e=new Image;e.onload=function(){base=e,document.fonts.load("20px A").then(function(){gi()&&sw()})},e.src=U+"map/2.webp"}</script>
