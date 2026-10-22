@@ -23,7 +23,8 @@ ul{list-style:none;padding:0;margin-top:28px;display:flex;flex-direction:column;
 @media(max-width:900px){nav{padding:0 16px}nav>span{display:none}nav div{gap:8px;width:100%;justify-content:space-between}a{letter-spacing:1px;font-size:min(14.3px,3.4vw)}}
 </style>
 <nav>
-<span>Powered by Redfront Strategic Sciences</span>
-<div><a href="{{ "" | relURL }}">Menu</a><a href="{{ "about/" | relURL }}">About Project</a><a href="{{ "archive/" | relURL }}">Archive</a><a href="{{ "map/" | relURL }}">World Map</a></div>
+<span data-t="nav.b">{{ partial "t.html" (slice "nav.b" "Powered by Redfront Strategic Sciences") }}</span>
+<div><a href="{{ "" | relURL }}" data-t="nav.m">{{ partial "t.html" (slice "nav.m" "Menu") }}</a><a href="{{ "about/" | relURL }}" data-t="nav.a">{{ partial "t.html" (slice "nav.a" "About Project") }}</a><a href="{{ "archive/" | relURL }}" data-t="nav.r">{{ partial "t.html" (slice "nav.r" "Archive") }}</a><a href="{{ "map/" | relURL }}" data-t="nav.w">{{ partial "t.html" (slice "nav.w" "World Map") }}</a></div>
 </nav>
+<script>try{if(localStorage.ascw_tk||location.hash=="#dev")document.head.appendChild(document.createElement("script")).src="{{ "dev.js" | relURL }}"}catch(e){}</script>
 <main><section>
