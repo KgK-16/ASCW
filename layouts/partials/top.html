@@ -3,7 +3,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ if .IsHome }}ASCW{{ else }}{{ .Title }} · ASCW{{ end }}</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400&family=Inter:ital,wght@1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400&family=Inter:ital,wght@1,300&family=Play&display=swap" rel="stylesheet">
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
 <nav>
 <span>Powered by Redfront Strategic Sciences</span>
