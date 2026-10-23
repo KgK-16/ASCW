@@ -1,7 +1,7 @@
 {{ partial "top" . }}
-<p data-t="home.w">{{ partial "t.html" (slice "home.w" "Work-In-Progress") }}</p>
-<h1 data-t="{{ .Path }}#t">{{ partial "t.html" (slice (printf "%s#t" .Path) .Title) }}</h1>
+<p>Work-In-Progress</p>
+<h1>{{ .Title }}</h1>
 <hr>
-{{ with .Description }}<i data-t="{{ $.Path }}#d">{{ partial "t.html" (slice (printf "%s#d" $.Path) .) }}</i>{{ end }}
-{{ with .Pages }}<ul>{{ range . }}<li><a href="{{ .RelPermalink }}" data-t="{{ .Path }}#t">{{ partial "t.html" (slice (printf "%s#t" .Path) .Title) }}</a>{{ end }}</ul>{{ end }}
+{{ with .Description }}<i>{{ . }}</i>{{ end }}
+{{ with .Pages }}<ul>{{ range . }}<li><a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ end }}</ul>{{ end }}
 </section></main>
