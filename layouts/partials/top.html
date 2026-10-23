@@ -8,7 +8,7 @@
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
 <nav>
 <span><span lang="en">Powered by Redfront Strategic Sciences</span><span lang="ru">При поддержке Redfront Strategic Sciences</span></span>
-<div><a href="{{ "" | relURL }}"><span lang="en">Menu</span><span lang="ru">Меню</span></a><a href="{{ "about/" | relURL }}"><span lang="en">About Project</span><span lang="ru">О проекте</span></a><a href="{{ "archive/" | relURL }}"><span lang="en">Archive</span><span lang="ru">Архив</span></a><a href="{{ "map/" | relURL }}"><span lang="en">World Map</span><span lang="ru">Карта мира</span></a><a id="lq"><span lang="en">RU</span><span lang="ru">EN</span></a></div>
+<div><a href="{{ "" | relURL }}"><span lang="en">Menu</span><span lang="ru">Меню</span></a><a href="{{ "about/" | relURL }}"><span lang="en">About Project</span><span lang="ru">О проекте</span></a><a href="{{ "archive/" | relURL }}"><span lang="en">Archive</span><span lang="ru">Архив</span></a><a href="{{ "map/" | relURL }}"><span lang="en">World Map</span><span lang="ru">Карта мира</span></a><a id="lq"><span lang="en">EN</span><span lang="ru">РУ</span></a></div>
 </nav>
 <script>var TT=document.querySelector("title");function utt(){document.title=TT.dataset[document.documentElement.lang=="ru"?"r":"e"]}utt();lq.onclick=function(){var l=document.documentElement.lang=="ru"?"en":"ru";document.documentElement.lang=l;try{localStorage.ascwLang=l}catch(e){}utt();document.dispatchEvent(new Event("lang"))}</script>
 <main><section>
