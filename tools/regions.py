@@ -1,4 +1,4 @@
-"""Builds static/regions.json from a flat-colour political map.
+"""Builds assets/regions.json from a flat-colour political map.
 usage: python3 tools/regions.py [political.png] [out.json]
 - every non-grey colour = one country (ordered by area, matches tools/labels.json ids)
 - grey land is ignored (not clickable)
@@ -10,7 +10,7 @@ from PIL import Image
 from scipy import ndimage as ndi
 T=os.path.dirname(os.path.abspath(__file__));R=os.path.dirname(T)
 SRC=sys.argv[1] if len(sys.argv)>1 else T+'/political.png'
-OUT=sys.argv[2] if len(sys.argv)>2 else R+'/static/regions.json'
+OUT=sys.argv[2] if len(sys.argv)>2 else R+'/assets/regions.json'
 LB=json.load(open(T+'/labels.json'));EM=json.load(open(T+'/emw.json'))
 im=np.array(Image.open(SRC).convert('RGB'))
 H,W=im.shape[:2]
@@ -44,10 +44,17 @@ for j,g in enumerate(groups,1):
         if cv2.contourArea(c)<15: continue
         c=cv2.approxPolyDP(c,1.2,True).reshape(-1,2)
         if len(c)<3: continue
-        nums=[int(c[0][0]),int(c[0][1])];rel=[]
-        for (a,b),(p,q) in zip(c[1:],c[:-1]):rel+=[int(a-p),int(b-q)]
         f=lambda v:''.join((('' if k==0 or str(n)[0]=='-' else ' ')+str(n)) for k,n in enumerate(v))
-        parts.append('M'+f(nums)+'l'+f(rel)+'z')
+        o='M'+f([int(c[0][0]),int(c[0][1])]);cur=None;buf=[]
+        for (a,b),(p,q) in zip(c[1:],c[:-1]):   # relative segments, h/v for axis-aligned ones
+            dx,dy=int(a-p),int(b-q)
+            cm,v=('h',[dx]) if dy==0 else ('v',[dy]) if dx==0 else ('l',[dx,dy])
+            if cm!=cur:
+                if cur:o+=cur+f(buf)
+                cur,buf=cm,[]
+            buf+=v
+        if cur:o+=cur+f(buf)
+        parts.append(o+'z')
     big=max(g['m'],key=lambda c:c['a']);bm=(lab==big['i'])
     dd=ndi.distance_transform_edt(bm);y,x=np.unravel_index(dd.argmax(),dd.shape)
     lb=LB[j-1];NAME=lb['en'];row=bm[y];l=x

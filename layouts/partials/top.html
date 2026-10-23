@@ -2,13 +2,15 @@
 <html lang="en">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title data-e="{{ if .IsHome }}ASCW{{ else }}{{ .Title }} · ASCW{{ end }}" data-r="{{ if .IsHome }}ASCW{{ else }}{{ default .Title .Params.title_ru }} · ASCW{{ end }}">{{ if .IsHome }}ASCW{{ else }}{{ .Title }} · ASCW{{ end }}</title>
-<script>try{var l=localStorage.ascwLang||(navigator.language||"").slice(0,2);document.documentElement.lang=l=="ru"?"ru":"en"}catch(e){}</script>
-<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400&family=Inter:ital,wght@1,300&family=Play&display=swap" rel="stylesheet">
+{{- $en := cond .IsHome "ASCW" (print .Title " · ASCW") }}{{ $ru := cond .IsHome "ASCW" (print (default .Title .Params.title_ru) " · ASCW") }}
+<title data-en="{{ $en }}" data-ru="{{ $ru }}">{{ $en }}</title>
+<script>{const d=document.documentElement,t=document.querySelector("title"),s=l=>{d.lang=l;document.title=t.dataset[l]};let l;try{l=localStorage.ascwLang}catch{}s((l||navigator.language||"").slice(0,2)=="ru"?"ru":"en");document.addEventListener("click",e=>{if(e.target.closest("#lq")){const n=d.lang=="ru"?"en":"ru";s(n);try{localStorage.ascwLang=n}catch{}document.dispatchEvent(new Event("lang"))}})}</script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400&family=Inter:ital,wght@1,300{{ if eq .Section "map" }}&family=Play{{ end }}&display=swap" rel="stylesheet">
+<link rel="preload" href="{{ "fonts/a.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
 <nav>
 <span><span lang="en">Powered by Redfront Strategic Sciences</span><span lang="ru">При поддержке Redfront Strategic Sciences</span></span>
 <div><a href="{{ "" | relURL }}"><span lang="en">Menu</span><span lang="ru">Меню</span></a><a href="{{ "about/" | relURL }}"><span lang="en">About Project</span><span lang="ru">О проекте</span></a><a href="{{ "archive/" | relURL }}"><span lang="en">Archive</span><span lang="ru">Архив</span></a><a href="{{ "map/" | relURL }}"><span lang="en">World Map</span><span lang="ru">Карта мира</span></a><a id="lq"><span lang="en">EN</span><span lang="ru">РУ</span></a></div>
 </nav>
-<script>var TT=document.querySelector("title");function utt(){document.title=TT.dataset[document.documentElement.lang=="ru"?"r":"e"]}utt();lq.onclick=function(){var l=document.documentElement.lang=="ru"?"en":"ru";document.documentElement.lang=l;try{localStorage.ascwLang=l}catch(e){}utt();document.dispatchEvent(new Event("lang"))}</script>
 <main><section>

@@ -1,3 +1,6 @@
 baseURL = "https://KgK-16.github.io/ASCW/"
 title = "ASCW"
 disableKinds = ["taxonomy", "term", "RSS", "sitemap"]
+
+[minify]
+disableJS = true  # inline map script is already minified by esbuild (js.Build); re-minifying breaks it
