@@ -2,11 +2,13 @@
 <html lang="en">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{ if .IsHome }}ASCW{{ else }}{{ .Title }} · ASCW{{ end }}</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400&family=Inter:ital,wght@1,300&family=Play&display=swap" rel="stylesheet">
+<title data-e="{{ if .IsHome }}ASCW{{ else }}{{ .Title }} · ASCW{{ end }}" data-r="{{ if .IsHome }}ASCW{{ else }}{{ default .Title .Params.title_ru }} · ASCW{{ end }}">{{ if .IsHome }}ASCW{{ else }}{{ .Title }} · ASCW{{ end }}</title>
+<script>try{var l=localStorage.ascwLang||(navigator.language||"").slice(0,2);document.documentElement.lang=l=="ru"?"ru":"en"}catch(e){}</script>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400&family=Inter:ital,wght@1,300&family=Play&display=swap" rel="stylesheet">
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
 <nav>
-<span>Powered by Redfront Strategic Sciences</span>
-<div><a href="{{ "" | relURL }}">Menu</a><a href="{{ "about/" | relURL }}">About Project</a><a href="{{ "archive/" | relURL }}">Archive</a><a href="{{ "map/" | relURL }}">World Map</a></div>
+<span><span lang="en">Powered by Redfront Strategic Sciences</span><span lang="ru">При поддержке Redfront Strategic Sciences</span></span>
+<div><a href="{{ "" | relURL }}"><span lang="en">Menu</span><span lang="ru">Меню</span></a><a href="{{ "about/" | relURL }}"><span lang="en">About Project</span><span lang="ru">О проекте</span></a><a href="{{ "archive/" | relURL }}"><span lang="en">Archive</span><span lang="ru">Архив</span></a><a href="{{ "map/" | relURL }}"><span lang="en">World Map</span><span lang="ru">Карта мира</span></a><a id="lq"><span lang="en">RU</span><span lang="ru">EN</span></a></div>
 </nav>
+<script>var TT=document.querySelector("title");function utt(){document.title=TT.dataset[document.documentElement.lang=="ru"?"r":"e"]}utt();lq.onclick=function(){var l=document.documentElement.lang=="ru"?"en":"ru";document.documentElement.lang=l;try{localStorage.ascwLang=l}catch(e){}utt();document.dispatchEvent(new Event("lang"))}</script>
 <main><section>

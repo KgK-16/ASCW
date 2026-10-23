@@ -1,7 +1,7 @@
 {{ partial "top" . }}
-<p>Work-In-Progress</p>
-<h1>{{ .Title }}</h1>
+<p><span lang="en">Work-In-Progress</span><span lang="ru">В разработке</span></p>
+<h1><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></h1>
 <hr>
-{{ with .Description }}<i>{{ . }}</i>{{ end }}
-{{ with .Pages }}<ul>{{ range . }}<li><a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ end }}</ul>{{ end }}
+{{ with .Description }}<i><span lang="en">{{ . }}</span><span lang="ru">{{ default . $.Params.description_ru }}</span></i>{{ end }}
+{{ with .Pages }}<ul>{{ range . }}<li><a href="{{ .RelPermalink }}"><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></a>{{ end }}</ul>{{ end }}
 </section></main>
