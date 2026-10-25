@@ -1,25 +1,32 @@
 // ASCW world map: flat raster + SVG viewer, timeline overlay and WebGL globe.
-// Globals injected by layouts/map/list.html: U (base URL), RG (regions), MK (markers), EV (timeline events).
+// Globals injected by layouts/map/list.html: U (base URL), V (map versions: [{y:year,b:has borders,r:[countries]}]), MK (markers), EV (timeline events).
+// Layers: geographic base (static/map/g*.webp) < country colours (vector, toggleable) < borders of the version (static/map/<year>/b*.webp) < graticule, labels, markers.
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
-[m,c,im,sv,mw,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zi,zo,pc]="m c im sv mw g p pt px cd tl xt ty tw tz tr zg zt zi zo pc".split(" ").map($),
+[m,c,im,sv,bi,sl,mw,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc]="m c im sv bi sl mw g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc".split(" ").map($),
 W=4096,H=2048,T0=350,T1=450,
-AL={1:380}, // demo: region id -> first year it exists
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-9L2.6-3 9-3 4-1 5.6 7 0 3.5-5.6 7-4-1-9-3-2.6-3z"], // marker shapes by kind (k)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
-R={},P={};
-RG.forEach(r=>R[r.id]=r);
-let k=1,x=0,y=0,lv=-1,sel=null,yr=420,ak,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+P={},hc=D.createElement("canvas").getContext("2d");
+let k=1,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
 nm=r=>ru()?r.ru:r.name,
-sz=r=>ru()?r.sr:r.s,
 mn=q=>ru()&&q.r||q.n,
 hemi=(v,lat)=>v?HM[ru()?"ru":"en"][(lat?0:2)+(v<0)]:"",
 deg=(v,lat)=>Math.abs(v)+"°"+hemi(v,lat),
-alive=id=>!(AL[id]>yr),
 path=r=>r.p||(r.p=new Path2D(r.d)),
 tlOpen=()=>tl.classList.contains("o"),
-two=o=>{const a=Object.values(o);return a[1]&&{d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2}};
+two=o=>{const a=Object.values(o);return a[1]&&{d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2}},
+ver=()=>V.reduce((a,v)=>v.y<=yr?v:a,V[0]), // latest map version not after the selected year
+bsrc=l=>U+`map/${cv.y}/b${l}.webp`;
+function glyphs(r){ // label letters keep their proportions; letter spacing stretches the name to its box width
+const q=ru()?r.sr:r.s;if(!q)return null;
+const t=nm(r).toUpperCase(),n=t.length,w=ru()?r.wr:r.w;hc.font=q+"px A";
+const ws=[...t].map(ch=>hc.measureText(ch).width),nat=ws.reduce((a,v)=>a+v,0),ls=n>1?Math.max(0,(w-nat)/(n-1)):0;
+let X=(ru()?r.xr:r.x)-(nat+ls*(n-1))/2;
+return{t,s:q,y:ru()?r.yr:r.y,xs:ws.map(v=>{const o=X;X+=v+ls;return o})}}
+function load(el,src){el._s=src;const i=new Image;i.onload=()=>{if(el._s==src)el.src=src};i.src=src}
 
 // ---- flat map ----
 const fit=()=>m.clientHeight/H,kmax=()=>Math.max(2,fit());
@@ -30,34 +37,39 @@ x=w<cw?(cw-w)/2:Math.min(0,Math.max(cw-w,x));
 y=h<ch?(ch-h)/2:Math.min(0,Math.max(ch-h,y));
 c.classList.toggle("t",!!anim);c.style.transform=`translate(${x}px,${y}px) scale(${k})`;c.style.setProperty("--k",k);
 const n=W*k*devicePixelRatio,l=n>2000?2:n>1000?1:0;
-if(l>lv){if(lv<0&&l)im.src=U+"map/0.webp"; // light preview while the sharp level loads
-lv=l;const i=new Image;i.onload=()=>{if(l==lv)im.src=i.src};i.src=U+`map/${l}.webp`}}
+if(l>lv){if(lv<0&&l)im.src=U+"map/g0.webp"; // light preview while the sharp level loads
+lv=l;load(im,U+`map/g${l}.webp`);lvB()}}
+function lvB(){if(lv<0)return;bi.hidden=!cv.b;if(cv.b)load(bi,bsrc(lv))}
 function zoom(f,px,py,anim){const k2=Math.min(Math.max(k*f,fit()),kmax());x=px-(px-x)*k2/k;y=py-(py-y)*k2/k;k=k2;set(anim)}
 
-function rs(){ // (re)build the SVG overlay: regions, graticule, labels
+function rs(){ // (re)build the SVG overlays: country shapes, graticule, labels
 let s="",q="",l="",t="";
 for(let i=-180;i<=180;i+=15){const X=(i+180)/360*W;q+=`<path${i?"":' class="e"'} d="M${X} 0V${H}"/>`;if(i%30==0&&i<180)l+=`<text x="${X+4}" y="38">${deg(i)}</text>`}
 for(let i=-75;i<=75;i+=15){const Y=(90-i)/180*H;q+=`<path${i?"":' class="e"'} d="M0 ${Y}H${W}"/>`;if(i%30==0)l+=`<text x="10" y="${Y-8}">${deg(i,1)}</text>`}
-RG.forEach(r=>{s+=`<path id="r${r.id}" data-i="${r.id}" fill-rule="evenodd" d="${r.d}"/>`;t+=`<text id="t${r.id}" x="${r.x}" y="${r.y}" font-size="${sz(r)}">${nm(r)}</text>`});
-sv.innerHTML=s+`<g class="gr">${q}</g><g class="gl">${l}</g>`+t;
-RG.forEach(r=>{r.el=$("r"+r.id);r.tx=$("t"+r.id)});
+RG.forEach(r=>{s+=`<path id="r${r.id}" data-i="${r.id}" fill="${r.c}" fill-rule="evenodd" d="${r.d}"/>`;const a=glyphs(r);
+if(a)t+=`<text x="${a.xs.map(v=>v.toFixed(1)).join(" ")}" y="${a.y}" font-size="${a.s}">${a.t}</text>`});
+sv.innerHTML=s;sl.innerHTML=`<g class="gr">${q}</g><g class="gl">${l}</g><g class="lb">${t}</g>`;
+RG.forEach(r=>r.el=$("r"+r.id));
 if(sel)R[sel].el.classList.add("s");
-ak=0;upd()}
+if(G)tq()}
 const drawM=()=>mw.innerHTML=MK.map(q=>`<g transform="translate(${(q.o+180)/360*W} ${(90-q.a)/180*H})"><g class="ms"><path d="${SH[q.k|0]}"/><text x="12" y="1">${mn(q)}</text></g></g>`).join("");
 
+function setVer(){ // switch to the map version of the selected year
+cv=ver();RG=cv.r;R={};RG.forEach(r=>R[r.id]=r);
+if(sel&&!R[sel]){sel=null;p.classList.remove("o")}else panel();
+lvB();rs();if(G)gB()}
 function upd(){ // apply the selected year
 zt.textContent=ty.textContent=yr;
 tz.querySelectorAll(".f").forEach(f=>f.classList.toggle("a",f.dataset.y<=yr));
-const key=RG.map(r=>+alive(r.id)).join("");
-if(key==ak)return;ak=key;
-RG.forEach(r=>{const d=!alive(r.id);r.el.classList.toggle("x",d);r.tx.classList.toggle("x",d)});
-if(sel&&!alive(sel))pick();else if(G)tq()}
+if(ver()!=cv)setVer()}
 function pick(id){
-id=id&&alive(id)?+id:null;
+id=id&&R[id]?+id:null;
 if(sel)R[sel].el.classList.remove("s");
 sel=id;if(sel){R[sel].el.classList.add("s");panel()}
 p.classList.toggle("o",!!sel);if(G)tq()}
 function panel(){if(sel){const r=R[sel];pt.textContent=nm(r);px.textContent=r.text||L("Placeholder text","Текст-заглушка")}}
+function col(on){CO=on;c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}if(G)tq()}
+zc.onclick=()=>col(!CO);
 
 m.onpointerdown=e=>{m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0};
 m.onpointermove=e=>{coords(e);const q=P[e.pointerId];if(!q)return;
@@ -105,10 +117,10 @@ xt.onclick=tlClose;
 
 D.addEventListener("lang",()=>{rs();drawM();panel();showC();if(tlOpen())tlB();if(G)tq()});
 addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
-k=fit();x=(m.clientWidth-W*k)/2;set();rs();drawM();
+upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
-let gl,gc,tc,tx2,bc,tex,bp,pp,tb,pb,eb,gD=3,ya=0,pa=.15,SC,AS,dirty,tdirty,gm=0,busy;
+let gl,gc,tc,tx2,bc,bb,tex,bp,pp,tb,pb,eb,gD=3,ya=0,pa=.15,SC,AS,dirty,tdirty,gm=0,busy;
 const GP={},cl=v=>Math.min(4.5,Math.max(1.6,v)),
 rq=()=>{if(!dirty){dirty=1;requestAnimationFrame(dr)}},
 tq=()=>{tdirty=1;rq()}; // texture rebuilds are coalesced to one per frame
@@ -140,9 +152,9 @@ gl.viewport(0,0,2048,1024);gl.useProgram(cp);gl.bindBuffer(gl.ARRAY_BUFFER,tb);g
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.deleteFramebuffer(fo);gl.deleteProgram(cp);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.generateMipmap(gl.TEXTURE_2D);
 gl.activeTexture(gl.TEXTURE0);gl.useProgram(pp);gl.uniform1i(pp.u.T,0);gl.uniform1i(pp.u.C,1);
 // map texture: base image is downscaled once, overlays are redrawn on top of it by tx()
-const S=Math.min(4096,gl.getParameter(gl.MAX_TEXTURE_SIZE)),cv=()=>{const e=D.createElement("canvas");e.width=S;e.height=S/2;return e};
-bc=cv();const bx=bc.getContext("2d");bx.imageSmoothingQuality="high";bx.drawImage(img,0,0,S,S/2);
-tc=cv();tx2=tc.getContext("2d");
+const S=Math.min(4096,gl.getParameter(gl.MAX_TEXTURE_SIZE)),mk=()=>{const e=D.createElement("canvas");e.width=S;e.height=S/2;return e};
+bc=mk();bb=mk();const bx=bc.getContext("2d");bx.imageSmoothingQuality="high";bx.drawImage(img,0,0,S,S/2);
+tc=mk();tx2=tc.getContext("2d");
 tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bc);
 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);tp();
 const e=gl.getExtension("EXT_texture_filter_anisotropic");if(e)gl.texParameterf(gl.TEXTURE_2D,e.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(e.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
@@ -164,16 +176,17 @@ gl.vertexAttribPointer(0,3,gl.FLOAT,0,20,0);gl.enableVertexAttribArray(1);gl.ver
 const cy=Math.cos(ya),sy=Math.sin(ya),cp=Math.cos(pa),sp=Math.sin(pa),Lx=.6227,Ly=.3817,Lz=.683,y1=cp*Ly+sp*Lz,z1=-sp*Ly+cp*Lz;
 gl.uniform3f(pp.u.u,gD,AS,SC);gl.uniform2f(pp.u.a,ya,pa);gl.uniform1f(pp.u.d,gD);gl.uniform3f(pp.u.Lo,cy*Lx-sy*z1,y1,sy*Lx+cy*z1);
 gl.drawElements(gl.TRIANGLES,27648,gl.UNSIGNED_SHORT,0)}
-function tx(){ // rebuild the globe texture: base map, dead regions, graticule, selection, labels, markers
+function tx(){ // rebuild the globe texture: base map, country colours, borders, graticule, selection, labels, markers
 const S=tc.width,Sh=S/2,s=S/W,o=tx2;
 o.drawImage(bc,0,0);
-o.save();o.scale(s,s);o.fillStyle="#a1a5ae";RG.forEach(r=>{if(!alive(r.id))o.fill(path(r),"evenodd")});o.restore();
+o.save();o.scale(s,s);if(CO){o.globalAlpha=.5;RG.forEach(r=>{o.fillStyle=r.c;o.fill(path(r),"evenodd")})}o.restore();
+if(cv.b)o.drawImage(bb,0,0);
 o.strokeStyle="#00000059";o.lineWidth=2;o.beginPath();for(let i=1;i<24;i++){o.moveTo(i*S/24,0);o.lineTo(i*S/24,Sh)}for(let i=1;i<12;i++){o.moveTo(0,i*Sh/12);o.lineTo(S,i*Sh/12)}o.stroke();
 o.strokeStyle="#000000b3";o.lineWidth=3;o.beginPath();o.moveTo(S/2,0);o.lineTo(S/2,Sh);o.moveTo(0,Sh/2);o.lineTo(S,Sh/2);o.stroke();
-if(sel){const q=path(R[sel]);o.save();o.scale(s,s);o.fillStyle="#6665c059";o.strokeStyle="#e8e8e0";o.lineWidth=3;o.fill(q,"evenodd");o.stroke(q);o.restore()}
-o.fillStyle="#e8e8e0";o.textAlign="center";o.textBaseline="middle";o.lineJoin="round";
-RG.forEach(r=>{if(!alive(r.id))return;const n=nm(r).toUpperCase(),X=r.x*s,Y=r.y*s,f=sz(r)*s;o.font=f+"px A";o.lineWidth=f*.14;o.strokeStyle="#000000b3";o.strokeText(n,X,Y);o.fillText(n,X,Y)});
-o.textAlign="left";o.font=24*s+"px Play,sans-serif";
+if(sel){const r=R[sel],q=path(r);o.save();o.scale(s,s);o.globalAlpha=CO?.35:.25;o.fillStyle=CO?r.c:"#e8e8e0";o.fill(q,"evenodd");o.globalAlpha=1;o.strokeStyle="#e8e8e0";o.lineWidth=3;o.stroke(q);o.restore()}
+o.fillStyle="#e8e8e0";o.textAlign="left";o.textBaseline="middle";o.lineJoin="round";o.strokeStyle="#000000b3";
+RG.forEach(r=>{const a=glyphs(r);if(!a)return;const f=a.s*s;o.font=f+"px A";o.lineWidth=f*.14;[...a.t].forEach((ch,i)=>{o.strokeText(ch,a.xs[i]*s,a.y*s);o.fillText(ch,a.xs[i]*s,a.y*s)})});
+o.font=24*s+"px Play,sans-serif";
 MK.forEach(q=>{const X=(q.o+180)/360*S,Y=(90-q.a)/180*Sh,n=mn(q).toUpperCase(),sp=new Path2D(SH[q.k|0]);
 o.save();o.translate(X,Y);o.scale(1.6*s,1.6*s);o.lineWidth=1.9;o.strokeStyle="#000";o.fill(sp);o.stroke(sp);o.restore();
 o.lineWidth=5*s;o.strokeStyle="#000000b3";o.strokeText(n,X+19*s,Y);o.fillText(n,X+19*s,Y)});
@@ -183,8 +196,9 @@ const r=g.getBoundingClientRect(),nx=(e.clientX-r.left)/r.width*2-1,ny=1-(e.clie
 if(f<0)return pick();
 const t=(-b-Math.sqrt(f))/(2*a),X=dx*t,Y=dy*t,Z=gD-t,cp=Math.cos(pa),sp=Math.sin(pa),cy=Math.cos(ya),sy=Math.sin(ya),
 y1=cp*Y+sp*Z,z1=-sp*Y+cp*Z,qx=cy*X-sy*z1,qz=sy*X+cy*z1,mx=(Math.atan2(qx,qz)/6.2832+.5)*W,my=(.5-Math.asin(y1)/3.1416)*H;
-pick(RG.find(r=>alive(r.id)&&hc.isPointInPath(path(r),mx,my,"evenodd"))?.id)}
-const hc=D.createElement("canvas").getContext("2d");
-function sw(){G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";if(G)tq()}
+pick(RG.find(r=>hc.isPointInPath(path(r),mx,my,"evenodd"))?.id)}
+function sw(){G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";if(G)gB()}
+function gB(){ // borders of the current version for the globe texture
+const v=cv;if(!v.b)return tq();const i=new Image;i.onload=()=>{if(v!=cv)return;const o=bb.getContext("2d");o.clearRect(0,0,bb.width,bb.height);o.drawImage(i,0,0,bb.width,bb.height);tq()};i.src=bsrc(2)}
 zg.onclick=()=>{if(gl)return sw();if(busy)return;busy=1;const i=new Image;i.onerror=()=>busy=0;
-i.onload=()=>Promise.all([D.fonts.load("20px A"),D.fonts.load("20px Play")]).then(()=>{if(gi(i))sw()});i.src=U+"map/2.webp"};
+i.onload=()=>Promise.all([D.fonts.load("20px A"),D.fonts.load("20px Play")]).then(()=>{if(gi(i))sw()});i.src=U+"map/g2.webp"};

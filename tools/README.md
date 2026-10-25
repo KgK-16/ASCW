@@ -1,8 +1,9 @@
 # tools
 
-Regenerate country outlines from a flat-colour political map:
+Rebuild the map from a Krita file (8-bit RGBA, layer names as described in map.py):
 
-    node tools/measure.js          # after changing names in labels.json
-    python3 tools/regions.py       # tools/political.png -> assets/regions.json
+    node tools/measure.js              # after changing names in labels.json
+    python3 tools/map.py General_Map.kra
 
-`labels.json`: EN/RU names, optional x/y/s (label position/size) per country, in colour-area order.
+Outputs: static/map/g0..g2.webp (geography), static/map/<year>/b0..b2.webp (borders), assets/map.json (countries, labels).
+`labels.json`: country hex colour -> EN/RU name.
