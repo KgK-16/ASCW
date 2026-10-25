@@ -11,7 +11,7 @@ section{width:100%;padding:0;border:0;position:relative;overflow:hidden}
 #c{position:absolute;left:0;top:0;width:4096px;height:2048px;transform-origin:0 0}
 #c.t{transition:transform .25s}
 #c>*{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
-#c.mv{will-change:transform}
+#c.mv{will-change:transform}#c.mv #sv>path{pointer-events:none}
 #ov{display:none}.on #ov{display:block}
 #sv>path{fill:#e8e8e0;fill-opacity:0;pointer-events:visibleFill;cursor:pointer}#sv>path:hover{fill-opacity:.12}.on #sv>path:hover{fill:var(--c);fill-opacity:.2}
 #hl path{animation:hf .25s}@keyframes hf{from{opacity:0}}
@@ -53,7 +53,7 @@ aside>a{position:absolute;right:14px;top:10px;font-size:20px}
 <aside id="p"><a id="pc">×</a><h1 id="pt"></h1><hr><i id="px"></i></aside>
 <div id="cd">—</div>
 <div id="g"></div>
-<div id="m"><div id="c"><img id="im" alt=""><canvas id="ov" width="4096" height="2048"></canvas><svg id="sv" viewBox="0 0 4096 2048"></svg><img id="bi" alt=""><svg id="hl" viewBox="0 0 4096 2048"></svg><svg id="sl" viewBox="0 0 4096 2048"></svg><svg id="mw" viewBox="0 0 4096 2048"></svg></div></div>
+<div id="m"><div id="c"><img id="im" alt="" decoding="async"><canvas id="ov" width="4096" height="2048"></canvas><svg id="sv" viewBox="0 0 4096 2048"></svg><img id="bi" alt="" decoding="async"><svg id="hl" viewBox="0 0 4096 2048"></svg><svg id="sl" viewBox="0 0 4096 2048"></svg><svg id="mw" viewBox="0 0 4096 2048"></svg></div></div>
 </section></main>
 {{ with resources.Get "map.js" | js.Build (dict "minify" true "target" "es2020") -}}
 <script>var U="{{ "" | relURL }}",V={{ (resources.Get "map.json").Content | safeJS }},MK={{ (resources.Get "markers.json").Content | safeJS }},EV={{ (resources.Get "events.json").Content | safeJS }};{{ .Content | safeJS }}</script>

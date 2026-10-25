@@ -1,9 +1,9 @@
 """Builds the site map from a Krita file.
 usage: python3 tools/map.py General_Map.kra
 Krita file layout (layer names matter):
-  top-level visible paint layers -> geographic base (static/map/g0..g2.webp), always shown
+  top-level visible paint layers -> geographic base (static/map/g0..g3.webp), always shown
   group "y<year>" (e.g. y410)   -> one map version:
-      "borders"   black lines, always shown       -> static/map/<year>/b0..b2.webp
+      "borders"   black lines, always shown       -> static/map/<year>/b0..b3.webp
       "countries" flat fills, one hex per country -> vector territories in assets/map.json
   other groups (e.g. weather) are ignored.
 Countries are matched by hex from tools/labels.json; unknown colours are reported.
@@ -46,9 +46,9 @@ def over(dst,src,op=1.):
     a=src[...,3:4]/255.*op;dst[...,:3]=src[...,:3]*a+dst[...,:3]*(1-a);dst[...,3:4]=np.maximum(dst[...,3:4],a*255)
 
 def levels(img,name,lossless=False):
-    """3 zoom levels: 1024, 2048, full width"""
+    """zoom levels: 1024, 2048, 4096 (also the globe texture), full width"""
     W=img.width
-    for i,w in enumerate((1024,2048,W)):
+    for i,w in enumerate((1024,2048,4096,W)):
         im=img if w==W else img.resize((w,w//2),Image.LANCZOS)
         if lossless and w!=W:   # keep thin lines visible when downscaled: alpha = block max
             a=np.asarray(img.getchannel('A'));f=W//w;a=a.reshape(w//2,f,w,f).max(axis=(1,3))

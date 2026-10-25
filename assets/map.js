@@ -8,7 +8,7 @@ W=4096,H=2048,T0=350,T1=450,
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-9L2.6-3 9-3 4-1 5.6 7 0 3.5-5.6 7-4-1-9-3-2.6-3z"], // marker shapes by kind (k)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
 P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d");
-let k=1,kk,mvT,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+let k=1,kk,mvT,raf,an,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
 try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
@@ -27,7 +27,7 @@ const t=nm(r).toUpperCase(),n=t.length,w=ru()?r.wr:r.w;hc.font=q+"px A";
 const ws=[...t].map(ch=>hc.measureText(ch).width),nat=ws.reduce((a,v)=>a+v,0),ls=n>1?Math.max(0,(w-nat)/(n-1)):0;
 let X=(ru()?r.xr:r.x)-(nat+ls*(n-1))/2;
 return{t,s:q,y:ru()?r.yr:r.y,xs:ws.map(v=>{const o=X;X+=v+ls;return o})}}
-function load(el,src){el._s=src;const i=new Image;i.onload=()=>{if(el._s==src)el.src=src};i.src=src}
+function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>{if(el._s==src)el.src=src},()=>{})} // decode off the main thread, then swap
 
 // ---- flat map ----
 const fit=()=>m.clientHeight/H,kmax=()=>Math.max(2,fit());
@@ -36,12 +36,14 @@ k=Math.min(Math.max(k,fit()),kmax());
 const w=W*k,h=H*k,cw=m.clientWidth,ch=m.clientHeight;
 x=w<cw?(cw-w)/2:Math.min(0,Math.max(cw-w,x));
 y=h<ch?(ch-h)/2:Math.min(0,Math.max(ch-h,y));
-c.classList.toggle("t",!!anim);c.style.transform=`translate(${x}px,${y}px) scale(${k})`;if(k!=kk)c.style.setProperty("--k",kk=k);
-c.classList.add("mv");clearTimeout(mvT);mvT=setTimeout(()=>c.classList.remove("mv"),250); // GPU layer while moving, crisp re-raster after
-const n=W*k*devicePixelRatio,l=n>2000?2:n>1000?1:0;
+an=anim;if(!raf)raf=requestAnimationFrame(apply); // at most one DOM update per frame
+const n=W*k*devicePixelRatio,l=n>4500?3:n>2200?2:n>1100?1:0; // image levels 1024/2048/4096/8192 px
 if(l>lv){if(lv<0&&l)im.src=U+"map/g0.webp"; // light preview while the sharp level loads
 lv=l;load(im,U+`map/g${l}.webp`);lvB()}}
 function lvB(){if(lv<0)return;bi.hidden=!cv.b;if(cv.b)load(bi,bsrc(lv))}
+function apply(){raf=0;c.classList.toggle("t",!!an);c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
+c.classList.add("mv");clearTimeout(mvT);mvT=setTimeout(rest,250)} // while moving: GPU layer only, no restyle/repaint
+function rest(){c.classList.remove("mv");if(k!=kk)c.style.setProperty("--k",kk=k)} // after: zoom-dependent widths, crisp re-raster
 function zoom(f,px,py,anim){const k2=Math.min(Math.max(k*f,fit()),kmax());x=px-(px-x)*k2/k;y=py-(py-y)*k2/k;k=k2;set(anim)}
 
 function rs(){ // (re)build the SVG overlays: country shapes, graticule, labels
@@ -71,6 +73,7 @@ function upd(){ // apply the selected year
 zt.textContent=ty.textContent=yr;
 tz.querySelectorAll(".f").forEach(f=>f.classList.toggle("a",f.dataset.y<=yr));
 if(ver()!=cv)setVer()}
+const hit=(mx,my)=>RG.find(r=>hc.isPointInPath(path(r),mx,my,"evenodd"))?.id; // country under a map point
 function pick(id){
 id=id&&R[id]?+id:null;
 sel=id;if(sel)panel();
@@ -86,7 +89,7 @@ if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/
 m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];
 if(!one||mv>6||e.type!="pointerup")return;const r=m.getBoundingClientRect(),t=Date.now();
 if(t-tap<300){zoom(2,e.clientX-r.left,e.clientY-r.top,1);tap=0;return}
-tap=t;pick(D.elementFromPoint(e.clientX,e.clientY)?.dataset?.i)};
+tap=t;pick(hit((e.clientX-r.left-x)/k,(e.clientY-r.top-y)/k))};
 m.onlostpointercapture=e=>{delete P[e.pointerId]};
 m.onwheel=e=>{e.preventDefault();const r=m.getBoundingClientRect();zoom(Math.exp(-e.deltaY*.002),e.clientX-r.left,e.clientY-r.top)};
 zi.onclick=()=>G?(gD=cl(gD/1.3),rq()):zoom(1.6,m.clientWidth/2,m.clientHeight/2,1);
@@ -125,7 +128,7 @@ xt.onclick=tlClose;
 
 D.addEventListener("lang",()=>{rs();drawM();panel();showC();if(tlOpen())tlB();if(G)tq()});
 addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
-upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
+upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
 let gl,gc,tc,tx2,bc,bb,tex,bp,pp,tb,pb,eb,gD=3,ya=0,pa=.15,SC,AS,dirty,tdirty,gm=0,busy;
@@ -205,9 +208,9 @@ const r=g.getBoundingClientRect(),nx=(e.clientX-r.left)/r.width*2-1,ny=1-(e.clie
 if(f<0)return pick();
 const t=(-b-Math.sqrt(f))/(2*a),X=dx*t,Y=dy*t,Z=gD-t,cp=Math.cos(pa),sp=Math.sin(pa),cy=Math.cos(ya),sy=Math.sin(ya),
 y1=cp*Y+sp*Z,z1=-sp*Y+cp*Z,qx=cy*X-sy*z1,qz=sy*X+cy*z1,mx=(Math.atan2(qx,qz)/6.2832+.5)*W,my=(.5-Math.asin(y1)/3.1416)*H;
-pick(RG.find(r=>hc.isPointInPath(path(r),mx,my,"evenodd"))?.id)}
+pick(hit(mx,my))}
 function sw(){G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";if(G)gB()}
 function gB(){ // borders of the current version for the globe texture
-const v=cv;if(!v.b)return tq();const i=new Image;i.onload=()=>{if(v!=cv)return;const o=bb.getContext("2d");o.clearRect(0,0,bb.width,bb.height);o.drawImage(i,0,0,bb.width,bb.height);tq()};i.src=bsrc(2)}
+const v=cv;if(!v.b)return tq();const i=new Image;i.onload=()=>{if(v!=cv)return;const o=bb.getContext("2d");o.clearRect(0,0,bb.width,bb.height);o.drawImage(i,0,0,bb.width,bb.height);tq()};i.src=bsrc(2)} // 4096 px level = globe texture size
 zg.onclick=()=>{if(gl)return sw();if(busy)return;busy=1;const i=new Image;i.onerror=()=>busy=0;
-i.onload=()=>Promise.all([D.fonts.load("20px A"),D.fonts.load("20px Play")]).then(()=>{if(gi(i))sw()});i.src=U+"map/g2.webp"};
+i.onload=()=>Promise.all([D.fonts.load("20px A"),D.fonts.load("20px Play")]).then(()=>{if(gi(i))sw()});i.src=U+"map/g2.webp"}; // 4096 px level
