@@ -69,31 +69,42 @@ def path_d(c):
         buf+=v
     return o+(cur+f(buf) if cur else '')+'z'
 
-def fit(mask,name):
-    """largest letter size whose text fits inside the territory on one line; letter spacing fills the rest.
-    mask: country on a 2048x1024 grid (1 cell = 2 map units)"""
-    em,cap,n=EM[name],EM['cap'],len(name)
-    ys,xs=np.nonzero(mask);y0,y1,x0,x1=ys.min(),ys.max()+1,xs.min(),xs.max()+1
-    m=mask[y0:y1,x0:x1].astype(np.int32);hgt,wid=m.shape
-    up=m.copy();dn=m.copy()
-    for i in range(1,hgt):up[i]=(up[i-1]+1)*m[i]
-    for i in range(hgt-2,-1,-1):dn[i]=(dn[i+1]+1)*m[i]
-    cache={}
-    for s in range(110,17,-2):                       # size in map units
+def pole(m):
+    """point of the shape farthest from all its borders (centre of the shape)"""
+    d=cv2.distanceTransform(np.pad(m,1).astype(np.uint8),cv2.DIST_L2,5)[1:-1,1:-1];y,x=np.unravel_index(d.argmax(),d.shape);return x,y
+
+def fit(mask,name,lb):
+    """label box on a 2048x1024 grid (1 cell = 2 map units): letters keep proportions, letter spacing fills the width.
+    default: centred on the pole of the territory, largest size that fits inside it.
+    lb.area=[x0,y0,x1,y1]: centre of the parts inside that box (may overlap water); lb.place='between': midway between the 2 largest parts."""
+    em,cap,n=EM[name],EM['cap'],len(name);sp=lambda s,w:min(w,em*s+.6*s*max(n-1,1))
+    if 'area' in lb or lb.get('place')=='between':
+        k,lab,st,cen=cv2.connectedComponentsWithStats(mask.astype(np.uint8),connectivity=8)
+        ids=[i for i in range(1,k) if st[i,4]>=4]
+        if 'area' in lb:
+            x0,y0,x1,y1=[v/2 for v in lb['area']]
+            ids=[i for i in ids if x0<=cen[i][0]<=x1 and y0<=cen[i][1]<=y1]
+            bx0=min(st[i,0] for i in ids);bx1=max(st[i,0]+st[i,2] for i in ids)
+            by0=min(st[i,1] for i in ids);by1=max(st[i,1]+st[i,3] for i in ids)
+            cx,cy,room=(bx0+bx1)/2,(by0+by1)/2,(bx1-bx0)*2*.75
+        else:
+            a,b=sorted(ids,key=lambda i:-st[i,4])[:2];pa=pole(lab==a);pb=pole(lab==b)
+            cx,cy,room=(pa[0]+pb[0])/2,(pa[1]+pb[1])/2,abs(pa[0]-pb[0])*2*1.4
+        s=int(max(26,min(70,room/em)));return round(cx*2+1),round(cy*2+1),s,round(sp(s,room))
+    cx,cy=pole(mask);hgt,wid=mask.shape
+    ys,xs=np.nonzero(mask);D=max(2,int((xs.max()-xs.min())*.08))   # centre may slide along the row by up to 8% of the width
+    for s in range(110,15,-2):                       # size in map units
         g=int(np.ceil(cap*s*.65/2))                  # half band height (cap + margin) in cells
-        if g not in cache:
-            C=((up>=g)&(dn>=g)).astype(np.int32);run=np.zeros_like(C)
-            run[:,0]=C[:,0]
-            for j in range(1,wid):run[:,j]=(run[:,j-1]+1)*C[:,j]
-            cache[g]=run
-        run=cache[g];need=em*s/.9/2                  # cells
-        best=run.max(axis=1);rows=np.nonzero(best>=need)[0]
-        if len(rows):
-            r=rows[np.argmax(best[rows])];j=int(np.argmax(run[r]));L=run[r,j]
-            cx=(x0+j-L/2+.5)*2;cy=(y0+r+.5)*2;room=L*2*.9
-            w=min(room,em*s+.6*s*max(n-1,1))
-            return round(cx),round(cy),s,round(w)
-    return None
+        if cy-g<0 or cy+g>=hgt:continue
+        B=mask[cy-g:cy+g+1].all(axis=0)              # columns where the whole band is inside
+        j=np.arange(wid);st=np.where(B,-1,j);L=np.maximum.accumulate(st)            # last outside column on the left
+        en=np.where(B,wid,j);Rr=np.minimum.accumulate(en[::-1])[::-1]               # first outside column on the right
+        half=np.minimum(j-L-1,Rr-j-1)*B
+        win=np.arange(max(0,cx-D),min(wid,cx+D+1));ok=win[2*half[win]*2*.9>=em*s]
+        if len(ok):
+            c=ok[np.argmin(abs(ok-cx))];room=2*half[c]*2*.9
+            return round(c*2+1),round(cy*2+1),s,round(sp(s,room))
+    return round(cx*2+1),round(cy*2+1),16,round(em*16)
 
 def countries(img,ver):
     rgb=img[...,:3].astype(int);on=img[...,3]>127
@@ -113,7 +124,7 @@ def countries(img,ver):
         g=cv2.resize(m,(2048,1024),interpolation=cv2.INTER_AREA)>0 if m.shape[1]!=2048 else m>0
         r=dict(id=i+1,c=l['hex'],name=l['en'],ru=l['ru'],d=d)
         for k,nm in (('',l['en']),('r',l['ru'])):
-            f=fit(g,nm)
+            f=fit(g,nm,l)
             if f is None:print(f'  y{ver}: no room for label {nm}');continue
             for a,v in zip('xysw',f):r[a+k]=v
         out.append(r)

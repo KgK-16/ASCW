@@ -1,11 +1,11 @@
 [
-{"hex":"#5e0a22","en":"Great Cascadia","ru":"Великая Каскадия"},
-{"hex":"#672f5c","en":"Venazia","ru":"Венация"},
-{"hex":"#207065","en":"Orland Empire","ru":"Империя Орланд"},
-{"hex":"#3f406e","en":"Talmark Federation","ru":"Федерация Талмарк"},
-{"hex":"#b77d2b","en":"Solstium","ru":"Солстиум"},
-{"hex":"#bf5034","en":"Shevran","ru":"Шевран"},
-{"hex":"#dfdfc7","en":"Exiar Central Empire","ru":"Центральная Империя Эксиар"},
-{"hex":"#1c4690","en":"Kai'zen Empire","ru":"Империя Кай'зен"},
-{"hex":"#537b3d","en":"Norvella","ru":"Норвелла"}
+{"hex": "#5e0a22", "en": "Great Cascadia", "ru": "Великая Каскадия"},
+{"hex": "#672f5c", "en": "Venazia", "ru": "Венация"},
+{"hex": "#207065", "en": "Orland Empire", "ru": "Империя Орланд", "place": "between"},
+{"hex": "#3f406e", "en": "Talmark Federation", "ru": "Федерация Талмарк"},
+{"hex": "#b77d2b", "en": "Solstium", "ru": "Солстиум"},
+{"hex": "#bf5034", "en": "Shevran", "ru": "Шевран"},
+{"hex": "#dfdfc7", "en": "Exiar Central Empire", "ru": "Центральная Империя Эксиар"},
+{"hex": "#1c4690", "en": "Kai'zen Empire", "ru": "Империя Кай'зен"},
+{"hex": "#537b3d", "en": "Norvella", "ru": "Норвелла", "area": [0, 0, 4096, 1100]}
 ]
