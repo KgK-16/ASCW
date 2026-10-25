@@ -132,10 +132,10 @@ upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();D.fonts.load(
 
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
-let gl,gc,tc,tx2,bc,bb,tex,bp,pp,tb,pb,eb,gD=3,ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0;
+let gl,gc,tc,tx2,bc,bb,tex,bp,pp,sp,fp,tb,pb,eb,gD=3,ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0;
 const GP={},cl=v=>Math.min(4.5,Math.max(1.6,v)),
 SW=(v=>{const l=Math.hypot(...v);return v.map(a=>a/l)})([.62,.32,.72]),
-SPIN=6.2832/300,CLOUD=[1/600,1/950], // one turn in 5 min; cloud layers drift (uv/s)
+SPIN=6.2832/430,CLOUD=[1/600,1/950], // one turn in ~7 min; cloud layers drift (uv/s)
 ry=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[c*v[0]+s*v[2],v[1],-s*v[0]+c*v[2]]},
 rx=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[v[0],c*v[1]-s*v[2],s*v[1]+c*v[2]]},
 rq=()=>{if(!loop&&G){last=0;loop=requestAnimationFrame(tick)}}, // render loop runs while the globe is shown
@@ -145,37 +145,63 @@ D.addEventListener("visibilitychange",rq);
 const PR="#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n",
 NZ=`float h3(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}float n3(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z);}float fb(vec3 x){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*n3(x);x=x*2.03+vec3(1.7,9.2,3.1);a*=.5;}return s;}`,
 FV="attribute vec2 g;varying vec2 n;void main(){n=g;gl_Position=vec4(g,0.,1.);}",
-PV=`attribute vec3 p;attribute vec2 t;uniform vec3 u;uniform vec2 a;varying vec2 v;varying vec3 q;varying vec3 o;void main(){float c=cos(a.x),s=sin(a.x),e=cos(a.y),f=sin(a.y);vec3 r=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);r=vec3(r.x,e*r.y-f*r.z,f*r.y+e*r.z);q=r;o=p;v=t;gl_Position=vec4(r.x/(u.z*u.y),r.y/u.z,0.,u.x-r.z);}`,
-PF=PR+`uniform sampler2D T;uniform sampler2D C;uniform float d;uniform vec3 L;uniform vec3 Lo;uniform vec4 cw;varying vec2 v;varying vec3 q;varying vec3 o;
-float cl(vec2 w){float a=texture2D(C,w+cw.xy).r,b=texture2D(C,vec2(w.x+cw.z,1.-w.y)).r;return smoothstep(.3,.95,a*.65+b*.5);}
-void main(){vec3 n=normalize(q),V=normalize(vec3(0.,0.,d)-q),ob=normalize(o);float ndl=dot(n,L),h=1./d,al=smoothstep(h,h+.03,q.z);
-float day=smoothstep(-.06,.32,ndl),tw=exp(-pow(ndl*6.,2.));
-vec3 m=texture2D(T,v).rgb;float cd=cl(v);
-vec3 e=normalize(vec3(ob.z,0.,-ob.x)+vec3(1e-4,0.,0.)),nr=cross(ob,e);float cs=max(sqrt(1.-ob.y*ob.y),.1);
-float sh=cl(v+vec2(dot(Lo,e)/(6.2832*cs),-dot(Lo,nr)/3.1416)*.014);
-float sea=smoothstep(.02,.07,m.b-m.r)*(1.-smoothstep(.18,.28,m.r));
-vec3 g=m*(1.-.5*sh*day);
-vec3 c=mix(m*vec3(.09,.11,.17),g*(.32+.8*smoothstep(0.,.7,ndl)),day);
-c+=vec3(1.,.93,.8)*pow(max(dot(n,normalize(L+V)),0.),60.)*.45*sea*(1.-cd)*day;
-c+=vec3(1.,.42,.12)*tw*.06;
-vec3 cc=mix(vec3(.035,.045,.07),vec3(1.,.985,.96)*(.55+.45*smoothstep(0.,.6,ndl)),day)+vec3(1.,.5,.2)*tw*.18;
-c=mix(c,cc,cd*.88);
-float fr=pow(1.-max(dot(n,V),0.),3.);
-vec3 atm=mix(vec3(.15,.3,.85),vec3(.42,.66,1.),day)*smoothstep(-.3,.25,ndl)+vec3(1.,.48,.18)*tw*.55;
-c=mix(c,atm,fr*.7);c=mix(c,vec3(.5,.66,1.),.07*day);
+// sphere mesh, radius R (1 = ground, >1 = cloud shell); planet rotation a.x = camera yaw + spin, a.y = camera pitch
+PV=`attribute vec3 p;attribute vec2 t;uniform vec3 u;uniform vec2 a;uniform float R;varying vec2 v;varying vec3 q;varying vec3 o;void main(){float c=cos(a.x),s=sin(a.x),e=cos(a.y),f=sin(a.y);vec3 r=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z)*R;r=vec3(r.x,e*r.y-f*r.z,f*r.y+e*r.z);q=r;o=p;v=t;gl_Position=vec4(r.x/(u.z*u.y),r.y/u.z,0.,u.x-r.z);}`,
+CL=`uniform sampler2D C;uniform vec4 cw;float cl(vec2 w){float a=texture2D(C,w+cw.xy).r,b=texture2D(C,vec2(w.x+cw.z,1.-w.y)).r;return smoothstep(.3,.95,a*.65+b*.5);}
+vec2 tl(vec3 ob,vec3 Lo){vec3 e=normalize(vec3(ob.z,0.,-ob.x)+vec3(1e-4,0.,0.)),nr=cross(ob,e);float cs=max(sqrt(1.-ob.y*ob.y),.1);return vec2(dot(Lo,e)/(6.2832*cs),-dot(Lo,nr)/3.1416);}`, // uv step towards the sun
+// ground: map, day/night lighting, ocean glint + sky reflection, cloud shadows, city lights, atmospheric haze
+PF=PR+NZ+CL+`uniform sampler2D T;uniform float d;uniform vec3 L;uniform vec3 Lo;varying vec2 v;varying vec3 q;varying vec3 o;
+void main(){vec3 n=normalize(q),V=normalize(vec3(0.,0.,d)-q),ob=normalize(o),H=normalize(L+V);float ndl=dot(n,L),h=1./d,al=smoothstep(h,h+.03,q.z),nv=max(dot(n,V),0.);
+float day=smoothstep(-.08,.3,ndl),tw=exp(-pow(ndl*6.,2.)),wr=clamp((ndl+.15)/1.15,0.,1.);
+vec3 m=texture2D(T,v).rgb;float cd=cl(v),sh=cl(v+tl(ob,Lo)*.014);
+float sea=smoothstep(.02,.07,m.b-m.r)*(1.-smoothstep(.18,.28,m.r)),snow=smoothstep(.72,.9,min(m.r,min(m.g,m.b)));
+vec3 g=m*(1.-.55*sh*day)*mix(1.,.82,sea);
+vec3 c=mix(m*vec3(.045,.06,.1),g*(.08+1.02*wr),day);
+c+=sea*day*(1.-cd)*(vec3(1.,.95,.85)*(pow(max(dot(n,H),0.),160.)*.8+pow(max(dot(n,H),0.),18.)*.05)+vec3(.3,.45,.85)*pow(1.-nv,5.)*.35);
+c+=vec3(1.,.35,.1)*tw*.05;
+float nt=1.-smoothstep(-.18,.04,ndl);
+if(nt>.01){float pop=smoothstep(.4,.66,fb(ob*5.+3.))*(1.-sea)*(1.-snow);
+vec3 gp=ob*240.,id=floor(gp),f=fract(gp)-.5;float dt=step(.7,h3(id))*smoothstep(.32,0.,length(f-(vec3(h3(id+1.),h3(id+2.),h3(id+5.))-.5)*.5))*(.35+.65*h3(id+9.));
+gp=ob*80.;id=floor(gp);f=fract(gp)-.5;float bg=step(.9,h3(id+4.))*smoothstep(.42,0.,length(f-(vec3(h3(id+6.),h3(id+8.),h3(id+3.))-.5)*.4));
+c+=vec3(1.,.7,.36)*(dt*.9+bg*1.6+.05)*pop*nt*(1.-cd*.7)*2.4;}
+float fr=pow(1.-nv,2.5);
+vec3 atm=mix(vec3(.16,.32,.9),vec3(.5,.72,1.),day)*smoothstep(-.28,.3,ndl)+vec3(1.,.42,.14)*exp(-pow(ndl*5.,2.))*.7;
+c=mix(c,atm,fr*.78);c=mix(c,vec3(.52,.68,1.),.06*day);
 gl_FragColor=vec4(c*al,al);}`,
-BF=PR+NZ+`uniform vec3 u;uniform vec2 a;uniform vec3 S;varying vec2 n;
+// cloud shell: soft density, self-shadowing towards the sun, warm light at the terminator, fades into the atmosphere at the limb
+CS=PR+CL+`uniform float d;uniform float R;uniform vec3 L;uniform vec3 Lo;varying vec2 v;varying vec3 q;varying vec3 o;
+void main(){vec3 n=normalize(q),V=normalize(vec3(0.,0.,d)-q),ob=normalize(o);float h=R*R/d,al=smoothstep(h,h+.02,q.z),ndl=dot(n,L);
+float cd=cl(v),c2=cl(v+tl(ob,Lo)*.005),sf=clamp((c2-cd)*2.5,0.,1.),day=smoothstep(-.22,.25,ndl);
+vec3 lit=vec3(1.,.985,.96)*(1.-.5*sf)+vec3(.05,.07,.12)*sf;
+vec3 col=mix(vec3(.02,.025,.04),mix(vec3(1.,.62,.42),lit,smoothstep(-.02,.3,ndl)),day);
+float fr=pow(1.-max(dot(n,V),0.),3.);col=mix(col,mix(vec3(.2,.35,.9),vec3(.6,.76,1.),day)*day,fr*.5);
+float k=cd*.95*al*(1.-fr*.4);gl_FragColor=vec4(col*k,k);}`,
+// background: twinkling stars, milky way, sun disc + corona, atmosphere halo (sunlit side, sunset rim, forward scattering when backlit)
+BF=PR+NZ+`uniform vec3 u;uniform vec2 a;uniform vec3 S;uniform float tm;varying vec2 n;
+float f3(vec3 x){float s=0.,b=.5;for(int i=0;i<3;i++){s+=b*n3(x);x*=2.1;b*=.5;}return s;}
 void main(){vec2 tp=vec2(n.x*u.z*u.y,n.y*u.z);vec3 rd=normalize(vec3(tp,-1.));
 float ce=cos(a.y),se=sin(a.y),cy=cos(a.x),sy=sin(a.x);vec3 w=vec3(rd.x,ce*rd.y+se*rd.z,-se*rd.y+ce*rd.z);w=vec3(cy*w.x-sy*w.z,w.y,sy*w.x+cy*w.z);
 vec3 col=vec3(0.);
+float mw=exp(-pow(dot(w,normalize(vec3(.35,1.,.25)))*4.,2.));
+col+=mix(vec3(.25,.3,.5),vec3(.5,.42,.38),f3(w*3.))*mw*smoothstep(.35,.75,f3(w*5.+2.))*.09;
 for(int k=0;k<3;k++){float z=float(k);vec3 gp=w*(70.+z*70.)+z*17.,id=floor(gp),f=fract(gp)-.5,of=(vec3(h3(id+7.),h3(id+13.),h3(id+29.))-.5)*.6;
-col+=mix(vec3(.7,.8,1.),vec3(1.,.82,.6),h3(id+19.))*step(.955+z*.01,h3(id+z*31.))*smoothstep(.1,0.,length(f-of))*(.35+.65*h3(id+3.))*(1.2-.3*z);}
+float tw=.75+.25*sin(tm*(1.5+h3(id+2.)*3.)+h3(id)*40.);
+col+=mix(vec3(.7,.8,1.),vec3(1.,.82,.6),h3(id+19.))*step(.955+z*.01-mw*.03,h3(id+z*31.))*smoothstep(.1,0.,length(f-of))*(.35+.65*h3(id+3.))*(1.2-.3*z)*tw;}
 vec3 o=vec3(0.,0.,u.x);float tc=-dot(o,rd);vec3 P=o+rd*tc;float dist=length(P),hh=max(dist-1.,0.),ss=dot(P/max(dist,1e-4),S),
-lit=smoothstep(-.35,.4,ss),fw=pow(max(dot(rd,S),0.),6.);
-col+=(mix(vec3(.15,.32,1.),vec3(.4,.65,1.),lit)*lit*1.1+vec3(1.,.5,.2)*exp(-pow(ss*3.,2.))*.45+vec3(.65,.8,1.)*fw*1.4)*exp(-hh*38.)*step(0.,tc);
-float sd=1.-dot(rd,S);col+=vec3(1.,.97,.92)*smoothstep(.00014,.00007,sd)*9.+vec3(1.,.9,.75)*.0007/(sd+.0007);
+lit=smoothstep(-.35,.4,ss),fw=pow(max(dot(rd,S),0.),6.),hz=exp(-hh*30.)*.75+exp(-hh*9.)*.25;
+col+=(mix(vec3(.12,.3,1.),vec3(.42,.66,1.),lit)*lit*1.15+vec3(1.,.45,.18)*exp(-pow(ss*3.2,2.))*.55+vec3(.7,.82,1.)*fw*1.8)*hz*step(0.,tc);
+float sd=max(1.-dot(rd,S),0.);vec2 sp=S.xy/max(-S.z,1e-3);float an=atan(tp.y-sp.y,tp.x-sp.x);
+col+=step(0.,-S.z)*(vec3(1.,.98,.94)*smoothstep(.00016,.00008,sd)*12.+vec3(1.,.88,.7)*(.0011/(sd+.0011))*.7
++vec3(1.,.85,.65)*.00025/(sd+.00025)*(.6+.4*pow(abs(cos(an*6.+1.)),8.)));
 gl_FragColor=vec4(1.-exp(-col*1.4),1.);}`,
-CF=PR+NZ+`void main(){vec2 uv=gl_FragCoord.xy/vec2(2048.,1024.);float th=(uv.x-.5)*6.2832,ph=(.5-uv.y)*3.1416;vec3 p=vec3(cos(ph)*sin(th),sin(ph),cos(ph)*cos(th)),w=p*3.5;vec3 q=vec3(fb(w),fb(w+vec3(5.2,1.3,2.8)),fb(w+vec3(1.7,9.2,4.1)));float n=fb(p*6.+5.*(q-.5)),y=p.y;float fr=exp(-pow((y-.52-.28*(fb(p*2.+9.)-.5))*5.5,2.))+exp(-pow((y+.46-.28*(fb(p*2.+4.)-.5))*5.5,2.))+.6*exp(-pow((y-.1*(fb(p*2.+2.)-.5))*9.,2.));float c=n*1.05+fr*.4-.8+(fb(p*30.+q*3.)-.5)*.25,d=smoothstep(-.12,.3,c);gl_FragColor=vec4(d,d,d,1.);}`;
+// lens flare (additive, after the planet): glare, streak, ghosts; S2.z = sun visibility
+FF=`precision mediump float;uniform vec3 u;uniform vec3 S2;varying vec2 n;
+float gh(vec2 p,vec2 c,float r){float d=length((p-c)*vec2(u.y,1.));return smoothstep(r,r*.6,d)*.5+smoothstep(r*1.02,r,d)*smoothstep(r*.9,r,d)*.6;}
+void main(){vec2 p=n,s=S2.xy,dd=(p-s)*vec2(u.y,1.);float r=length(dd);
+vec3 c=vec3(1.,.9,.75)*(.02/(r*r*30.+.02)*.25+exp(-abs(dd.y)*90.)*exp(-abs(dd.x)*2.5)*.25);
+c+=vec3(.4,.6,1.)*gh(p,-s*.4,.06)*.08+vec3(1.,.6,.3)*gh(p,-s*.75,.1)*.06+vec3(.5,1.,.7)*gh(p,s*.35,.035)*.07+vec3(.7,.5,1.)*gh(p,-s*1.15,.16)*.04;
+gl_FragColor=vec4(c*S2.z,1.);}`,
+CF=PR+NZ+`uniform vec2 rs;void main(){vec2 uv=gl_FragCoord.xy/rs;float th=(uv.x-.5)*6.2832,ph=(.5-uv.y)*3.1416;vec3 p=vec3(cos(ph)*sin(th),sin(ph),cos(ph)*cos(th)),w=p*3.5;vec3 q=vec3(fb(w),fb(w+vec3(5.2,1.3,2.8)),fb(w+vec3(1.7,9.2,4.1)));float n=fb(p*6.+5.*(q-.5)),y=p.y;float fr=exp(-pow((y-.52-.28*(fb(p*2.+9.)-.5))*5.5,2.))+exp(-pow((y+.46-.28*(fb(p*2.+4.)-.5))*5.5,2.))+.6*exp(-pow((y-.1*(fb(p*2.+2.)-.5))*9.,2.));float c=n*1.05+fr*.4-.8+(fb(p*30.+q*3.)-.5)*.28+(fb(p*70.+q*6.)-.5)*.12,d=smoothstep(-.14,.32,c);gl_FragColor=vec4(d,d,d,1.);}`;
 
 function sh(t,s){const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o}
 function prog(v,f,a,u){const q=gl.createProgram();gl.attachShader(q,sh(gl.VERTEX_SHADER,v));gl.attachShader(q,sh(gl.FRAGMENT_SHADER,f));
@@ -183,19 +209,19 @@ a.forEach((n,i)=>gl.bindAttribLocation(q,i,n));gl.linkProgram(q);q.u={};u.forEac
 function tp(){gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE)}
 function gi(img){
 gc=D.createElement("canvas");gl=gc.getContext("webgl",{antialias:true});if(!gl){zg.style.display="none";return}g.append(gc);
-bp=prog(FV,BF,["g"],["u","a","S"]);pp=prog(PV,PF,["p","t"],["u","a","d","L","Lo","cw","T","C"]);const cp=prog(FV,CF,["g"],[]);
+bp=prog(FV,BF,["g"],["u","a","S","tm"]);pp=prog(PV,PF,["p","t"],["u","a","R","d","L","Lo","cw","T","C"]);sp=prog(PV,CS,["p","t"],["u","a","R","d","L","Lo","cw","C"]);fp=prog(FV,FF,["g"],["u","S2"]);const cp=prog(FV,CF,["g"],["rs"]);
 tb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
 const b=[],ix=[];for(let j=0;j<=48;j++)for(let i=0;i<=96;i++){const th=(i/96-.5)*6.2832,ph=(.5-j/48)*3.1416;b.push(Math.cos(ph)*Math.sin(th),Math.sin(ph),Math.cos(ph)*Math.cos(th),i/96,j/48)}
 for(let j=0;j<48;j++)for(let i=0;i<96;i++){const a=j*97+i;ix.push(a,a+1,a+97,a+1,a+98,a+97)}
 pb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(b),gl.STATIC_DRAW);
 eb=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,eb);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(ix),gl.STATIC_DRAW);
 // clouds: rendered once into a texture
-gl.activeTexture(gl.TEXTURE1);const ct=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,ct);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,2048,1024,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+const CW=Math.min(4096,gl.getParameter(gl.MAX_TEXTURE_SIZE));gl.activeTexture(gl.TEXTURE1);const ct=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,ct);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,CW,CW/2,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);tp();
 const fo=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,fo);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,ct,0);
-gl.viewport(0,0,2048,1024);gl.useProgram(cp);gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0);gl.drawArrays(gl.TRIANGLES,0,3);
+gl.viewport(0,0,CW,CW/2);gl.useProgram(cp);gl.uniform2f(cp.u.rs,CW,CW/2);gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0);gl.drawArrays(gl.TRIANGLES,0,3);
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.deleteFramebuffer(fo);gl.deleteProgram(cp);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.generateMipmap(gl.TEXTURE_2D);
-gl.activeTexture(gl.TEXTURE0);gl.useProgram(pp);gl.uniform1i(pp.u.T,0);gl.uniform1i(pp.u.C,1);
+gl.activeTexture(gl.TEXTURE0);gl.useProgram(pp);gl.uniform1i(pp.u.T,0);gl.uniform1i(pp.u.C,1);gl.useProgram(sp);gl.uniform1i(sp.u.C,1);
 // map texture: base image is downscaled once, overlays are redrawn on top of it by tx()
 const S=Math.min(4096,gl.getParameter(gl.MAX_TEXTURE_SIZE)),mk=()=>{const e=D.createElement("canvas");e.width=S;e.height=S/2;return e};
 bc=mk();bb=mk();const bx=bc.getContext("2d");bx.imageSmoothingQuality="high";bx.drawImage(img,0,0,S,S/2);
@@ -214,14 +240,18 @@ function dr(){if(tdirty){tdirty=0;tx()}
 const w=g.clientWidth,h=g.clientHeight,r=Math.min(devicePixelRatio||1,2),cw=Math.round(w*r),ch=Math.round(h*r);
 if(gc.width!=cw||gc.height!=ch){gc.width=cw;gc.height=ch}
 gl.viewport(0,0,cw,ch);AS=w/h;SC=.364*Math.max(1,1/AS);
-const Lv=rx(ry(SW,ya),pa),Lo=ry(SW,-sa); // sun direction in view space / in planet space
+const Lv=rx(ry(SW,ya),pa),Lo=ry(SW,-sa),dw=[tm*CLOUD[0]%1,0,(.37-tm*CLOUD[1])%1,0]; // sun direction in view / planet space, cloud drift
 gl.disable(gl.BLEND);gl.useProgram(bp);gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0);gl.disableVertexAttribArray(1);
-gl.uniform3f(bp.u.u,gD,AS,SC);gl.uniform2f(bp.u.a,ya,pa);gl.uniform3f(bp.u.S,...Lv);gl.drawArrays(gl.TRIANGLES,0,3);
-gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.useProgram(pp);gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,eb);
+gl.uniform3f(bp.u.u,gD,AS,SC);gl.uniform2f(bp.u.a,ya,pa);gl.uniform3f(bp.u.S,...Lv);gl.uniform1f(bp.u.tm,tm);gl.drawArrays(gl.TRIANGLES,0,3);
+gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,eb);
 gl.vertexAttribPointer(0,3,gl.FLOAT,0,20,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,2,gl.FLOAT,0,20,12);
-gl.uniform3f(pp.u.u,gD,AS,SC);gl.uniform2f(pp.u.a,ya+sa,pa);gl.uniform1f(pp.u.d,gD);gl.uniform3f(pp.u.L,...Lv);gl.uniform3f(pp.u.Lo,...Lo);
-gl.uniform4f(pp.u.cw,tm*CLOUD[0]%1,0,(.37-tm*CLOUD[1])%1,0);
-gl.drawElements(gl.TRIANGLES,27648,gl.UNSIGNED_SHORT,0)}
+for(const [q,R] of [[pp,1],[sp,1.012]]){gl.useProgram(q);gl.uniform3f(q.u.u,gD,AS,SC);gl.uniform2f(q.u.a,ya+sa,pa);gl.uniform1f(q.u.R,R);gl.uniform1f(q.u.d,gD);
+gl.uniform3f(q.u.L,...Lv);gl.uniform3f(q.u.Lo,...Lo);gl.uniform4f(q.u.cw,...dw);gl.drawElements(gl.TRIANGLES,27648,gl.UNSIGNED_SHORT,0)}
+if(Lv[2]<-.02){ // sun in front of the camera: lens flare, hidden when the planet covers the sun
+const t=-gD*Lv[2],px=t*Lv[0],py=t*Lv[1],pz=gD+t*Lv[2],vis=Math.min(1,Math.max(0,(Math.hypot(px,py,pz)-1)/.05)),
+sx=Lv[0]/-Lv[2]/(SC*AS),sy=Lv[1]/-Lv[2]/SC,on=vis*Math.max(0,1-Math.hypot(sx,sy)/2.5);
+if(on>0){gl.blendFunc(gl.ONE,gl.ONE);gl.useProgram(fp);gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0);gl.disableVertexAttribArray(1);
+gl.uniform3f(fp.u.u,gD,AS,SC);gl.uniform3f(fp.u.S2,sx,sy,on);gl.drawArrays(gl.TRIANGLES,0,3)}}}
 function tx(){ // rebuild the globe texture: base map, country colours, borders, graticule, selection, labels, markers
 const S=tc.width,Sh=S/2,s=S/W,o=tx2;
 o.drawImage(bc,0,0);
