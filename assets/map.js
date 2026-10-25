@@ -131,17 +131,51 @@ addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
 upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
-let gl,gc,tc,tx2,bc,bb,tex,bp,pp,tb,pb,eb,gD=3,ya=0,pa=.15,SC,AS,dirty,tdirty,gm=0,busy;
+// World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
+let gl,gc,tc,tx2,bc,bb,tex,bp,pp,tb,pb,eb,gD=3,ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0;
 const GP={},cl=v=>Math.min(4.5,Math.max(1.6,v)),
-rq=()=>{if(!dirty){dirty=1;requestAnimationFrame(dr)}},
+SW=(v=>{const l=Math.hypot(...v);return v.map(a=>a/l)})([.62,.32,.72]),
+SPIN=6.2832/300,CLOUD=[1/600,1/950], // one turn in 5 min; cloud layers drift (uv/s)
+ry=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[c*v[0]+s*v[2],v[1],-s*v[0]+c*v[2]]},
+rx=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[v[0],c*v[1]-s*v[2],s*v[1]+c*v[2]]},
+rq=()=>{if(!loop&&G){last=0;loop=requestAnimationFrame(tick)}}, // render loop runs while the globe is shown
 tq=()=>{tdirty=1;rq()}; // texture rebuilds are coalesced to one per frame
+function tick(t){loop=0;if(!G||D.hidden)return;const dt=last?Math.min((t-last)/1e3,.1):0;last=t;tm+=dt;sa+=dt*SPIN;dr();loop=requestAnimationFrame(tick)}
+D.addEventListener("visibilitychange",rq);
 const PR="#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n",
 NZ=`float h3(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}float n3(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z);}float fb(vec3 x){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*n3(x);x=x*2.03+vec3(1.7,9.2,3.1);a*=.5;}return s;}`,
 FV="attribute vec2 g;varying vec2 n;void main(){n=g;gl_Position=vec4(g,0.,1.);}",
 PV=`attribute vec3 p;attribute vec2 t;uniform vec3 u;uniform vec2 a;varying vec2 v;varying vec3 q;varying vec3 o;void main(){float c=cos(a.x),s=sin(a.x),e=cos(a.y),f=sin(a.y);vec3 r=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);r=vec3(r.x,e*r.y-f*r.z,f*r.y+e*r.z);q=r;o=p;v=t;gl_Position=vec4(r.x/(u.z*u.y),r.y/u.z,0.,u.x-r.z);}`,
-PF=PR+`uniform sampler2D T;uniform sampler2D C;uniform float d;uniform vec3 Lo;varying vec2 v;varying vec3 q;varying vec3 o;void main(){vec3 n=normalize(q),L=normalize(vec3(.62,.38,.68)),V=normalize(vec3(0.,0.,d)-q),ob=normalize(o);float ndl=dot(n,L),day=smoothstep(-.35,.45,ndl),h=1./d,al=smoothstep(h,h+.03,q.z);vec3 m=texture2D(T,v).rgb;float cd=texture2D(C,v).r;vec3 e=normalize(vec3(ob.z,0.,-ob.x)+vec3(1e-4,0.,0.)),nr=cross(ob,e);float cs=max(sqrt(1.-ob.y*ob.y),.1);float sh=texture2D(C,v+vec2(dot(Lo,e)/(6.2832*cs),-dot(Lo,nr)/3.1416)*.018).r;vec3 c=m*(1.-.5*sh);float sea=smoothstep(.02,.07,m.b-m.r)*(1.-smoothstep(.18,.28,m.r));c+=vec3(1.,.93,.8)*pow(max(dot(n,normalize(L+V)),0.),70.)*.55*sea*(1.-cd)*day;c*=.26+.74*day;c=mix(c,vec3(.96,.97,1.)*(.22+.78*day),cd*.8);float tw=exp(-pow(ndl*3.2,2.));c+=vec3(1.,.42,.12)*tw*.14;float fr=pow(1.-max(dot(n,V),0.),4.);c=mix(c,mix(vec3(.18,.35,.9),vec3(.45,.7,1.),day)*(.2+.8*day)+vec3(1.,.5,.2)*tw*.15,fr*.55);gl_FragColor=vec4(c*al,al);}`,
-BF=PR+NZ+`uniform vec3 u;uniform vec2 a;varying vec2 n;float h2(vec2 p){p=fract(p*vec2(.1031,.103));p+=dot(p,p.yx+33.33);return fract((p.x+p.y)*p.x);}void main(){const vec3 S=vec3(.30,.17,-.94);vec2 tp=vec2(n.x*u.z*u.y,n.y*u.z),sk=tp+a*.15;vec3 rd=normalize(vec3(tp,-1.)),col=vec3(0.);for(int k=0;k<3;k++){float z=float(k),sc=40.+z*45.;vec2 g=sk*sc+z*17.,id=floor(g),f=fract(g)-.5;vec2 of=(vec2(h2(id+7.),h2(id+13.))-.5)*.7;float br=step(.96+z*.01,h2(id+z*31.))*smoothstep(.07+.02*(2.-z),0.,length(f-of))*(.4+.6*h2(id+3.));col+=mix(vec3(.7,.8,1.),vec3(1.,.82,.6),h2(id+19.))*br*(1.2-.3*z);}vec3 o=vec3(0.,0.,u.x);vec3 P=o-dot(o,rd)*rd;float dist=length(P),ss=max(dot(normalize(P.xy+1e-4),normalize(S.xy)),0.),hh=max(dist-1.,0.);col+=mix(vec3(.25,.5,1.),vec3(1.,.7,.45),pow(ss,4.)*.4)*exp(-hh*55.)*(.08+1.2*ss*ss);vec2 ts=S.xy/-S.z;float ds=length(tp-ts);col+=vec3(1.,.97,.92)*smoothstep(.012,.009,ds)*9.;col+=vec3(1.,.95,.85)*.004/(ds+.004);gl_FragColor=vec4(1.-exp(-col*1.4),1.);}`,
-CF=PR+NZ+`void main(){vec2 uv=gl_FragCoord.xy/vec2(2048.,1024.);float th=(uv.x-.5)*6.2832,ph=(.5-uv.y)*3.1416;vec3 p=vec3(cos(ph)*sin(th),sin(ph),cos(ph)*cos(th)),w=p*3.5;vec3 q=vec3(fb(w),fb(w+vec3(5.2,1.3,2.8)),fb(w+vec3(1.7,9.2,4.1)));float n=fb(p*6.+5.*(q-.5)),y=p.y;float fr=exp(-pow((y-.52-.28*(fb(p*2.+9.)-.5))*5.5,2.))+exp(-pow((y+.46-.28*(fb(p*2.+4.)-.5))*5.5,2.))+.6*exp(-pow((y-.1*(fb(p*2.+2.)-.5))*9.,2.));float c=n*1.05+fr*.4-.8+(fb(p*30.+q*3.)-.5)*.25,d=smoothstep(0.,.16,c);gl_FragColor=vec4(d,d,d,1.);}`;
+PF=PR+`uniform sampler2D T;uniform sampler2D C;uniform float d;uniform vec3 L;uniform vec3 Lo;uniform vec4 cw;varying vec2 v;varying vec3 q;varying vec3 o;
+float cl(vec2 w){float a=texture2D(C,w+cw.xy).r,b=texture2D(C,vec2(w.x+cw.z,1.-w.y)).r;return smoothstep(.3,.95,a*.65+b*.5);}
+void main(){vec3 n=normalize(q),V=normalize(vec3(0.,0.,d)-q),ob=normalize(o);float ndl=dot(n,L),h=1./d,al=smoothstep(h,h+.03,q.z);
+float day=smoothstep(-.06,.32,ndl),tw=exp(-pow(ndl*6.,2.));
+vec3 m=texture2D(T,v).rgb;float cd=cl(v);
+vec3 e=normalize(vec3(ob.z,0.,-ob.x)+vec3(1e-4,0.,0.)),nr=cross(ob,e);float cs=max(sqrt(1.-ob.y*ob.y),.1);
+float sh=cl(v+vec2(dot(Lo,e)/(6.2832*cs),-dot(Lo,nr)/3.1416)*.014);
+float sea=smoothstep(.02,.07,m.b-m.r)*(1.-smoothstep(.18,.28,m.r));
+vec3 g=m*(1.-.5*sh*day);
+vec3 c=mix(m*vec3(.09,.11,.17),g*(.32+.8*smoothstep(0.,.7,ndl)),day);
+c+=vec3(1.,.93,.8)*pow(max(dot(n,normalize(L+V)),0.),60.)*.45*sea*(1.-cd)*day;
+c+=vec3(1.,.42,.12)*tw*.06;
+vec3 cc=mix(vec3(.035,.045,.07),vec3(1.,.985,.96)*(.55+.45*smoothstep(0.,.6,ndl)),day)+vec3(1.,.5,.2)*tw*.18;
+c=mix(c,cc,cd*.88);
+float fr=pow(1.-max(dot(n,V),0.),3.);
+vec3 atm=mix(vec3(.15,.3,.85),vec3(.42,.66,1.),day)*smoothstep(-.3,.25,ndl)+vec3(1.,.48,.18)*tw*.55;
+c=mix(c,atm,fr*.7);c=mix(c,vec3(.5,.66,1.),.07*day);
+gl_FragColor=vec4(c*al,al);}`,
+BF=PR+NZ+`uniform vec3 u;uniform vec2 a;uniform vec3 S;varying vec2 n;
+void main(){vec2 tp=vec2(n.x*u.z*u.y,n.y*u.z);vec3 rd=normalize(vec3(tp,-1.));
+float ce=cos(a.y),se=sin(a.y),cy=cos(a.x),sy=sin(a.x);vec3 w=vec3(rd.x,ce*rd.y+se*rd.z,-se*rd.y+ce*rd.z);w=vec3(cy*w.x-sy*w.z,w.y,sy*w.x+cy*w.z);
+vec3 col=vec3(0.);
+for(int k=0;k<3;k++){float z=float(k);vec3 gp=w*(70.+z*70.)+z*17.,id=floor(gp),f=fract(gp)-.5,of=(vec3(h3(id+7.),h3(id+13.),h3(id+29.))-.5)*.6;
+col+=mix(vec3(.7,.8,1.),vec3(1.,.82,.6),h3(id+19.))*step(.955+z*.01,h3(id+z*31.))*smoothstep(.1,0.,length(f-of))*(.35+.65*h3(id+3.))*(1.2-.3*z);}
+vec3 o=vec3(0.,0.,u.x);float tc=-dot(o,rd);vec3 P=o+rd*tc;float dist=length(P),hh=max(dist-1.,0.),ss=dot(P/max(dist,1e-4),S),
+lit=smoothstep(-.35,.4,ss),fw=pow(max(dot(rd,S),0.),6.);
+col+=(mix(vec3(.15,.32,1.),vec3(.4,.65,1.),lit)*lit*1.1+vec3(1.,.5,.2)*exp(-pow(ss*3.,2.))*.45+vec3(.65,.8,1.)*fw*1.4)*exp(-hh*38.)*step(0.,tc);
+float sd=1.-dot(rd,S);col+=vec3(1.,.97,.92)*smoothstep(.00014,.00007,sd)*9.+vec3(1.,.9,.75)*.0007/(sd+.0007);
+gl_FragColor=vec4(1.-exp(-col*1.4),1.);}`,
+CF=PR+NZ+`void main(){vec2 uv=gl_FragCoord.xy/vec2(2048.,1024.);float th=(uv.x-.5)*6.2832,ph=(.5-uv.y)*3.1416;vec3 p=vec3(cos(ph)*sin(th),sin(ph),cos(ph)*cos(th)),w=p*3.5;vec3 q=vec3(fb(w),fb(w+vec3(5.2,1.3,2.8)),fb(w+vec3(1.7,9.2,4.1)));float n=fb(p*6.+5.*(q-.5)),y=p.y;float fr=exp(-pow((y-.52-.28*(fb(p*2.+9.)-.5))*5.5,2.))+exp(-pow((y+.46-.28*(fb(p*2.+4.)-.5))*5.5,2.))+.6*exp(-pow((y-.1*(fb(p*2.+2.)-.5))*9.,2.));float c=n*1.05+fr*.4-.8+(fb(p*30.+q*3.)-.5)*.25,d=smoothstep(-.12,.3,c);gl_FragColor=vec4(d,d,d,1.);}`;
 
 function sh(t,s){const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o}
 function prog(v,f,a,u){const q=gl.createProgram();gl.attachShader(q,sh(gl.VERTEX_SHADER,v));gl.attachShader(q,sh(gl.FRAGMENT_SHADER,f));
@@ -149,7 +183,7 @@ a.forEach((n,i)=>gl.bindAttribLocation(q,i,n));gl.linkProgram(q);q.u={};u.forEac
 function tp(){gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE)}
 function gi(img){
 gc=D.createElement("canvas");gl=gc.getContext("webgl",{antialias:true});if(!gl){zg.style.display="none";return}g.append(gc);
-bp=prog(FV,BF,["g"],["u","a"]);pp=prog(PV,PF,["p","t"],["u","a","d","Lo","T","C"]);const cp=prog(FV,CF,["g"],[]);
+bp=prog(FV,BF,["g"],["u","a","S"]);pp=prog(PV,PF,["p","t"],["u","a","d","L","Lo","cw","T","C"]);const cp=prog(FV,CF,["g"],[]);
 tb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
 const b=[],ix=[];for(let j=0;j<=48;j++)for(let i=0;i<=96;i++){const th=(i/96-.5)*6.2832,ph=(.5-j/48)*3.1416;b.push(Math.cos(ph)*Math.sin(th),Math.sin(ph),Math.cos(ph)*Math.cos(th),i/96,j/48)}
 for(let j=0;j<48;j++)for(let i=0;i<96;i++){const a=j*97+i;ix.push(a,a+1,a+97,a+1,a+98,a+97)}
@@ -171,21 +205,22 @@ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);tp
 const e=gl.getExtension("EXT_texture_filter_anisotropic");if(e)gl.texParameterf(gl.TEXTURE_2D,e.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(e.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
 g.onpointerdown=e=>{if(e.pointerType=="mouse")for(const i in GP)delete GP[i];g.setPointerCapture(e.pointerId);GP[e.pointerId]={x:e.clientX,y:e.clientY};gm=0};
 g.onpointermove=e=>{const q=GP[e.pointerId];if(!q)return;const o=two(GP),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;gm+=Math.abs(dx)+Math.abs(dy);
-if(o){gD=cl(gD*o.d/two(GP).d);gm=99}else{const s=2*(gD-1)*SC/g.clientHeight;ya+=dx*s;pa=Math.min(1.4,Math.max(-1.4,pa+dy*s))}rq()};
+if(o){gD=cl(gD*o.d/two(GP).d);gm=99}else{const s=2*(gD-1)*SC/g.clientHeight;ya+=dx*s;pa=Math.min(1.4,Math.max(-1.4,pa+dy*s))}};
 g.onpointerup=g.onpointercancel=e=>{const one=GP[e.pointerId]&&Object.keys(GP).length==1;delete GP[e.pointerId];if(one&&gm<6&&e.type=="pointerup")pk(e)};
 g.onlostpointercapture=e=>{delete GP[e.pointerId]};
-g.onwheel=e=>{e.preventDefault();gD=cl(gD*Math.exp(e.deltaY*.0015));rq()};
+g.onwheel=e=>{e.preventDefault();gD=cl(gD*Math.exp(e.deltaY*.0015))};
 return 1}
-function dr(){dirty=0;if(tdirty){tdirty=0;tx()}
+function dr(){if(tdirty){tdirty=0;tx()}
 const w=g.clientWidth,h=g.clientHeight,r=Math.min(devicePixelRatio||1,2),cw=Math.round(w*r),ch=Math.round(h*r);
 if(gc.width!=cw||gc.height!=ch){gc.width=cw;gc.height=ch}
 gl.viewport(0,0,cw,ch);AS=w/h;SC=.364*Math.max(1,1/AS);
+const Lv=rx(ry(SW,ya),pa),Lo=ry(SW,-sa); // sun direction in view space / in planet space
 gl.disable(gl.BLEND);gl.useProgram(bp);gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0);gl.disableVertexAttribArray(1);
-gl.uniform3f(bp.u.u,gD,AS,SC);gl.uniform2f(bp.u.a,ya,pa);gl.drawArrays(gl.TRIANGLES,0,3);
+gl.uniform3f(bp.u.u,gD,AS,SC);gl.uniform2f(bp.u.a,ya,pa);gl.uniform3f(bp.u.S,...Lv);gl.drawArrays(gl.TRIANGLES,0,3);
 gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.useProgram(pp);gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,eb);
 gl.vertexAttribPointer(0,3,gl.FLOAT,0,20,0);gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,2,gl.FLOAT,0,20,12);
-const cy=Math.cos(ya),sy=Math.sin(ya),cp=Math.cos(pa),sp=Math.sin(pa),Lx=.6227,Ly=.3817,Lz=.683,y1=cp*Ly+sp*Lz,z1=-sp*Ly+cp*Lz;
-gl.uniform3f(pp.u.u,gD,AS,SC);gl.uniform2f(pp.u.a,ya,pa);gl.uniform1f(pp.u.d,gD);gl.uniform3f(pp.u.Lo,cy*Lx-sy*z1,y1,sy*Lx+cy*z1);
+gl.uniform3f(pp.u.u,gD,AS,SC);gl.uniform2f(pp.u.a,ya+sa,pa);gl.uniform1f(pp.u.d,gD);gl.uniform3f(pp.u.L,...Lv);gl.uniform3f(pp.u.Lo,...Lo);
+gl.uniform4f(pp.u.cw,tm*CLOUD[0]%1,0,(.37-tm*CLOUD[1])%1,0);
 gl.drawElements(gl.TRIANGLES,27648,gl.UNSIGNED_SHORT,0)}
 function tx(){ // rebuild the globe texture: base map, country colours, borders, graticule, selection, labels, markers
 const S=tc.width,Sh=S/2,s=S/W,o=tx2;
@@ -206,7 +241,7 @@ gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texSubImage2D
 function pk(e){ // globe click -> region under the cursor
 const r=g.getBoundingClientRect(),nx=(e.clientX-r.left)/r.width*2-1,ny=1-(e.clientY-r.top)/r.height*2,dx=nx*SC*AS,dy=ny*SC,a=dx*dx+dy*dy+1,b=-2*gD,cc=gD*gD-1,f=b*b-4*a*cc;
 if(f<0)return pick();
-const t=(-b-Math.sqrt(f))/(2*a),X=dx*t,Y=dy*t,Z=gD-t,cp=Math.cos(pa),sp=Math.sin(pa),cy=Math.cos(ya),sy=Math.sin(ya),
+const t=(-b-Math.sqrt(f))/(2*a),X=dx*t,Y=dy*t,Z=gD-t,cp=Math.cos(pa),sp=Math.sin(pa),cy=Math.cos(ya+sa),sy=Math.sin(ya+sa),
 y1=cp*Y+sp*Z,z1=-sp*Y+cp*Z,qx=cy*X-sy*z1,qz=sy*X+cy*z1,mx=(Math.atan2(qx,qz)/6.2832+.5)*W,my=(.5-Math.asin(y1)/3.1416)*H;
 pick(hit(mx,my))}
 function sw(){G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";if(G)gB()}
