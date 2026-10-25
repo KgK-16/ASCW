@@ -1,8 +1,9 @@
 // ASCW world map: flat raster + SVG viewer, timeline overlay and WebGL globe.
 // Globals injected by layouts/map/list.html: U (base URL), V (map versions: [{y:year,b:has borders,r:[countries]}]), MK (markers), EV (timeline events).
-// Layers: geographic base (static/map/g*.webp) < country colours (vector, toggleable) < borders of the version (static/map/<year>/b*.webp) < graticule, labels, markers.
+// Layers: geographic base (static/map/g*.webp) < country colours: light tint + inner colour band (vector, toggleable) < borders of the version (static/map/<year>/b*.webp)
+// < selection: everything else dimmed, outline on top < graticule, labels, markers.
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
-[m,c,im,sv,bi,sl,mw,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc]="m c im sv bi sl mw g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc".split(" ").map($),
+[m,c,im,sv,bi,hl,sl,mw,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc]="m c im sv bi hl sl mw g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc".split(" ").map($),
 W=4096,H=2048,T0=350,T1=450,
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-9L2.6-3 9-3 4-1 5.6 7 0 3.5-5.6 7-4-1-9-3-2.6-3z"], // marker shapes by kind (k)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
@@ -46,11 +47,14 @@ function rs(){ // (re)build the SVG overlays: country shapes, graticule, labels
 let s="",q="",l="",t="";
 for(let i=-180;i<=180;i+=15){const X=(i+180)/360*W;q+=`<path${i?"":' class="e"'} d="M${X} 0V${H}"/>`;if(i%30==0&&i<180)l+=`<text x="${X+4}" y="38">${deg(i)}</text>`}
 for(let i=-75;i<=75;i+=15){const Y=(90-i)/180*H;q+=`<path${i?"":' class="e"'} d="M0 ${Y}H${W}"/>`;if(i%30==0)l+=`<text x="10" y="${Y-8}">${deg(i,1)}</text>`}
-RG.forEach(r=>{s+=`<path id="r${r.id}" data-i="${r.id}" fill="${r.c}" fill-rule="evenodd" d="${r.d}"/>`;const a=glyphs(r);
+RG.forEach(r=>{s+=`<clipPath id="k${r.id}"><path clip-rule="evenodd" d="${r.d}"/></clipPath><path id="r${r.id}" class="r" data-i="${r.id}" fill="${r.c}" fill-rule="evenodd" d="${r.d}"/><path class="bd" stroke="${r.c}" clip-path="url(#k${r.id})" d="${r.d}"/>`;const a=glyphs(r);
 if(a)t+=`<text x="${a.xs.map(v=>v.toFixed(1)).join(" ")}" y="${a.y}" font-size="${a.s}">${a.t}</text>`});
 sv.innerHTML=s;sl.innerHTML=`<g class="gr">${q}</g><g class="gl">${l}</g><g class="lb">${t}</g>`;
 RG.forEach(r=>r.el=$("r"+r.id));
-if(sel)R[sel].el.classList.add("s");
+hi()}
+function hi(){ // selection layer above the borders: the rest of the map is dimmed, the country keeps its own relief colours
+const r=sel&&R[sel];RG.forEach(q=>q.el.classList.toggle("s",q==r));
+hl.innerHTML=r?`<path class="dm" fill-rule="evenodd" d="M0 0H${W}V${H}H0z${r.d}"/><path class="gw" d="${r.d}"/><path class="ol" d="${r.d}"/>`:"";
 if(G)tq()}
 const drawM=()=>mw.innerHTML=MK.map(q=>`<g transform="translate(${(q.o+180)/360*W} ${(90-q.a)/180*H})"><g class="ms"><path d="${SH[q.k|0]}"/><text x="12" y="1">${mn(q)}</text></g></g>`).join("");
 
@@ -64,9 +68,8 @@ tz.querySelectorAll(".f").forEach(f=>f.classList.toggle("a",f.dataset.y<=yr));
 if(ver()!=cv)setVer()}
 function pick(id){
 id=id&&R[id]?+id:null;
-if(sel)R[sel].el.classList.remove("s");
-sel=id;if(sel){R[sel].el.classList.add("s");panel()}
-p.classList.toggle("o",!!sel);if(G)tq()}
+sel=id;if(sel)panel();
+p.classList.toggle("o",!!sel);hi()}
 function panel(){if(sel){const r=R[sel];pt.textContent=nm(r);px.textContent=r.text||L("Placeholder text","Текст-заглушка")}}
 function col(on){CO=on;c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}if(G)tq()}
 zc.onclick=()=>col(!CO);
@@ -179,11 +182,15 @@ gl.drawElements(gl.TRIANGLES,27648,gl.UNSIGNED_SHORT,0)}
 function tx(){ // rebuild the globe texture: base map, country colours, borders, graticule, selection, labels, markers
 const S=tc.width,Sh=S/2,s=S/W,o=tx2;
 o.drawImage(bc,0,0);
-o.save();o.scale(s,s);if(CO){o.globalAlpha=.5;RG.forEach(r=>{o.fillStyle=r.c;o.fill(path(r),"evenodd")})}o.restore();
+o.save();o.scale(s,s);o.lineJoin="round";
+if(CO)RG.forEach(r=>{const q=path(r);o.globalAlpha=r.id==sel?0:.28;o.fillStyle=r.c;o.fill(q,"evenodd"); // light tint
+o.save();o.clip(q,"evenodd");o.globalAlpha=.85;o.strokeStyle=r.c;o.lineWidth=14;o.stroke(q);o.restore()}); // inner colour band
+o.restore();o.globalAlpha=1;
 if(cv.b)o.drawImage(bb,0,0);
 o.strokeStyle="#00000059";o.lineWidth=2;o.beginPath();for(let i=1;i<24;i++){o.moveTo(i*S/24,0);o.lineTo(i*S/24,Sh)}for(let i=1;i<12;i++){o.moveTo(0,i*Sh/12);o.lineTo(S,i*Sh/12)}o.stroke();
 o.strokeStyle="#000000b3";o.lineWidth=3;o.beginPath();o.moveTo(S/2,0);o.lineTo(S/2,Sh);o.moveTo(0,Sh/2);o.lineTo(S,Sh/2);o.stroke();
-if(sel){const r=R[sel],q=path(r);o.save();o.scale(s,s);o.globalAlpha=CO?.35:.25;o.fillStyle=CO?r.c:"#e8e8e0";o.fill(q,"evenodd");o.globalAlpha=1;o.strokeStyle="#e8e8e0";o.lineWidth=3;o.stroke(q);o.restore()}
+if(sel){const q=path(R[sel]),d=new Path2D;d.rect(0,0,W,H);d.addPath(q);o.save();o.scale(s,s);o.lineJoin="round";
+o.fillStyle="#04040a";o.globalAlpha=.5;o.fill(d,"evenodd");o.strokeStyle="#e8e8e0";o.globalAlpha=.25;o.lineWidth=9;o.stroke(q);o.globalAlpha=1;o.lineWidth=3;o.stroke(q);o.restore()}
 o.fillStyle="#e8e8e0";o.textAlign="left";o.textBaseline="middle";o.lineJoin="round";o.strokeStyle="#000000b3";
 RG.forEach(r=>{const a=glyphs(r);if(!a)return;const f=a.s*s;o.font=f+"px A";o.lineWidth=f*.14;[...a.t].forEach((ch,i)=>{o.strokeText(ch,a.xs[i]*s,a.y*s);o.fillText(ch,a.xs[i]*s,a.y*s)})});
 o.font=24*s+"px Play,sans-serif";

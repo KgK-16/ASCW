@@ -11,9 +11,12 @@ section{width:100%;padding:0;border:0;position:relative;overflow:hidden}
 #c{position:absolute;left:0;top:0;width:4096px;height:2048px;transform-origin:0 0}
 #c.t{transition:transform .25s}
 #c>*{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
-#sv>path{fill-opacity:0;pointer-events:visibleFill;cursor:pointer;transition:fill-opacity .2s}
-#sv>path:hover{fill-opacity:.2}.on #sv>path{fill-opacity:.5}.on #sv>path:hover{fill-opacity:.65}
-#sv>path.s{fill-opacity:.35;stroke:#e8e8e0;stroke-width:calc(1.5px/var(--k))}.on #sv>path.s{fill-opacity:.75}
+#sv .r{fill-opacity:0;pointer-events:visibleFill;cursor:pointer;transition:fill-opacity .2s}
+#sv .r:hover{fill-opacity:.15}.on #sv .r{fill-opacity:.28}.on #sv .r:hover{fill-opacity:.4}#sv .r.s{fill-opacity:0}
+#sv .bd{fill:none;stroke-width:calc(12px/var(--k));stroke-opacity:.85;stroke-linejoin:round;display:none}.on #sv .bd{display:inline}
+#hl path{animation:hf .25s}@keyframes hf{from{opacity:0}}
+#hl .dm{fill:#04040a;fill-opacity:.5}
+#hl .gw,#hl .ol{fill:none;stroke:#e8e8e0;stroke-linejoin:round;vector-effect:non-scaling-stroke}#hl .gw{stroke-width:7px;stroke-opacity:.22}#hl .ol{stroke-width:2px}
 .gr{fill:none;stroke:#000;stroke-opacity:.35;vector-effect:non-scaling-stroke}.gr .e{stroke-opacity:.7}
 #c text{paint-order:stroke;stroke:#000b;stroke-width:calc(3px/var(--k));stroke-linejoin:round;fill:#e8e8e0;font-family:A;text-transform:uppercase;text-anchor:middle;dominant-baseline:central}
 #c .lb text{text-anchor:start}
@@ -50,7 +53,7 @@ aside>a{position:absolute;right:14px;top:10px;font-size:20px}
 <aside id="p"><a id="pc">×</a><h1 id="pt"></h1><hr><i id="px"></i></aside>
 <div id="cd">—</div>
 <div id="g"></div>
-<div id="m"><div id="c"><img id="im" alt=""><svg id="sv" viewBox="0 0 4096 2048"></svg><img id="bi" alt=""><svg id="sl" viewBox="0 0 4096 2048"></svg><svg id="mw" viewBox="0 0 4096 2048"></svg></div></div>
+<div id="m"><div id="c"><img id="im" alt=""><svg id="sv" viewBox="0 0 4096 2048"></svg><img id="bi" alt=""><svg id="hl" viewBox="0 0 4096 2048"></svg><svg id="sl" viewBox="0 0 4096 2048"></svg><svg id="mw" viewBox="0 0 4096 2048"></svg></div></div>
 </section></main>
 {{ with resources.Get "map.js" | js.Build (dict "minify" true "target" "es2020") -}}
 <script>var U="{{ "" | relURL }}",V={{ (resources.Get "map.json").Content | safeJS }},MK={{ (resources.Get "markers.json").Content | safeJS }},EV={{ (resources.Get "events.json").Content | safeJS }};{{ .Content | safeJS }}</script>
