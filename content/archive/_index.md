@@ -1,16 +1,9 @@
 {
  "title": "Archive",
  "title_ru": "Архив",
- "body_en": "",
- "body_ru": "",
- "items": [
+ "blocks": [
   {
-   "t": "links",
-   "al": "center",
-   "x": 118,
-   "y": 740,
-   "w": 685,
-   "fs": 16
+   "t": "links"
   }
  ]
 }

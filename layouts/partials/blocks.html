@@ -1,0 +1,22 @@
+{{- /* page body: a vertical list of blocks (front matter "blocks"). The editor (assets/edit.js) draws the same markup.
+   head  — kicker, title (+ accent line), line, description; defaults to the page title and description
+   h     — heading (lv 2 | 3)      p — paragraph      quote — quote (+ cite)      list — list (ord) of <li> items
+   img   — image (al: center | full | left | right) + caption      card — fact card (title, rows of key / value, image), floats right
+   cols  — two columns of text or image      hr — divider      links — links to the subpages */ -}}
+{{- $P := . }}{{ $T := hugo.Data.text -}}
+{{- range $b := .Params.blocks }}
+{{- if eq $b.t "head" }}<header class="b-head{{ if $b.tall }} tall{{ end }}">
+{{- partial "tx" (dict "b" $b "f" "k_" "tag" "p" "cls" "k" "d" $T.wip) }}
+<h1>{{ partial "tx" (dict "b" $b "f" "t_" "tag" "span" "d" (dict "en" $P.Title "ru" ($P.Params.title_ru | default $P.Title))) }}{{ with or $b.a_en $b.a_ru }}<b>{{ partial "tx" (dict "b" $b "f" "a_" "tag" "span") }}</b>{{ end }}</h1><hr>
+{{- partial "tx" (dict "b" $b "f" "d_" "tag" "p" "cls" "ds" "d" (dict "en" $P.Description "ru" ($P.Params.description_ru | default $P.Description))) }}</header>
+{{- else if eq $b.t "h" }}{{ partial "tx" (dict "b" $b "f" "" "tag" (printf "h%v" (default 2 $b.lv))) }}
+{{- else if eq $b.t "p" }}{{ partial "tx" (dict "b" $b "f" "" "tag" "p") }}
+{{- else if eq $b.t "quote" }}<blockquote>{{ partial "tx" (dict "b" $b "f" "" "tag" "p") }}{{ partial "tx" (dict "b" $b "f" "cite_" "tag" "cite") }}</blockquote>
+{{- else if eq $b.t "list" }}{{ partial "tx" (dict "b" $b "f" "" "tag" (cond (eq $b.ord true) "ol" "ul")) }}
+{{- else if eq $b.t "img" }}<figure class="b-img al-{{ default "center" $b.al }}">{{ with $b.src }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}{{ partial "tx" (dict "b" $b "f" "cap_" "tag" "figcaption") }}</figure>
+{{- else if eq $b.t "card" }}<aside class="b-card">{{ with $b.src }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}{{ partial "tx" (dict "b" $b "f" "t_" "tag" "h4") }}
+{{- with $b.rows }}<dl>{{ range . }}<div>{{ partial "tx" (dict "b" . "f" "k_" "tag" "dt") }}{{ partial "tx" (dict "b" . "f" "v_" "tag" "dd") }}</div>{{ end }}</dl>{{ end }}</aside>
+{{- else if eq $b.t "cols" }}<div class="b-cols">{{ range $b.c }}<div class="cell">{{ if eq .t "img" }}<figure class="b-img">{{ with .src }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}{{ partial "tx" (dict "b" . "f" "cap_" "tag" "figcaption") }}</figure>{{ else }}{{ partial "tx" (dict "b" . "f" "" "tag" "div") }}{{ end }}</div>{{ end }}</div>
+{{- else if eq $b.t "hr" }}<hr class="b-hr">
+{{- else if eq $b.t "links" }}<ul class="b-links">{{ range $P.Pages }}<li><a href="{{ .RelPermalink }}"><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></a>{{ end }}</ul>
+{{- end }}{{ end -}}

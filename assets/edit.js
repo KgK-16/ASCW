@@ -2,9 +2,11 @@
 // Every change goes into a local draft (localStorage) and is published to GitHub as one commit with the editor's own access token;
 // GitHub Actions then rebuilds the site. Source files: content/**/_index.md (JSON front matter), data/text.json (interface texts),
 // assets/markers.json, assets/events.json, assets/countries.json (map), static/img/* (uploaded images).
+(()=>{
 const D=document,HT=D.documentElement,BT=D.getElementById("ed"),U=BT.dataset.u,REPO=BT.dataset.repo,BR="main",
 LS=(()=>{try{return localStorage}catch{return{}}})(),
-SRC=D.querySelector("meta[name=src]")?.content||"",PAGE=SRC&&"content/"+SRC,
+NEWP=!D.querySelector("meta[name=src]")?.content, // a page that exists only in the draft opens on the 404 page at its future address
+SRC=D.querySelector("meta[name=src]")?.content||(p=>p&&p+"/_index.md")(decodeURI(location.pathname).slice(U.length).replace(/\/?(index\.html)?$/,"")),PAGE=SRC&&"content/"+SRC,
 F={text:"data/text.json",mk:"assets/markers.json",ev:"assets/events.json",co:"assets/countries.json"},
 ru=()=>HT.lang=="ru",L=(e,r)=>ru()?r:e,
 h=(t,a={},...c)=>{const e=D.createElement(t);for(const k in a)k.startsWith("on")?e[k]=a[k]:k=="cls"?e.className=a[k]:e.setAttribute(k,a[k]);e.append(...c.flat().filter(v=>v!=null));return e},
@@ -50,338 +52,345 @@ function discard(){if(!n()||!confirm(L("Discard all unpublished changes?","Уд�
 
 // ---------- UI shell ----------
 D.head.append(h("style",{},`
-.ed [contenteditable]{outline:1px dashed #6665c0aa;outline-offset:3px;cursor:text;min-width:1em;display:inline-block}
-.ed [contenteditable]:focus{outline:1px solid #8d8cf0;background:#6665c01f}
-.ed .ds{display:block!important}.ed .ds [contenteditable]:empty::before,.ed h1 [contenteditable]:empty::before{content:"…";opacity:.4}
 #eb{position:fixed;left:12px;bottom:12px;z-index:40;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 24px);text-transform:none}
-.eb{font:400 13px "Exo 2",sans-serif;letter-spacing:.5px;color:#e8e8e0;background:#020206f2;border:1px solid #6665c0;padding:6px 10px;cursor:pointer;line-height:1.2;min-height:32px}
-.eb:hover{background:#6665c040}.eb.on{background:#6665c0;color:#fff}.eb:disabled{opacity:.4;cursor:default}
-#eb .eb.n{border-color:#e8b04a;color:#e8b04a}
+.eb{font:400 13px "Exo 2",sans-serif;letter-spacing:.5px;color:#e8e8e0;background:#020206f2;border:1px solid #6665c0;padding:6px 10px;cursor:pointer;line-height:1.2;min-height:32px;text-transform:none}
+.eb:hover{background:#6665c040}.eb.on{background:#6665c0;color:#fff}.eb:disabled{opacity:.4;cursor:default}#eb .eb.n{border-color:#e8b04a;color:#e8b04a}
 #et{position:fixed;left:12px;bottom:56px;z-index:41;max-width:min(420px,calc(100% - 24px));font:400 13px "Exo 2",sans-serif;color:#e8e8e0;background:#020206f2;border:1px solid #6665c0;padding:8px 12px;text-transform:none}#et.x{border-color:#e85a4a}
 .dl{position:fixed;inset:0;z-index:50;background:#020206b3;display:flex;align-items:center;justify-content:center;padding:16px;text-transform:none}
-.dlb{background:#05050d;border:1px solid #6665c0;width:min(640px,100%);max-height:100%;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:10px;font:400 14px "Exo 2",sans-serif;color:#e8e8e0}
+.dlb{background:#05050d;border:1px solid #6665c0;width:min(640px,100%);max-height:100%;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:10px;font:400 14px "Exo 2",sans-serif;color:#e8e8e0;text-align:left}
 .dlb h3{font:400 15px "Exo 2",sans-serif;letter-spacing:2px;text-transform:uppercase;margin:0}
-.dlb label{display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:1px;color:#e8e8e099;text-transform:uppercase}
+.dlb label,.ef label{display:flex;flex-direction:column;gap:4px;font:400 11px "Exo 2",sans-serif;letter-spacing:1px;color:#e8e8e099;text-transform:uppercase}
 .ei{font:400 14px Inter,sans-serif;color:#e8e8e0;background:#0b0b18;border:1px solid #6665c066;padding:7px 9px;width:100%;text-transform:none;letter-spacing:0}
 .ei:focus{outline:none;border-color:#8d8cf0}textarea.ei{resize:vertical;min-height:70px;line-height:1.5}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.row>.eb{flex:0 0 auto}
 .dlb a{font-size:13px;letter-spacing:0;color:#8d8cf0;text-decoration:underline;white-space:normal}
-#ae{position:fixed;top:48px;right:0;bottom:0;width:min(760px,55vw);z-index:45;background:#05050df7;border-left:1px solid #6665c0;display:flex;flex-direction:column;text-transform:none}
-#ae .hd{display:flex;gap:4px;padding:8px;border-bottom:1px solid #6665c04d;flex-wrap:wrap}#ae .hd .sp{flex:1}
-#ae .fl{display:flex;flex-direction:column;gap:8px;padding:10px;border-bottom:1px solid #6665c04d}
-#ae .tb{display:flex;gap:2px;padding:6px 8px;flex-wrap:wrap;border-bottom:1px solid #6665c04d}#ae .tb .eb{min-width:34px;padding:4px 8px}
-#ae .bd{flex:1;display:flex;min-height:0}#ae .bd>*{flex:1;min-width:0;overflow:auto}
-#ae textarea{border:0;resize:none;padding:14px;font:400 15px/1.6 Inter,sans-serif;min-height:0;height:100%}
-#ae .pv{padding:14px 20px;border-left:1px solid #6665c04d;background:#020206}#ae.tg .pv{display:none}
-#ae .ft{display:flex;gap:8px;padding:8px;border-top:1px solid #6665c04d;align-items:center;font:400 12px "Exo 2",sans-serif;color:#e8e8e099}
-#ae .ft input{width:70px}
-.ed li .mv{font:400 13px "Exo 2";margin-left:8px;cursor:pointer;opacity:.6}.ed li .mv:hover{opacity:1}
-.ed li.nw a{color:#e8b04a}
-.ed #mw g{pointer-events:auto;cursor:grab}.mke #m{cursor:crosshair}
-.ed aside .ef{display:flex;flex-direction:column;gap:6px;margin-top:14px;text-align:left}.ed aside .ef textarea{min-height:90px}
-#ae.nb .tb,#ae.nb .bd{display:none}#ae.nb{bottom:auto}#ae.tx .fl,#ae.tx .ft{display:none}
-.lea{position:relative}.lea .fr{min-height:160px;outline:1px dashed #6665c055;outline-offset:6px;position:relative;
-background-image:linear-gradient(90deg,transparent calc(50% - .5px),#6665c033 0 calc(50% + .5px),transparent 0)}
-.lea .fr{-webkit-user-select:none;user-select:none}.lea .fr img{-webkit-user-drag:none;pointer-events:none}.lea .fi{position:relative;outline:1px dashed #6665c066;cursor:move;min-height:14px;touch-action:none}.lea .fi:hover{outline-color:#8d8cf0}.lea .fi.sel{outline:1px solid #e8b04a}
-.lea .f-hr{padding:6px 0;margin-top:calc(var(--y)*100cqw/var(--dw) - 6px)}.lea .ph{opacity:.35}.lea .pi{font-size:28px;text-align:center;padding:24px;border:1px dashed #6665c0}
-.lea .rl,.lea .rr{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;display:none;font-style:normal}.lea .rl{left:-5px}.lea .rr{right:-5px}.lea .sel>.rl,.lea .sel>.rr{display:block;background:#e8b04a88}
-.lea .gd{position:absolute;display:none;background:#e8b04a;pointer-events:none;z-index:99;font-style:normal}.lea .gv{top:0;bottom:0;width:1px}.lea .gh{left:0;right:0;height:1px}
-.lea .bk-links .nw a{color:#e8b04a}.lea .bk-links a{pointer-events:none}
-@media(max-width:700px){.lea .fr{display:grid}.lea .fi{margin-left:calc(var(--x)*100cqw/var(--dw));margin-top:calc(var(--y)*100cqw/var(--dw));width:calc(var(--w)*100cqw/var(--dw))}}
-.lad{display:flex;gap:4px;flex-wrap:wrap;margin:22px 0 8px;justify-content:center}
-.ltb .tbh{cursor:move;padding:0 6px;font-size:18px;line-height:28px;color:#8d8cf0;user-select:none;touch-action:none}
-.ltb[hidden]{display:none}.ltb{position:absolute;z-index:30;display:flex;gap:2px;flex-wrap:wrap;background:#05050df2;border:1px solid #6665c0;padding:3px;max-width:100%}.ltb .eb{min-height:28px;padding:3px 7px}
-@media(max-width:800px){#ae{width:100%}#ae .pv{border-left:0;display:none}#ae.tg .pv{display:block}#ae.tg textarea{display:none}}
+.ed [data-k][contenteditable]{outline:1px dashed #6665c0aa;outline-offset:3px;cursor:text}
+/* document editor */
+.ed .doc [contenteditable]{outline:none;cursor:text}.ed .doc :is([contenteditable],li[data-ph]):empty::before{content:attr(data-ph);color:#e8e8e040;font-style:italic;pointer-events:none}
+.ed .doc [data-i]{position:relative}.ed .doc [data-i].cur{box-shadow:-14px 0 0 -12px #6665c0}
+.ed .doc .b-img img,.ed .doc .b-card img{cursor:pointer}.ed .doc .pi{display:block;width:100%;padding:36px 12px;border:1px dashed #6665c0;color:#e8e8e080;font:400 13px "Exo 2",sans-serif;cursor:pointer;text-align:center}
+.ed .doc .b-links .nw a{color:#e8b04a}.ed .doc .b-links a{pointer-events:none}
+.ed .doc .add{display:block;margin:4px 0 0;font:400 12px "Exo 2",sans-serif;color:#8d8cf0;cursor:pointer;text-transform:none;letter-spacing:.5px}
+.ed .doc .b-cols .cell{outline:1px dashed #6665c033;outline-offset:6px;min-height:40px}
+#gut{position:absolute;z-index:30;display:flex;gap:2px;transform:translateX(calc(-100% - 10px))}#gut[hidden]{display:none}
+#gut button{width:26px;height:26px;font:400 15px/24px "Exo 2",sans-serif;color:#8d8cf0;background:#05050df2;border:1px solid #6665c066;cursor:pointer;touch-action:none}#gut button:hover{color:#fff;border-color:#8d8cf0}
+#gut .hd{cursor:grab}#gut.nr{transform:translateX(-100%)}.ed .doc{position:relative;padding-bottom:140px}
+#eb .lb{margin-left:5px}@media(max-width:700px){#eb .lb{display:none}#eb{left:8px;bottom:8px;max-width:calc(100% - 16px);gap:3px}#eb .eb{padding:6px 8px;font-size:12px}}
+.mn{position:fixed;z-index:46;background:#05050d;border:1px solid #6665c0;min-width:220px;max-height:min(70vh,520px);overflow:auto;padding:4px;display:flex;flex-direction:column;text-transform:none;font:400 13px "Exo 2",sans-serif;box-shadow:0 8px 30px #000a}
+.mn button{display:flex;gap:10px;align-items:center;text-align:left;padding:7px 10px;color:#e8e8e0;cursor:pointer;letter-spacing:.3px}.mn button:hover,.mn button.f{background:#6665c040}
+.mn button i{width:20px;text-align:center;font-style:normal;color:#8d8cf0}.mn hr{width:auto;margin:4px 6px;opacity:.25}.mn .on i::after{content:" ✓"}
+#ift{position:absolute;z-index:47;display:flex;gap:2px;background:#05050d;border:1px solid #6665c0;padding:2px;text-transform:none}#ift[hidden]{display:none}
+#ift button{min-width:30px;height:28px;padding:0 6px;font:600 13px Inter,sans-serif;color:#e8e8e0;cursor:pointer}#ift button:hover{background:#6665c040}
+#dln{position:absolute;z-index:29;height:2px;background:#e8b04a;pointer-events:none}#dln[hidden]{display:none}
+.ed .doc.dropping{outline:1px dashed #e8b04a;outline-offset:-4px}
+#pvw{position:fixed;inset:0;z-index:55;background:#020206e6;display:flex;align-items:center;justify-content:center;gap:16px;flex-direction:column}
+#pvw iframe{width:390px;height:min(844px,calc(100vh - 90px));border:1px solid #6665c0;border-radius:16px;background:#04040a}
+.ed aside{justify-content:flex-start;overflow:auto;padding-top:44px}.ed aside .ef{display:flex;flex-direction:column;gap:8px;margin-top:14px;text-align:left}.ed aside .ef textarea{min-height:80px}
+.ef .row>label{min-width:0}@media(max-width:700px){.ed aside{height:62%}body:has(#p.o) :is(#eb,#et),.ed aside.o~#cd{display:none}}body:has(#p.o) :is(#eb,#et){left:292px}
+.ed #mw g{cursor:grab}.ed #mw g.z:not([hidden]){display:inline;opacity:.45} /* markers hidden at this zoom stay reachable for editing */.mke #m{cursor:crosshair}
+.ml{display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow:auto}.ml button{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:6px 8px;color:#e8e8e0;cursor:pointer;font:400 14px Inter,sans-serif}.ml button:hover{background:#6665c040}.ml small{color:#e8e8e080}
 `));
 let pb,eb,et;
-function bar(){if(!on)return;pb.firstChild.textContent=(n()?"● "+n()+" · ":"")+L("Publish","Опубликовать");pb.firstChild.classList.toggle("n",!!n());pb.lastChild.disabled=!n()}
-let tt;function toast(t,x){et.style.bottom=eb.offsetHeight+20+"px";et.textContent=t;et.className=x?"x":"";et.hidden=false;clearTimeout(tt);tt=setTimeout(()=>et.hidden=true,x?12e3:6e3)}
-function dialog(title,...c){const b=h("div",{cls:"dlb"},h("h3",{},title),...c),w=h("div",{cls:"dl",onclick:e=>{if(e.target==w)w.remove()}},b);D.body.append(w);return w}
-const btn=(t,f,ti)=>h("button",{cls:"eb",type:"button",onclick:f,...(ti?{title:ti}:{})},t),
+function bar(){if(!on||PV)return;pb.firstChild.textContent=(n()?"● "+n()+" · ":"")+L("Publish","Опубликовать");pb.firstChild.classList.toggle("n",!!n());pb.lastChild.disabled=!n()}
+let tt;function toast(t,x){if(!et)return;et.style.bottom=eb.offsetHeight+20+"px";et.textContent=t;et.className=x?"x":"";et.hidden=false;clearTimeout(tt);tt=setTimeout(()=>et.hidden=true,x?12e3:6e3)}
+function dialog(title,...c){const b=h("div",{cls:"dlb",role:"dialog","aria-label":title},h("h3",{},title),...c),w=h("div",{cls:"dl",onclick:e=>{if(e.target==w)w.remove()}},b);D.body.append(w);
+w.addEventListener("keydown",e=>{if(e.key=="Escape"){e.stopPropagation();w.remove()}});setTimeout(()=>b.querySelector("input,textarea,select,button")?.focus());return w}
+const btn=(t,f,ti)=>h("button",{cls:"eb",type:"button",onclick:f,...(ti?{title:ti,"aria-label":ti}:{})},t),
 inp=(v,f,a={})=>{const e=h(a.area?"textarea":"input",{cls:"ei",...(a.ph?{placeholder:a.ph}:{}),...(a.type?{type:a.type}:{})});e.value=v??"";e.oninput=()=>f(e.value,e);return e},
+sel=(v,opts,f)=>{const s=h("select",{cls:"ei"},...opts.map(([k,t])=>h("option",{value:k},t)));s.value=v;s.onchange=()=>f(s.value);return s},
 lab=(t,e)=>h("label",{},t,e);
+function menu(x,y,items){D.querySelector(".mn")?.remove();const m=h("div",{cls:"mn",role:"menu"});
+for(const it of items){if(it=="-"){m.append(h("hr"));continue}m.append(h("button",{type:"button",role:"menuitem",cls:it.on?"on":"",onclick:()=>{m.remove();it.f()}},h("i",{},it.i||""),it.t))}
+D.body.append(m);const r=m.getBoundingClientRect();m.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+"px";m.style.top=Math.max(56,Math.min(y,innerHeight-r.height-8))+"px";
+let fi=0;const bs=[...m.querySelectorAll("button")];bs[0]?.focus();
+m.addEventListener("keydown",e=>{if(e.key=="Escape"){m.remove();e.stopPropagation()}else if(/Arrow(Down|Up)/.test(e.key)){e.preventDefault();fi=(fi+(e.key=="ArrowDown"?1:bs.length-1))%bs.length;bs[fi].focus()}});
+setTimeout(()=>D.addEventListener("pointerdown",function f(e){if(!m.contains(e.target)){m.remove();D.removeEventListener("pointerdown",f)}}));return m}
 
 function token(){const i=inp(tok,()=>{},{type:"password",ph:"github_pat_…"});
 const w=dialog(L("GitHub access","Доступ к GitHub"),
 h("div",{},L("A fine-grained personal access token for ","Fine-grained токен для репозитория "),h("b",{},REPO),L(" with permission Contents: read and write (Actions: read — optional, for build status). It is stored only in this browser.",
 " с правом Contents: Read and write (Actions: Read — по желанию, для статуса сборки). Хранится только в этом браузере.")),
 h("a",{href:"https://github.com/settings/personal-access-tokens/new",target:"_blank",rel:"noopener"},L("Create a token on GitHub","Создать токен на GitHub")),
-lab("Token",i),h("div",{cls:"row"},btn(L("Save","Сохранить"),async()=>{tok=i.value.trim();LS.ascwTok=tok;base={};
+lab("Token",i),h("div",{cls:"row"},btn(L("Save","Сохранить"),async()=>{tok=i.value.trim();LS.ascwTok=tok;base={};pend={};
 try{const r=await gh("");toast(r.permissions?.push?L("Token OK","Токен работает"):L("Token has no write access","У токена нет права записи"),!r.permissions?.push);w.remove()}catch(e){toast(L("Token rejected: ","Токен не принят: ")+e.message,1)}}),
 btn(L("Forget token","Забыть токен"),()=>{tok="";LS.ascwTok="";w.remove()})))}
-
-// ---------- markdown preview (close to Hugo's Goldmark for the common syntax) ----------
-const img=u=>blobs[u]||u;
-function inl(t){return esc(t).replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g,(_,a,u)=>`<img src="${img(u)}" alt="${a}">`)
-.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,'<a href="$2">$1</a>').replace(/`([^`]+)`/g,"<code>$1</code>")
-.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/~~(.+?)~~/g,"<del>$1</del>").replace(/(^|[^*])\*([^*\s][^*]*?)\*/g,"$1<em>$2</em>").replace(/(?: {2,}|\\)\n/g,"<br>")}
-function md(s){const o=[],L2=(s||"").replace(/\r/g,"").split("\n");let p=[],q=[],li=null,lt="";
-const fp=()=>{if(p.length)o.push("<p>"+inl(p.join("\n"))+"</p>");p=[]},fq=()=>{if(q.length)o.push("<blockquote>"+md(q.join("\n"))+"</blockquote>");q=[]},
-fl=()=>{if(li)o.push(`<${lt}>`+li.map(v=>"<li>"+inl(v)+"</li>").join("")+`</${lt}>`);li=null},all=()=>{fp();fq();fl()};
-for(let i=0;i<L2.length;i++){const l=L2[i];let m;
-if(/^\s*$/.test(l)){all();continue}
-if(/^>\s?/.test(l)){fp();fl();q.push(l.replace(/^>\s?/,""));continue}else fq();
-if(m=l.match(/^(#{1,6})\s+(.*)/)){all();o.push(`<h${m[1].length}>${inl(m[2])}</h${m[1].length}>`);continue}
-if(/^\s*([-*_])(\s*\1){2,}\s*$/.test(l)){all();o.push("<hr>");continue}
-if(/^\|.*\|\s*$/.test(l)&&/^\|[\s:|-]+\|\s*$/.test(L2[i+1]||"")){all();const row=(r,t)=>"<tr>"+r.trim().slice(1,-1).split("|").map(c=>`<${t}>${inl(c.trim())}</${t}>`).join("")+"</tr>";
-let t="<table><thead>"+row(l,"th")+"</thead><tbody>";i+=2;while(i<L2.length&&/^\|.*\|\s*$/.test(L2[i]))t+=row(L2[i++],"td");i--;o.push(t+"</tbody></table>");continue}
-if(m=l.match(/^\s*([-*+]|\d+[.)])\s+(.*)/)){fp();const t=/\d/.test(m[1])?"ol":"ul";if(li&&t!=lt)fl();lt=t;(li=li||[]).push(m[2]);continue}
-if(li&&/^\s{2,}\S/.test(l)){li[li.length-1]+="\n"+l.trim();continue}
-fl();p.push(l)}
-all();return o.join("")}
-
-// ---------- texts: interface strings (data/text.json) and page fields (title, description) ----------
-let TX={},PG=null;
-const pageObj=async p=>{const t=await read(p);if(t==null)return null;try{return JSON.parse(t)}catch{return null}};
-function showPage(o){if(!o)return;D.querySelectorAll("[data-f]").forEach(e=>{const f=e.dataset.f;if(e==D.activeElement)return;
-if(f.startsWith("body_"))e.innerHTML=md(o[f]);else e.textContent=o[f]??""})}
-function showText(){D.querySelectorAll("[data-k]").forEach(e=>{const v=TX[e.dataset.k]?.[e.lang];if(v!=null&&e!=D.activeElement)e.textContent=v})}
-const setText=(k,l,v)=>{(TX[k]=TX[k]||{})[l]=v;showText();WJ(F.text,TX)},
-setPage=(f,v)=>{PG[f]=v;WJ(PAGE,PG);showPage(PG);syncAE()};
-function editable(){
-D.querySelectorAll("[data-k]").forEach(e=>{if(e.closest("a"))return;e.contentEditable="plaintext-only";e.oninput=()=>setText(e.dataset.k,e.lang,e.textContent)});
-if(PG)D.querySelectorAll("[data-f]").forEach(e=>{if(e.dataset.f.startsWith("body_"))return;e.contentEditable="plaintext-only";e.oninput=()=>setPage(e.dataset.f,e.textContent)})}
-D.addEventListener("keydown",e=>{if(e.key=="Enter"&&e.target.isContentEditable)e.preventDefault()},true);
-function texts(){const rows=Object.keys(TX).map(k=>h("div",{cls:"row"},...["en","ru"].map(l=>lab(k+" · "+l.toUpperCase(),inp(TX[k][l],v=>setText(k,l,v))))));
-dialog(L("Interface texts","Тексты интерфейса"),...rows)}
-
-// ---------- article editor ----------
-let AE=null,AL="en",AP=null,AO=null;
-const nameOf=o=>o&&(o.title||"");
-async function openAE(p=PAGE,tg=null){AP=p;AO=p==PAGE?PG:await pageObj(p);if(!AO)return toast(L("Page source not found","Исходник страницы не найден"),1);
-AL=HT.lang;AE?.remove();const T=tg||(p!=PAGE?{get:l=>AO["body_"+l]||"",set:(l,v)=>upd("body_"+l,v)}:null);
-const ta=h("textarea",{cls:"ei",spellcheck:"true",placeholder:L("Article text (Markdown)","Текст статьи (Markdown)")}),pv=h("div",{cls:"pv"},h("article")),
-F2=h("div",{cls:"fl"}),ft=h("div",{cls:"ft"});
-const tab=l=>btn(l.toUpperCase(),()=>{AL=l;fill()}),tabs=[tab("en"),tab("ru")];
-const tool=(t,ti,f)=>btn(t,()=>{f();ta.focus()},ti);
-AE=h("div",{id:"ae"},
-h("div",{cls:"hd"},...tabs,h("span",{cls:"sp"}),btn(L("Preview","Просмотр"),()=>AE.classList.toggle("tg")),btn("✕",()=>{AE.remove();AE=null})),F2,
-h("div",{cls:"tb"},tool("H2",L("Heading","Заголовок"),()=>pre("## ")),tool("H3",L("Subheading","Подзаголовок"),()=>pre("### ")),
-tool("B","Ctrl+B",()=>wrap("**")),tool("I","Ctrl+I",()=>wrap("*")),tool("S",L("Strikethrough","Зачёркнутый"),()=>wrap("~~")),
-tool("❝",L("Quote","Цитата"),()=>pre("> ")),tool("•",L("List","Список"),()=>pre("- ")),tool("1.",L("Numbered list","Нумерованный список"),()=>pre("1. ")),
-tool("🔗","Ctrl+K",link),tool("🖼",L("Image","Изображение"),pick),tool("▦",L("Table","Таблица"),()=>ins("\n| | |\n|---|---|\n| | |\n")),
-tool("―",L("Divider","Разделитель"),()=>ins("\n\n---\n\n")),tool("</>",L("Code","Код"),()=>wrap("`"))),
-h("div",{cls:"bd"},ta,pv),ft);if(!T)AE.classList.add("nb");else if(tg)AE.classList.add("tx");
-D.body.append(AE);
-function fill(){tabs.forEach((b,i)=>b.classList.toggle("on",["en","ru"][i]==AL));const s=AL=="ru"?"_ru":"";
-F2.replaceChildren(lab(L("Title","Заголовок")+" · "+AL.toUpperCase(),inp(AO["title"+s],v=>upd("title"+s,v))),
-lab(L("Description","Описание")+" · "+AL.toUpperCase(),inp(AO["description"+s],v=>upd("description"+s,v))));
-ta.value=T?T.get(AL):"";render()}
-const render=()=>{pv.firstChild.innerHTML=md(ta.value)};
-function upd(f,v){AO[f]=v;WJ(AP,AO);if(AP==PAGE)showPage(PG)}
-let st=0;ta.oninput=()=>{if(!st){st=1;T.start?.()}T.set(AL,ta.value);render()};
-ft.append(L("Order","Порядок")+":",inp(AO.weight,v=>upd("weight",+v||0),{type:"number"}),h("span",{cls:"sp"},AP.replace(/^content\/|\/?_index\.md$/g,"")||"/"));
-// editing helpers keep the browser's undo history (execCommand insertText)
-function put(t,s0,s1){ta.focus();if(!D.execCommand(t?"insertText":"delete",false,t))ta.setRangeText(t,ta.selectionStart,ta.selectionEnd,"end");
-if(s0!=null){const e=ta.selectionEnd-t.length;ta.setSelectionRange(e+s0,e+s1)}ta.oninput()}
-function wrap(a,b=a){const s=ta.value.slice(ta.selectionStart,ta.selectionEnd);put(a+s+b,a.length,a.length+s.length)}
-function ins(t){put(t)}
-function pre(p){const v=ta.value,s=v.lastIndexOf("\n",ta.selectionStart-1)+1;let e=v.indexOf("\n",ta.selectionEnd);if(e<0)e=v.length;
-ta.setSelectionRange(s,e);const t=v.slice(s,e).split("\n").map(l=>l.startsWith(p)?l.slice(p.length):p+l.replace(/^(#{1,6} |> |- |1\. )/,"")).join("\n");put(t)} // caret stays at the end of the line
-function link(){const s=ta.value.slice(ta.selectionStart,ta.selectionEnd);put(`[${s}](https://)`,s.length+3,s.length+11)}
-function pick(){const f=h("input",{type:"file",accept:"image/*"});f.onchange=()=>f.files[0]&&up(f.files[0]);f.click()}
-async function up(file){const u=await upload(file),v=ta.value,a=ta.selectionStart,nl=a&&v[a-1]!="\n"?"\n\n":"";put(`${nl}![](${u})\n`)}
-ta.onkeydown=e=>{if(e.key=="Enter"&&!e.shiftKey&&ta.selectionStart==ta.selectionEnd){ // lists and quotes continue on Enter; Enter on an empty item ends them
-const v=ta.value,a=ta.selectionStart,s=v.lastIndexOf("\n",a-1)+1,l=v.slice(s,a),m=l.match(/^(\s*)([-*+]|\d+[.)]|>)\s+/);
-if(m){e.preventDefault();if(l==m[0]){ta.setSelectionRange(s,a);put("")}else{const nx=/\d/.test(m[2])?(parseInt(m[2])+1)+m[2].slice(-1):m[2];put("\n"+m[1]+nx+" ")}return}}
-if(!(e.ctrlKey||e.metaKey))return;const k=e.key.toLowerCase();if(k=="b"){e.preventDefault();wrap("**")}else if(k=="i"){e.preventDefault();wrap("*")}else if(k=="k"){e.preventDefault();link()}};
-ta.onpaste=e=>{const f=[...e.clipboardData.files].find(f=>f.type.startsWith("image/"));if(f){e.preventDefault();up(f)}};
-ta.ondragover=e=>e.preventDefault();ta.ondrop=e=>{const f=[...e.dataTransfer.files].find(f=>f.type.startsWith("image/"));if(f){e.preventDefault();up(f)}};
-AE.sync=()=>{if(AP==PAGE){const a=D.activeElement;F2.querySelectorAll("input").forEach((e,i)=>{if(e!=a)e.value=AO[(i?"description":"title")+(AL=="ru"?"_ru":"")]??""})}};
-fill();if(tg)ta.focus()}
-const syncAE=()=>AE?.sync?.();
 function upload(file){return new Promise(res=>{const r=new FileReader;r.onload=()=>{
 const ext=(file.name.match(/\.(\w+)$/)?.[1]||file.type.split("/")[1]||"png").toLowerCase(),
 nm=(file.name.replace(/\.\w+$/,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"img")+"-"+Date.now().toString(36)+"."+ext,u=U+"img/"+nm;
 draft["static/img/"+nm]={b:r.result.split(",")[1]};blobs[u]=URL.createObjectURL(file);save();res(u)};r.readAsDataURL(file)})}
+const img=u=>{const d=draft["static/"+String(u).slice(U.length)];if(!blobs[u]&&d?.b){const x=atob(d.b),a=new Uint8Array(x.length);for(let i=0;i<x.length;i++)a[i]=x.charCodeAt(i);
+blobs[u]=URL.createObjectURL(new Blob([a],{type:"image/"+(u.match(/\.(\w+)$/)?.[1]||"png").replace("jpg","jpeg").replace("svg","svg+xml")}))}return blobs[u]||u}, // unpublished images come from the draft
+pickFile=()=>new Promise(r=>{const f=h("input",{type:"file",accept:"image/*"});f.onchange=()=>r(f.files[0]);f.click()});
 
-// ---------- free layout: rectangles with text, images, links or a line anywhere in the strip (same markup as layouts/partials/layout.html) ----------
-// item: {t:"text"|"img"|"links"|"hr", x, y, w (px of the design width = strip − 80), st, col, al, z, fs (from the style), en, ru, bind, src, cap_en, cap_ru}
-// moving snaps to a 10 px grid and to the centre / edges of the strip and of the other items
-let LY=null,SI=null,HI=[],HR=[],DG=null;
-const IT=()=>PG.items??=(PG.body_en||PG.body_ru?[{t:"text",x:0,y:0,w:DW(),fs:16,en:PG.body_en||"",ru:PG.body_ru||""}]:[]),
-cl=(v,a,b)=>Math.min(b,Math.max(a,v)),
-snap=()=>JSON.stringify(IT()),
-DW=()=>920, // design width of the layout: strip 1000 px − padding
-// fixed design system: text sizes come only from styles, colours only from the site palette, strip width up to 1200 px
-STY={"":16,h:22,k:11,t:45,s:13},PAL=[["","Default","По умолчанию"],["#e8e8e0","Light","Светлый"],["#6665c0","Accent","Акцент"],["#8d8cf0","Accent light","Светлый акцент"],["#e8e8e099","Muted","Приглушённый"]],
-fixSz=o=>{if(o.t=="text"||o.t=="links")o.fs=STY[o.st||""];else delete o.fs;if(o.col&&!PAL.some(c=>c[0]==o.col))delete o.col};
-// base page layout: kicker, page title, line, page description — centred at the top of the strip
-const TPL=()=>[{t:"text",al:"center",bind:"k:wip",st:"k",fs:11,x:118,y:0,w:685},{t:"text",al:"center",bind:"title",st:"t",fs:45,x:118,y:34,w:685},{t:"hr",x:436,y:112,w:48},
-{t:"text",al:"center",bind:"description",st:"s",fs:13,x:118,y:136,w:685}];
-function tpl(){const I=IT(),H=180;if(I.some(q=>q.y<H))I.forEach(q=>q.y+=H); // existing items move down so nothing overlaps
-I.unshift(...TPL());SI=null;commit()}
-function commit(hist=1){if(hist){HI.push(LY.last);HR=[];if(HI.length>200)HI.shift()}PG.body_en=PG.body_ru="";WJ(PAGE,PG);LY.last=snap();draw()}
-function undo(back){const a=back?HI:HR,b=back?HR:HI;if(!a.length)return;b.push(snap());PG.items=JSON.parse(a.pop());SI=null;LY.last=snap();PG.body_en=PG.body_ru="";WJ(PAGE,PG);draw()}
-// text bound to a page field (title, description) or to an interface string (k:<key>, data/text.json)
-const bt=(k,l)=>k.startsWith("k:")?TX[k.slice(2)]?.[l]??"":l=="ru"?PG[k+"_ru"]||PG[k]||"":PG[k]||"",
-sc=o=>(o.st?" st-"+o.st:""),col=o=>o.col?`;color:${o.col}`:"";
-function cell(q,j){const l=HT.lang,ph=`<p class="ph">${L("Text","Текст")}</p>`,
-st=`--x:${q.x};--y:${q.y};--w:${q.w};--f:${q.fs||16};text-align:${q.al||"left"};z-index:${q.z|0}${col(q)}`;
-const body=q.t=="img"?(q.src?`<img src="${img(q.src)}" alt="" draggable="false">`:`<div class="ph pi">🖼</div>`)+(q["cap_"+l]?`<figcaption>${esc(q["cap_"+l])}</figcaption>`:"")
-:q.t=="hr"?"<hr>":q.t=="links"?`<ul class="bk-links">${kids().map(k=>`<li${k.nw?' class="nw"':""}><a>${esc(l=="ru"?k.ru||k.en:k.en)}</a></li>`).join("")||`<li class="ph">${L("No pages yet","Страниц пока нет")}</li>`}</ul>`
-:q.bind?`<div>${esc(bt(q.bind,l))||ph}</div>`:(md(q[l])||ph);
-const cx=(q.x+q.w/2)/DW(),pos=cx<.4?"pl":cx>.6?"pr":"pc";
-return`<div class="fi f-${q.t} ${pos}${sc(q)}${j===SI?" sel":""}" data-i="${j}" style="${st}">${body}<i class="rl"></i><i class="rr"></i></div>`}
-function draw(){if(!LY)return;LY.fr.style.setProperty("--dw",DW());LY.fr.innerHTML=IT().map(cell).join("")+'<i class="gd gv"></i><i class="gd gh"></i>';tools()}
-function mark(){LY.fr.querySelectorAll(".sel").forEach(e=>e.classList.remove("sel"));LY.fr.querySelector(`[data-i="${SI}"]`)?.classList.add("sel");tools()} // selection without re-rendering
-function tools(){LY.tb.hidden=SI==null;if(SI==null)return;const q=IT()[SI],e=LY.fr.querySelector(`[data-i="${SI}"]`);if(!q||!e){SI=null;LY.tb.hidden=true;return}
-const set=(k,v)=>{q[k]=v;commit()},B=[];
-if(q.t!="hr"&&q.t!="img")B.push(...["left","center","right","justify"].map((a,j)=>btn(["⯇","≡","⯈","☰"][j],()=>set("al",a),{left:L("Left","Влево"),center:L("Centre","По центру"),right:L("Right","Вправо"),justify:L("Justify","По ширине")}[a])));
-B.push(btn("⇔",()=>{q.x=Math.round((DW()-q.w)/2);commit()},L("Centre on the strip","По центру ленты")),btn("⬆",()=>set("z",(q.z|0)+1),L("Bring forward","Выше")),btn("⬇",()=>set("z",Math.max(0,(q.z|0)-1)),L("Send backward","Ниже")));
-if(q.t=="text"||q.t=="links"){const se=h("select",{cls:"eb",title:L("Text style","Стиль текста")},...[["",L("Text","Текст")],["h",L("Heading","Заголовок раздела")],["k",L("Kicker","Надзаголовок")],["t",L("Title","Заголовок")],["s",L("Subtitle","Подзаголовок")]].map(([v,t])=>h("option",{value:v},t)));
-se.value=q.st||"";se.onchange=()=>{if(se.value)q.st=se.value;else delete q.st;fixSz(q);commit()};B.push(se,pal(q))}
-if(q.t=="hr")B.push(pal(q));
-if(q.t=="text")B.push(btn("✎",()=>editText(q),L("Edit text","Редактировать текст")));
-if(q.t=="links")B.push(btn("🔗",links,L("Edit links","Ссылки")),btn("+",()=>newPage(),L("New page","Новая страница")));
-if(q.t=="img")B.push(btn("🖼",()=>pickImg(q),L("Choose image","Выбрать изображение")),btn("Aa",()=>caption(q),L("Caption","Подпись")));
-B.push(btn("⧉",()=>{IT().push({...q,x:cl(q.x+20,0,DW()-q.w),y:q.y+20});SI=IT().length-1;commit()},L("Duplicate","Дублировать")),btn("🗑",del,L("Delete","Удалить")));
-LY.tb.replaceChildren(grip(),...B);
-const t=e.getBoundingClientRect(),pr=LY.el.getBoundingClientRect();
-let fx=null;try{fx=JSON.parse(LS.ascwTb||"null")}catch{} // toolbar moved by the user stays where it was put (fixed on screen)
-if(fx){LY.tb.style.position="fixed";LY.tb.style.left=cl(fx.x,0,innerWidth-LY.tb.offsetWidth)+"px";LY.tb.style.top=cl(fx.y,48,innerHeight-LY.tb.offsetHeight)+"px";return}
-LY.tb.style.position="";const hgt=LY.tb.offsetHeight+6; // otherwise above the item, or below it when there is no room
-LY.tb.style.top=(t.top-hgt<56?t.bottom-pr.top+6:t.top-pr.top-hgt)+"px";LY.tb.style.left=cl(t.left-pr.left,0,Math.max(0,pr.width-LY.tb.offsetWidth))+"px"}
-function pal(o){const s=h("select",{cls:"eb",title:L("Colour","Цвет")},...PAL.map(([v,e,r])=>h("option",{value:v,style:v?`color:${v}`:""},(v?"■ ":"")+L(e,r))));
-s.value=o.col||"";s.onchange=()=>{if(s.value)o.col=s.value;else delete o.col;commit()};return s}
-function grip(){const g=h("span",{cls:"tbh",title:L("Drag the panel; double-click — back to the item","Перетащите панель; двойной клик — вернуть к элементу")},"⠿");
-g.onpointerdown=e=>{e.preventDefault();g.setPointerCapture(e.pointerId);const r=LY.tb.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top;
-g.onpointermove=m=>{const x=m.clientX-ox,y=m.clientY-oy;LS.ascwTb=JSON.stringify({x,y});LY.tb.style.position="fixed";LY.tb.style.left=cl(x,0,innerWidth-r.width)+"px";LY.tb.style.top=cl(y,48,innerHeight-r.height)+"px"};
-g.onpointerup=()=>{g.onpointermove=null}};
-g.ondblclick=()=>{LS.ascwTb="";tools()};return g}
-function del(){if(SI==null)return;IT().splice(SI,1);SI=null;commit()}
-function add(t){const I=IT(),dw=DW(),bot=Math.max(0,...[...LY.fr.querySelectorAll(".fi")].map(e=>e.offsetTop+e.offsetHeight))*dw/(LY.fr.clientWidth||dw),
-w=t=="hr"?Math.round(dw*.1):t=="text"||t=="img"?Math.min(dw,600):dw,q={t,x:Math.round((dw-w)/2),y:Math.round((bot?bot+24:0)/10)*10,w};
-if(t=="text"||t=="links"){q.al=t=="links"?"center":"left";fixSz(q)}I.push(q);SI=I.length-1;commit();if(t=="text")editText(q);if(t=="img")pickImg(q)}
-function editText(o){const k=o.bind,f=l=>k+(l=="ru"?"_ru":"");
-openAE(PAGE,{get:l=>k?(k.startsWith("k:")?TX[k.slice(2)]?.[l]:PG[f(l)])||"":o[l]||"",
-set:(l,v)=>{if(k?.startsWith("k:"))setText(k.slice(2),l,v);else if(k){PG[f(l)]=v;WJ(PAGE,PG);syncAE()}else{o[l]=v;PG.body_en=PG.body_ru="";WJ(PAGE,PG);LY.last=snap()}draw()},
-start:()=>{if(!k){HI.push(LY.last);HR=[]}}})}
-function pickImg(o){const f=h("input",{type:"file",accept:"image/*"});f.onchange=async()=>{if(!f.files[0])return;o.src=await upload(f.files[0]);commit()};f.click()}
-function caption(b){dialog(L("Caption","Подпись"),...["en","ru"].map(l=>lab(l.toUpperCase(),inp(b["cap_"+l],v=>{b["cap_"+l]=v;commit(0)}))))}
-function pageSet(){const M=D.querySelector("main"),sv=()=>{WJ(PAGE,PG);M.style.setProperty("--bg",PG.bg?PG.bg=="none"?"none":`url(${img(PG.bg)})`:"")};
-dialog(L("Page background","Фон страницы"),h("div",{cls:"row"},btn(L("Background image…","Фоновое изображение…"),()=>{const f=h("input",{type:"file",accept:"image/*"});f.onchange=async()=>{if(f.files[0]){PG.bg=await upload(f.files[0]);sv()}};f.click()}),
-btn(L("No background","Без фона"),()=>{PG.bg="none";sv()}),btn(L("Default background","Фон по умолчанию"),()=>{delete PG.bg;sv()})))}
-function layout(){const a=D.querySelector("section article");if(!a||!PG)return;
-const fr=h("div",{cls:"fr"}),tb=h("div",{cls:"ltb",hidden:""}),
-bar2=h("div",{cls:"lad"},btn("▤ "+L("Layout","Макет"),tpl,L("Add the base layout: kicker, title, line, description","Добавить базовый макет: надзаголовок, название, линия, описание")),btn("+ "+L("Text","Текст"),()=>add("text")),btn("+ "+L("Image","Изображение"),()=>add("img")),btn("+ "+L("Links","Ссылки"),()=>add("links")),btn("+ ―",()=>add("hr"),L("Line","Линия")),
-btn("↶",()=>undo(1),"Ctrl+Z"),btn("↷",()=>undo(0),"Ctrl+Shift+Z"),btn("▭ "+L("Background","Фон"),pageSet,L("Page background","Фон страницы")));
-delete PG.width;if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
-a.replaceChildren(fr,bar2,tb);a.classList.add("lea");IT().forEach(fixSz);LY={el:a,fr,tb,last:snap()};draw();
-fr.addEventListener("pointerdown",down);fr.addEventListener("dragstart",e=>e.preventDefault());fr.addEventListener("selectstart",e=>e.preventDefault());fr.addEventListener("pointermove",move);fr.addEventListener("pointerup",up);fr.addEventListener("pointercancel",up);
-fr.addEventListener("dblclick",e=>{const t=(D.elementFromPoint(e.clientX,e.clientY)||e.target).closest(".fi");if(!t)return;const o=IT()[+t.dataset.i]; // pointer capture retargets dblclick
-if(o.t=="text")editText(o);else if(o.t=="img")pickImg(o);else if(o.t=="links")links()});
-D.addEventListener("pointerdown",e=>{if(SI!=null&&!e.target.closest(".fr,.ltb,#ae,.dl")){SI=null;mark()}});
-D.addEventListener("keydown",e=>{if(!LY||e.target.closest("input,textarea,select,[contenteditable]"))return;const k=e.key;
-if((e.ctrlKey||e.metaKey)&&k.toLowerCase()=="z"){e.preventDefault();undo(!e.shiftKey);return}
-if(SI==null)return;if(k=="Delete"||k=="Backspace"){e.preventDefault();del();return}
-const q=IT()[SI],d=e.shiftKey?10:1,mv={ArrowLeft:[-d,0],ArrowRight:[d,0],ArrowUp:[0,-d],ArrowDown:[0,d]}[k];
-if(mv){e.preventDefault();q.x=cl(q.x+mv[0],0,DW()-q.w);q.y=Math.max(0,q.y+mv[1]);commit()}});
-addEventListener("resize",()=>tools())}
-// drag: move (snapped) and resize the width of items; height follows the content
-function down(e){const t=e.target.closest(".fi");if(!t||e.button)return;e.preventDefault();getSelection().removeAllRanges(); // no native image drag, no text selection
-SI=+t.dataset.i;const q=IT()[SI],hd=e.target.closest(".rl,.rr");
-DG={x:e.clientX,y:e.clientY,q,o:{...q},m:hd?hd.className:"mv",s:DW()/LY.fr.clientWidth,moved:0,h:t.offsetHeight*DW()/LY.fr.clientWidth};
-LY.fr.setPointerCapture(e.pointerId);mark()}
-function snapTo(v,cands,tol){let b=null;for(const c of cands)if(Math.abs(v-c)<=tol&&(b==null||Math.abs(v-c)<Math.abs(v-b)))b=c;return b}
-function move(e){if(!DG)return;const dx=(e.clientX-DG.x)*DG.s,dy=(e.clientY-DG.y)*DG.s;if(!DG.moved&&Math.hypot(dx,dy)<4)return;
-if(!DG.moved){DG.moved=1;HI.push(LY.last);HR=[];LY.fr.classList.add("drag")}
-const q=DG.q,o=DG.o,dw=DW(),tol=6*DG.s,others=IT().filter(v=>v!=q),gv=LY.fr.querySelector(".gv"),gh=LY.fr.querySelector(".gh");let sx=null,sy=null;
-if(DG.m=="mv"){let x=o.x+dx,y=Math.max(0,o.y+dy);
-const xs=[0,dw/2,dw,...others.flatMap(v=>[v.x,v.x+v.w/2,v.x+v.w])]; // snap left edge, centre or right edge to the strip and to other items
-for(const [off,k] of [[0,"l"],[q.w/2,"c"],[q.w,"r"]]){const c=snapTo(x+off,xs,tol);if(c!=null&&sx==null){sx=c;x=c-off}}
-const ys=others.flatMap(v=>[v.y]);const cy=snapTo(y,ys,tol);if(cy!=null){sy=cy;y=cy}
-q.x=Math.round(cl(sx==null?Math.round(x/10)*10:x,0,dw-q.w));q.y=Math.round(sy==null?Math.round(y/10)*10:y)}
-else if(DG.m=="rr"){q.w=Math.round(cl(Math.round((o.w+dx)/10)*10,20,dw-q.x))}
-else if(DG.m=="rl"){const nx=cl(Math.round((o.x+dx)/10)*10,0,o.x+o.w-20);q.x=Math.round(nx);q.w=Math.round(o.w+o.x-nx)}
-const el=LY.fr.querySelector(`[data-i="${SI}"]`);if(el){el.style.setProperty("--x",q.x);el.style.setProperty("--y",q.y);el.style.setProperty("--w",q.w)}
-const k=LY.fr.clientWidth/dw;gv.style.cssText=sx!=null?`display:block;left:${sx*k}px`:"";gh.style.cssText=sy!=null?`display:block;top:${sy*k}px`:"";tools()}
-function up(){if(!DG)return;const d=DG;DG=null;LY.fr.classList.remove("drag");if(d.moved){PG.body_en=PG.body_ru="";WJ(PAGE,PG);LY.last=snap();draw()}}
+// ---------- interface texts (data/text.json): nav, brand, button labels ----------
+let TX={};
+function showText(){D.querySelectorAll("[data-k]").forEach(e=>{const v=TX[e.dataset.k]?.[e.lang];if(v!=null&&e!=D.activeElement)e.textContent=v})}
+const setText=(k,l,v)=>{(TX[k]=TX[k]||{})[l]=v;showText();WJ(F.text,TX)};
+function editable(){D.querySelectorAll("nav [data-k]").forEach(e=>{if(e.closest("a"))return;e.contentEditable="plaintext-only";e.oninput=()=>setText(e.dataset.k,e.lang,e.textContent)})}
+D.addEventListener("keydown",e=>{if(e.key=="Enter"&&e.target.closest?.("nav [contenteditable]"))e.preventDefault()},true);
+function texts(){dialog(L("Interface texts","Тексты интерфейса"),...Object.keys(TX).map(k=>h("div",{cls:"row"},...["en","ru"].map(l=>lab(k+" · "+l.toUpperCase(),inp(TX[k][l],v=>setText(k,l,v)))))))}
 
-// ---------- pages: new, delete, order ----------
-const dir=SRC.replace(/_index\.md$/,"");
-// subpages of this page (the "links" block); new ones live in the draft until published
+// ---------- page document: blocks edited in place (same markup as layouts/partials/blocks.html) ----------
+let PG=null,DOC=null,HI=[],HR=[],burst=0,bt0,svT,PV=/[?&]preview\b/.test(location.search),gut,ift,dln,CB=null;
+const B=()=>PG.blocks??=[],
+TYPES=()=>[["p","¶",L("Text","Текст")],["h2","H",L("Heading","Заголовок")],["h3","h",L("Subheading","Подзаголовок")],["quote","❝",L("Quote","Цитата")],
+["ul","•",L("List","Список")],["ol","1.",L("Numbered list","Нумерованный список")],"-",["img","🖼",L("Image","Изображение")],["cols","◫",L("Two columns","Две колонки")],
+["card","▤",L("Fact card","Карточка фактов")],["hr","―",L("Divider","Разделитель")],"-",["links","☰",L("Links to subpages","Ссылки на подстраницы")],["head","▀",L("Page header","Шапка страницы")]],
+mk=k=>({p:{t:"p"},h2:{t:"h",lv:2},h3:{t:"h",lv:3},quote:{t:"quote"},ul:{t:"list"},ol:{t:"list",ord:true},img:{t:"img",al:"center"},cols:{t:"cols",c:[{t:"text"},{t:"text"}]},
+card:{t:"card",rows:[{},{}]},hr:{t:"hr"},links:{t:"links"},head:{t:"head"}})[k],
+TXT=new Set(["p","h","quote","list"]);
+// stored HTML is limited to a few tags: inline (b, i, s, a, code, br), list items, and for columns also paragraphs, subheadings and lists
+function clean(html,mode){const t=D.createElement("template");t.innerHTML=html;
+const INL={B:"b",STRONG:"b",I:"i",EM:"i",S:"s",STRIKE:"s",DEL:"s",A:"a",BR:"br",CODE:"code"},BLK={P:"p",DIV:"p",H1:"h3",H2:"h3",H3:"h3",H4:"h3",UL:"ul",OL:"ol",LI:"li",BLOCKQUOTE:"p"},
+walk=n=>[...n.childNodes].map(c=>{if(c.nodeType==3)return esc(c.data.replace(/\u00a0/g," "));if(c.nodeType!=1)return"";
+const g=INL[c.tagName]||(mode=="block"&&BLK[c.tagName])||(mode=="li"&&c.tagName=="LI"&&"li"),in_=walk(c);if(!g)return in_+(mode!="inline"&&/^(P|DIV)$/.test(c.tagName)?"<br>":"");
+if(g=="br")return"<br>";if(g=="a"){const u=c.getAttribute("href")||"";return/^(https?:|\/|#|mailto:)/i.test(u)?`<a href="${esc(u)}">${in_}</a>`:in_}return`<${g}>${in_}</${g}>`}).join("");
+let r=walk(t.content).replace(/(<br>)+(<\/(p|li|h3)>|$)/g,"$2").replace(/<(p|li|h3|b|i|s)><\/\1>/g,"").trim();
+if(mode=="li"&&r&&!/^<li>/.test(r))r="<li>"+r.replace(/<\/?li>/g,"")+"</li>";
+if(mode=="block"&&r&&!/^<(p|h3|ul|ol)>/.test(r))r="<p>"+r+"</p>";return r}
+const plain=h=>{const t=D.createElement("template");t.innerHTML=(h||"").replace(/<\/(li|p)>|<br>/g," $&");return t.content.textContent.trim()};
+// header title / description belong to the page itself unless the header has its own text (the home page)
+const bound=(b,f)=>b.t=="head"&&(f=="t_"||f=="d_")&&!b[f+"en"]&&!b[f+"ru"],
+pf=(f,l)=>(f=="t_"?"title":"description")+(l=="ru"?"_ru":""),
+gv=(b,o,f,l)=>bound(b,f)?PG[pf(f,l)]||"":o[f+l]||"",
+sv=(b,o,f,l,v)=>{if(bound(b,f))PG[pf(f,l)]=v;else if(v)o[f+l]=v;else delete o[f+l]},
+other=l=>l=="ru"?"en":"ru";
+function state(){return JSON.stringify({b:B(),t:[PG.title,PG.title_ru,PG.description,PG.description_ru]})}
+function snap1(){if(!burst){HI.push(state());HR=[];if(HI.length>200)HI.shift()}burst=1;clearTimeout(bt0);bt0=setTimeout(()=>burst=0,1200)}
+function snapN(){HI.push(state());HR=[];burst=0}
+function store(){clearTimeout(svT);svT=setTimeout(()=>WJ(PAGE,PG),250)}
+function undo(back){const a=back?HI:HR,o=back?HR:HI;if(!a.length)return;o.push(state());const s=JSON.parse(a.pop());PG.blocks=s.b;[PG.title,PG.title_ru,PG.description,PG.description_ru]=s.t;store();render()}
+function commit(){snapN();store();render()}
+// one editable text field: data-f = field prefix, data-m = cleaning mode (plain | inline | li | block); empty fields show the other language as a hint
+function E(tag,b,o,f,m,a="",def){const l=HT.lang,v=gv(b,o,f,l),w=gv(b,o,f,other(l)),ph=w?other(l).toUpperCase()+" · "+plain(w).slice(0,90):def||({k_:L("Kicker","Надзаголовок"),t_:L("Title","Название"),a_:L("Second line","Вторая строка"),
+d_:L("Description","Описание"),cap_:L("Caption","Подпись"),cite_:L("Source","Источник")}[f]||L("Write…","Пишите…"));
+if(!ED)return v||w?`<${tag}${a}>${v||w}</${tag}>`:"";
+return`<${tag}${a} data-f="${f}" data-m="${m}" contenteditable="${m=="plain"?"plaintext-only":"true"}" data-ph="${esc(ph)}" spellcheck="true">${v}</${tag}>`}
+let ED=1;
+function rb(b,i){const di=ED?` data-i="${i}"`:"",l=HT.lang;
+switch(b.t){
+case"head":{const own=b.k_en||b.k_ru,kd={k_en:TX.wip?.en||"",k_ru:TX.wip?.ru||TX.wip?.en||""}; // without its own kicker the header shows the shared "work in progress" text
+return`<header class="b-head${b.tall?" tall":""}"${di}>${E("p",b,own||ED?b:kd,"k_","plain",' class="k"',own?null:kd["k_"+l])}<h1>${E("span",b,b,"t_","plain")}${b.a_en||b.a_ru||b.acc?`<b>${E("span",b,b,"a_","plain")}</b>`:""}</h1><hr>${E("p",b,b,"d_","plain",' class="ds"')}</header>`}
+case"h":return E("h"+(b.lv||2),b,b,"","plain",di);
+case"p":return E("p",b,b,"","inline",di);
+case"quote":return`<blockquote${di}>${E("p",b,b,"","inline")}${E("cite",b,b,"cite_","plain")}</blockquote>`;
+case"list":{const t=b.ord?"ol":"ul",e=E(t,b,b,"","li",di);return ED?e.replace(/data-ph="([^"]*)"([^>]*)><\/(ul|ol)>$/,'data-ph="$1"$2><li data-ph="$1"></li></$3>'):e}
+case"img":return`<figure class="b-img al-${b.al||"center"}"${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>`:ED?`<button type="button" class="pi" data-pick="">🖼 ${L("Choose an image or drop a file here","Выберите изображение или перетащите файл")}</button>`:""}${E("figcaption",b,b,"cap_","plain")}</figure>`;
+case"card":return`<aside class="b-card"${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>`:""}${E("h4",b,b,"t_","plain")}<dl>${(b.rows||[]).map((r,j)=>
+`<div>${E("dt",b,r,"k_","plain",` data-r="${j}"`,L("Property","Свойство"))}${E("dd",b,r,"v_","inline",` data-r="${j}"`,L("Value","Значение"))}</div>`).join("")}</dl>${ED?`<button type="button" class="add" data-act="row">+ ${L("Row","Строка")}</button>`:""}</aside>`;
+case"cols":return`<div class="b-cols"${di}>${(b.c||[]).map((c,j)=>`<div class="cell">${c.t=="img"?`<figure class="b-img">${c.src?`<img src="${img(c.src)}" alt=""${ED?` data-pick="" data-c="${j}"`:""}>`:ED?`<button type="button" class="pi" data-pick="" data-c="${j}">🖼</button>`:""}${E("figcaption",b,c,"cap_","plain",` data-c="${j}"`)}</figure>`
+:E("div",b,c,"","block",` data-c="${j}"`)}</div>`).join("")}</div>`;
+case"hr":return`<hr class="b-hr"${di}>`;
+case"links":return`<ul class="b-links"${di}>${kids().map(q=>`<li${q.nw?' class="nw"':""}><a href="${U+q.src.replace(/_index\.md$/,"")}">${esc(l=="ru"?q.ru||q.en:q.en)}</a></li>`).join("")||(ED?`<li>${L("No subpages yet — add one in the block menu ⠿","Подстраниц пока нет — добавьте в меню блока ⠿")}</li>`:"")}</ul>`}
+return""}
+function render(){if(!DOC)return;const a=D.activeElement?.closest?.("[data-f]"),ai=a?.closest("[data-i]")?.dataset.i,af=a?.dataset.f;
+DOC.innerHTML=B().map(rb).join("")+(ED&&!B().length?`<p class="ph" style="text-align:center;color:#e8e8e080">${L("Empty page — press + to add a block","Пустая страница — нажмите +, чтобы добавить блок")}</p>`:"");
+if(ED){DOC.append(gut,dln);if(CB!=null&&!DOC.querySelector(`[data-i="${CB}"]`))CB=null;gutAt(CB)}
+if(ai!=null)focusF(+ai,af)}
+function focusF(i,f,end=1){const k=DOC.querySelector(`[data-i="${i}"]`);if(!k)return;const e=f!=null?(k.matches(`[data-f="${f}"]`)?k:k.querySelector(`[data-f="${f}"]`)):k.matches("[data-f]")?k:k.querySelector("[data-f]");
+if(!e)return;e.focus();const r=D.createRange();r.selectNodeContents(e);r.collapse(!end);const s=getSelection();s.removeAllRanges();s.addRange(r)}
+function insert(b,at,focus=1){B().splice(at,0,b);commit();CB=at;gutAt(at);if(focus){if(b.t=="img"&&!b.src)pickImg(b);else focusF(at,null,0)}}
+async function pickImg(o,file){file=file||await pickFile();if(!file)return;snapN();o.src=await upload(file);store();render()}
+function convert(i,k){const b=B()[i],n=mk(k),l=["en","ru"];snapN();
+for(const x of l){let v=b[x]||"";if(b.t=="list")v=v.replace(/<\/li><li>/g,"<br>").replace(/<\/?li>/g,"");if(n.t=="list"&&v)v="<li>"+v.split(/<br>/).join("</li><li>")+"</li>";if(n.t=="h")v=esc(plain(v));if(v)n[x]=v}
+if(b.cite_en)n.cite_en=b.cite_en;if(b.cite_ru)n.cite_ru=b.cite_ru;B()[i]=n;store();render();focusF(i)}
+// block gutter: + inserts after the block, ⠿ opens the block menu (click) or moves the block (drag)
+function gutAt(i){if(!gut)return;const k=i!=null&&DOC.querySelector(`[data-i="${i}"]`);gut.hidden=!k;DOC.querySelectorAll(".cur").forEach(e=>e.classList.remove("cur"));if(!k)return;
+k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClientRect(),lx=Math.max(r.left-d.left,(d.width-680)/2),nr=lx<70;gut.classList.toggle("nr",nr); // phones: above the right end
+gut.style.top=r.top-d.top-(nr?30:0)+"px";gut.style.left=(nr?r.right-d.left:lx)+"px";gut.dataset.i=i}
+function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],f:()=>{const b=mk(t[0]);if(replace){snapN();B()[i]=b;store();render();b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}))}
+function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>{snapN();if(v==null)delete b[k];else b[k]=v;store();render()},items=[];
+if(TXT.has(b.t))items.push(...TYPES().slice(0,6).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h2"&&b.t=="h"&&b.lv!=3)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-");
+if(b.t=="img")items.push(...[["center","▣",L("Centred, text width","По центру, ширина текста")],["full","▭",L("Full strip width","Во всю ширину ленты")],["left","◧",L("Left, text wraps","Слева, текст обтекает")],["right","◨",L("Right, text wraps","Справа, текст обтекает")]]
+.map(([a,ic,t])=>({i:ic,t,on:(b.al||"center")==a,f:()=>set("al",a)})),{i:"🖼",t:L("Replace image…","Заменить изображение…"),f:()=>pickImg(b)},"-");
+if(b.t=="card")items.push({i:"🖼",t:b.src?L("Replace image…","Заменить изображение…"):L("Add image…","Добавить изображение…"),f:()=>pickImg(b)},...(b.src?[{i:"✕",t:L("Remove image","Убрать изображение"),f:()=>set("src")}]:[]),
+{i:"+",t:L("Add row","Добавить строку"),f:()=>{snapN();(b.rows??=[]).push({});store();render()}},...((b.rows||[]).length?[{i:"−",t:L("Remove last row","Убрать последнюю строку"),f:()=>{snapN();b.rows.pop();store();render()}}]:[]),"-");
+if(b.t=="cols")b.c.forEach((c,j)=>items.push({i:c.t=="img"?"¶":"🖼",t:(j?L("Right column: ","Правая колонка: "):L("Left column: ","Левая колонка: "))+(c.t=="img"?L("text","текст"):L("image","изображение")),
+f:()=>{snapN();b.c[j]=c.t=="img"?{t:"text"}:{t:"img"};store();render()}})),b.t=="cols"&&items.push("-");
+if(b.t=="head")items.push({i:"↕",t:L("Centred on the screen","По центру экрана"),on:!!b.tall,f:()=>set("tall",b.tall?null:true)},
+{i:"B",t:L("Second (accent) line","Вторая (акцентная) строка"),on:!!(b.a_en||b.a_ru||b.acc),f:()=>{snapN();if(b.a_en||b.a_ru||b.acc){delete b.a_en;delete b.a_ru;delete b.acc}else b.acc=true;store();render()}},
+...(b.t_en||b.t_ru||b.d_en||b.d_ru?[{i:"↺",t:L("Use the page title and description","Взять название и описание страницы"),f:()=>{snapN();["t_en","t_ru","d_en","d_ru"].forEach(k=>delete b[k]);store();render()}}]:[]),"-");
+if(b.t=="links")items.push({i:"✎",t:L("Edit links…","Ссылки…"),f:links},{i:"+",t:L("New subpage…","Новая подстраница…"),f:()=>newPage()},"-");
+items.push({i:"↑",t:L("Move up","Выше"),f:()=>move(i,i-1)},{i:"↓",t:L("Move down","Ниже"),f:()=>move(i,i+1)},
+{i:"⧉",t:L("Duplicate","Дублировать"),f:()=>insert(JSON.parse(JSON.stringify(b)),i+1,0)},{i:"🗑",t:L("Delete","Удалить"),f:()=>{snapN();B().splice(i,1);CB=null;store();render()}});
+if(!i)items.splice(items.findIndex(x=>x.i=="↑"),1);if(i==N-1)items.splice(items.findIndex(x=>x.i=="↓"),1);menu(x,y,items)}
+function move(i,j){if(j<0||j>=B().length)return;snapN();const [b]=B().splice(i,1);B().splice(j,0,b);CB=j;store();render()}
+const caretAtStart=e=>{const s=getSelection();if(!s.rangeCount||!s.isCollapsed)return 0;const r=D.createRange();r.selectNodeContents(e);r.setEnd(s.anchorNode,s.anchorOffset);return!r.toString().length&&!r.cloneContents().querySelector?.("img")};
+function docInit(){DOC.classList.add("edoc");
+gut=h("div",{id:"gut",hidden:""},h("button",{type:"button",title:L("Add a block","Добавить блок"),"aria-label":L("Add a block","Добавить блок"),
+onclick:e=>{const r=e.currentTarget.getBoundingClientRect();addMenu(+gut.dataset.i,r.left,r.bottom+4)}},"+"),
+h("button",{type:"button",cls:"hd",title:L("Drag to move · click for block options","Перетащите, чтобы переместить · клик — настройки блока"),"aria-label":L("Block options","Настройки блока")},"⠿"));
+dln=h("div",{id:"dln",hidden:""});
+ift=h("div",{id:"ift",hidden:""},...[["B","bold",L("Bold","Жирный")+" (Ctrl+B)"],["I","italic",L("Italic","Курсив")+" (Ctrl+I)"],["S","strikeThrough",L("Strikethrough","Зачёркнутый")],["🔗","link",L("Link","Ссылка")+" (Ctrl+K)"],["⌫","removeFormat",L("Clear formatting","Убрать оформление")]]
+.map(([t,c,ti])=>h("button",{type:"button",title:ti,"aria-label":ti,onmousedown:e=>{e.preventDefault();fmt2(c)}},t)));D.body.append(ift);
+DOC.addEventListener("mouseover",e=>{const k=e.target.closest("[data-i]");if(k&&!DG)gutAt(CB=+k.dataset.i)});
+DOC.addEventListener("pointerdown",e=>{const k=e.target.closest("[data-i]");if(k)gutAt(CB=+k.dataset.i)});
+DOC.addEventListener("focusin",e=>{const k=e.target.closest("[data-i]");if(k)gutAt(CB=+k.dataset.i)});
+DOC.addEventListener("input",e=>{const el=e.target.closest("[data-f]");if(!el)return;const k=el.closest("[data-i]"),i=+k.dataset.i,b=B()[i],l=HT.lang,f=el.dataset.f,m=el.dataset.m;
+const o=el.dataset.r!=null?b.rows[+el.dataset.r]:el.dataset.c!=null?b.c[+el.dataset.c]:b;
+if(el.innerHTML=="<br>")el.innerHTML="";
+if(b.t=="p"&&f==""){const t=el.textContent,mt=t.match(/^(#{2,3}|[-*]|1\.|>)\s/)||(t=="---"&&[t]); // Markdown-like shortcuts at the start of a paragraph
+if(mt){const k2={"##":"h2","###":"h3","-":"ul","*":"ul","1.":"ol",">":"quote","---":"hr"}[mt[1]||mt[0]];snapN();b[l]=clean(el.innerHTML,"inline").replace(/^(#{2,3}|[-*]|1\.|&gt;|---)\s?/,"");if(!b[l])delete b[l];
+if(k2=="hr"){B()[i]={t:"hr"};B().splice(i+1,0,{t:"p"});store();render();focusF(i+1)}else convert(i,k2);return}}
+snap1();sv(b,o,f,l,m=="plain"?esc(el.textContent):clean(el.innerHTML,m));store();if(bound(b,f)&&f=="t_")D.title=(PG[pf(f,l)]||"")+" · ASCW"});
+DOC.addEventListener("keydown",keys);
+DOC.addEventListener("paste",paste);
+DOC.addEventListener("click",e=>{const p=e.target.closest("[data-pick]");if(p){const k=p.closest("[data-i]"),b=B()[+k.dataset.i];pickImg(p.dataset.c!=null?b.c[+p.dataset.c]:b);return}
+const a=e.target.closest("[data-act=row]");if(a){const b=B()[+a.closest("[data-i]").dataset.i];snapN();(b.rows??=[]).push({});store();render()}
+if(e.target.closest("a")&&e.target.closest("[contenteditable]"))e.preventDefault()});
+// drag & drop of image files: a new image block where the file is dropped
+DOC.addEventListener("dragover",e=>{if([...e.dataTransfer.items].some(x=>x.kind=="file")){e.preventDefault();DOC.classList.add("dropping")}});
+DOC.addEventListener("dragleave",()=>DOC.classList.remove("dropping"));
+DOC.addEventListener("drop",e=>{DOC.classList.remove("dropping");const f=[...e.dataTransfer.files].filter(f=>f.type.startsWith("image/"));if(!f.length)return;e.preventDefault();
+let at=dropAt(e.clientY);f.forEach(file=>{const b={t:"img",al:"center"};B().splice(at++,0,b);pickImg(b,file)})});
+gut.querySelector(".hd").addEventListener("pointerdown",gDown);
+D.addEventListener("selectionchange",selTb);addEventListener("scroll",selTb,{passive:true});addEventListener("resize",()=>gutAt(CB));
+D.addEventListener("keydown",e=>{const k=e.key.toLowerCase();if((e.ctrlKey||e.metaKey)&&(k=="z"||k=="y")&&!e.target.closest?.("input,textarea,select,nav,.dl")){e.preventDefault();undo(k=="z"&&!e.shiftKey)}})}
+function dropAt(y){const ks=[...DOC.querySelectorAll(":scope>[data-i]")];for(const k of ks){const r=k.getBoundingClientRect();if(y<r.top+r.height/2)return+k.dataset.i}return B().length}
+let DG=null;
+function gDown(e){e.preventDefault();const i=+gut.dataset.i;DG={i,y:e.clientY,mv:0,to:i};const t=e.currentTarget;t.setPointerCapture(e.pointerId);
+t.onpointermove=m=>{if(Math.abs(m.clientY-DG.y)>4)DG.mv=1;if(!DG.mv)return;DG.to=dropAt(m.clientY);const ks=[...DOC.querySelectorAll(":scope>[data-i]")],d=DOC.getBoundingClientRect(),
+k=ks.find(x=>+x.dataset.i==DG.to),r=k?k.getBoundingClientRect():ks.at(-1).getBoundingClientRect();dln.hidden=false;dln.style.top=(k?r.top-d.top-8:r.bottom-d.top+6)+"px";dln.style.left=r.left-d.left+"px";dln.style.width=r.width+"px"};
+t.onpointerup=m=>{t.onpointermove=t.onpointerup=null;dln.hidden=true;const g=DG;DG=null;if(!g.mv){const r=t.getBoundingClientRect();return blockMenu(g.i,r.left,r.bottom+4)}
+let to=g.to>g.i?g.to-1:g.to;if(to!=g.i)move(g.i,to)}}
+function keys(e){const el=e.target.closest?.("[data-f]");if(!el)return;const k=el.closest("[data-i]"),i=+k.dataset.i,b=B()[i],l=HT.lang,m=el.dataset.m;
+if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=="k"&&m!="plain"){e.preventDefault();fmt2("link");return}
+if(e.key=="/"&&b.t=="p"&&!el.textContent){e.preventDefault();const r=el.getBoundingClientRect();addMenu(i,r.left,r.bottom+4,1);return}
+if(e.key=="Enter"&&!e.shiftKey){
+if(m=="li"){const s=getSelection(),li=s.anchorNode&&(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement).closest("li");
+if(li&&!li.textContent&&li==el.lastElementChild){e.preventDefault();li.remove();el.dispatchEvent(new Event("input",{bubbles:true}));insert({t:"p"},i+1)}return}
+if(m=="block")return;e.preventDefault();if(!/^(p|h|quote)$/.test(b.t)||el.dataset.f!="")return;
+// split the paragraph / heading at the caret: the rest goes to a new paragraph
+const s=getSelection();if(!s.rangeCount)return;const r=s.getRangeAt(0);r.deleteContents();const tail=D.createRange();tail.selectNodeContents(el);tail.setStart(r.endContainer,r.endOffset);
+const t=h("div");t.append(tail.extractContents());snapN();const rest=b.t=="h"?esc(t.textContent):clean(t.innerHTML,"inline");
+sv(b,b,"",l,b.t=="h"?esc(el.textContent):clean(el.innerHTML,"inline"));
+B().splice(i+1,0,rest?{t:"p",[l]:rest}:{t:"p"});CB=i+1;store();render();focusF(i+1,null,0);return}
+if(e.key=="Backspace"&&TXT.has(b.t)&&el.dataset.f==""&&caretAtStart(el)){const pv=B()[i-1];
+if(!el.textContent&&!el.querySelector("img")&&(m!="li"||el.children.length<=1)){e.preventDefault();snapN();B().splice(i,1);store();render();if(pv)focusF(i-1);return}
+if(b.t=="p"&&pv?.t=="p"){e.preventDefault();snapN();const a=pv[l]||"",mk2=`<span id="cj"></span>`;pv[l]=a+(b[l]||"");B().splice(i,1);store();render();
+const pe=DOC.querySelector(`[data-i="${i-1}"]`);pe.innerHTML=a+mk2+(pv[l].slice(a.length));const j=pe.querySelector("#cj"),r=D.createRange();r.setStartBefore(j);r.collapse(true);j.remove();pe.focus();getSelection().removeAllRanges();getSelection().addRange(r)}}}
+function paste(e){const el=e.target.closest?.("[data-f]");if(!el)return;const cd=e.clipboardData,f=[...cd.files].find(f=>f.type.startsWith("image/")),k=el.closest("[data-i]"),i=+k.dataset.i;
+e.preventDefault();if(f){insert({t:"img",al:"center"},i+1,0);pickImg(B()[i+1],f);return}
+const t=(cd.getData("text/plain")||"").replace(/\r/g,"");if(el.dataset.m=="plain"||el.dataset.m=="li"||el.dataset.m=="block"){D.execCommand("insertText",false,el.dataset.m=="plain"?t.replace(/\s*\n\s*/g," "):t);return}
+const parts=t.split(/\n\s*\n/).map(x=>x.replace(/\s*\n\s*/g," ").trim()).filter(Boolean);if(!parts.length)return;D.execCommand("insertText",false,parts[0]);
+if(parts.length>1){snapN();B().splice(i+1,0,...parts.slice(1).map(x=>({t:"p",[HT.lang]:esc(x)})));store();render();focusF(i+parts.length-1)}}
+function selTb(){const s=getSelection(),el=s.rangeCount&&!s.isCollapsed&&(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('.doc [contenteditable="true"]');
+if(!el||ift.contains(D.activeElement)){if(!ift.contains(D.activeElement))ift.hidden=true;return}const r=s.getRangeAt(0).getBoundingClientRect();ift.hidden=false;
+ift.style.left=Math.max(8,Math.min(r.left+scrollX+r.width/2-ift.offsetWidth/2,innerWidth-ift.offsetWidth-8))+"px";ift.style.top=r.top+scrollY-ift.offsetHeight-8+"px"}
+function fmt2(c){const s=getSelection(),el=(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('[contenteditable="true"]');if(!el)return;
+if(c=="link"){const r=s.rangeCount&&s.getRangeAt(0).cloneRange(),cur=(s.anchorNode.parentElement?.closest("a"))?.getAttribute("href")||"https://",i=inp(cur,()=>{}),
+w=dialog(L("Link","Ссылка"),lab(L("Address (empty — remove the link)","Адрес (пусто — убрать ссылку)"),i),h("div",{cls:"row"},btn("OK",ok)));
+i.onkeydown=e=>{if(e.key=="Enter")ok()};function ok(){w.remove();el.focus();getSelection().removeAllRanges();getSelection().addRange(r);const u=i.value.trim();
+D.execCommand(u&&u!="https://"?"createLink":"unlink",false,u);el.dispatchEvent(new Event("input",{bubbles:true}))}return}
+D.execCommand(c);el.dispatchEvent(new Event("input",{bubbles:true}))}
+
+// ---------- page settings, new pages, subpages ----------
+const dir=PAGE.replace(/^content\/|_index\.md$/g,"");
 let KIDS=[];
 const kids=()=>KIDS.filter(q=>!q.del);
-async function initKids(){const seen={};
-KIDS=[...D.querySelectorAll("section ul li a,section .bk-links li a")].map(a=>({src:decodeURI(a.getAttribute("href")).replace(U,"")+"_index.md",en:a.querySelector("[lang=en]")?.textContent||"",ru:a.querySelector("[lang=ru]")?.textContent||""})).filter(q=>!seen[q.src]&&(seen[q.src]=1));
+async function initKids(){try{KIDS=JSON.parse(D.getElementById("kids")?.textContent||"[]")}catch{KIDS=[]}
 for(const p in draft){const m=p.match(new RegExp(`^content/${dir.replace(/[/.-]/g,"\\$&")}([^/]+)/_index\\.md$`));if(!m)continue;const q=KIDS.find(k=>"content/"+k.src==p);
 if(draft[p].del){if(q)q.del=1;continue}let o={};try{o=JSON.parse(draft[p].t)}catch{}
 if(q){q.en=o.title||q.en;q.ru=o.title_ru||o.title||q.ru}else KIDS.push({src:p.slice(8),en:o.title||m[1],ru:o.title_ru||o.title||m[1],nw:1,w:o.weight||0})}
-KIDS.sort((a,b)=>(a.nw?1:0)-(b.nw?1:0)||(a.w||0)-(b.w||0))}
-function newPage(done){let en,ruI,sl;const slug=v=>v.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-const w=dialog(L("New page","Новая страница"),lab(L("Title","Заголовок")+" · EN",en=inp("",v=>{if(!sl.dataset.t)sl.value=slug(v)})),
-lab(L("Title","Заголовок")+" · RU",ruI=inp("",()=>{})),lab(L("Address","Адрес")+" ("+U+dir+"…)",sl=inp("",(v,e)=>{e.dataset.t=1})),
-h("div",{cls:"row"},btn(L("Create","Создать"),async()=>{const s=slug(sl.value);if(!s||!en.value.trim())return toast(L("Title and address are required","Нужны заголовок и адрес"),1);
+KIDS.sort((a,b)=>(a.nw?1:0)-(b.nw?1:0))}
+const pageObj=async p=>{const t=await read(p);if(t==null)return null;try{return JSON.parse(t)}catch{return null}};
+function newPage(){let en,ruI,sl;const slug=v=>v.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const w=dialog(L("New subpage","Новая подстраница"),lab(L("Title","Название")+" · EN",en=inp("",v=>{if(!sl.dataset.t)sl.value=slug(v)})),
+lab(L("Title","Название")+" · RU",ruI=inp("",()=>{})),lab(L("Address","Адрес")+" ("+U+dir+"…)",sl=inp("",(v,e)=>{e.dataset.t=1})),
+h("div",{cls:"row"},btn(L("Create and open","Создать и открыть"),async()=>{const s=slug(sl.value);if(!s||!en.value.trim())return toast(L("Title (EN) and address are required","Нужны название (EN) и адрес"),1);
 const p=`content/${dir}${s}/_index.md`;if(await read(p)!=null)return toast(L("This address is taken","Такой адрес уже занят"),1);
-const ws=await Promise.all(kids().map(q=>pageObj("content/"+q.src))),wt=Math.max(0,...ws.map(o=>o?.weight||0))+1;
-await WJ(p,{title:en.value.trim(),title_ru:ruI.value.trim(),description:"",description_ru:"",weight:wt,body_en:"",body_ru:"",items:TPL()});
-KIDS.push({src:p.slice(8),en:en.value.trim(),ru:ruI.value.trim()||en.value.trim(),nw:1,w:wt});w.remove();draw();done?.();
-toast(L("The page appears on the site after publishing","Страница появится на сайте после публикации"))})));en.focus()}
-async function delPage(){if(!PAGE||!/\/.+\//.test(PAGE.replace(/^content\//,"")))return toast(L("Top-level pages cannot be deleted","Страницы верхнего уровня удалить нельзя"),1);
-if(kids().length)return toast(L("Delete or move its subpages first","Сначала удалите вложенные страницы"),1);
-if(!confirm(L("Delete this page after publishing?","Удалить эту страницу при публикации?")))return;
-await src(PAGE);if(base[PAGE]==null)delete draft[PAGE];else draft[PAGE]={del:1};save();toast(L("Page will be deleted on publish","Страница будет удалена при публикации"))}
-async function reorder(){const K=kids(),os=await Promise.all(K.map(q=>pageObj("content/"+q.src)));os.forEach((o,i)=>{K[i].w=i+1;if(o&&o.weight!=i+1){o.weight=i+1;WJ("content/"+K[i].src,o)}})}
+if(!B().some(b=>b.t=="links")){B().push({t:"links"});await WJ(PAGE,PG)} // so the new page can be reached from this one
+await WJ(p,{title:en.value.trim(),title_ru:ruI.value.trim(),description:"",description_ru:"",weight:(KIDS.length+1)*10,blocks:[{t:"head"},{t:"p"}]});
+await new Promise(r=>setTimeout(r,300));location.href=U+dir+s+"/"})));en.focus()}
+async function delPage(){const up=dir.replace(/[^/]+\/$/,"");if(!up)return toast(L("This page cannot be deleted","Эту страницу удалить нельзя"),1);
+if(kids().length)return toast(L("Delete its subpages first","Сначала удалите её подстраницы"),1);
+if(!confirm(L("Delete this page when publishing?","Удалить эту страницу при публикации?")))return;
+await src(PAGE);if(base[PAGE]==null)delete draft[PAGE];else draft[PAGE]={del:1};save();location.href=U+up}
+function settings(){const S=(k,v)=>{snap1();if(v)PG[k]=v;else delete PG[k];store();render()},bgv=()=>D.querySelector("main").style.setProperty("--bg",PG.bg?PG.bg=="none"?"none":`url(${img(PG.bg)})`:"");
+dialog(L("Page","Страница"),h("div",{cls:"row"},lab(L("Title","Название")+" · EN",inp(PG.title,v=>S("title",v))),lab(L("Title","Название")+" · RU",inp(PG.title_ru,v=>S("title_ru",v)))),
+h("div",{cls:"row"},lab(L("Description (also shown in link previews)","Описание (видно и в превью ссылок)")+" · EN",inp(PG.description,v=>S("description",v),{area:1})),lab(L("Description","Описание")+" · RU",inp(PG.description_ru,v=>S("description_ru",v),{area:1}))),
+h("div",{cls:"row"},lab(L("Background","Фон"),h("div",{cls:"row"},btn(L("Image…","Изображение…"),async()=>{const f=await pickFile();if(f){PG.bg=await upload(f);store();bgv()}}),
+btn(L("None","Без фона"),()=>{PG.bg="none";store();bgv()}),btn(L("Default","По умолчанию"),()=>{delete PG.bg;store();bgv()})))),
+h("div",{style:"font-size:12px;color:#e8e8e080"},L("Address: ","Адрес: ")+U+dir),h("div",{cls:"row"},btn("+ "+L("New subpage…","Новая подстраница…"),newPage),btn("🗑 "+L("Delete page","Удалить страницу"),delPage)))}
+async function reorder(){const K=kids(),os=await Promise.all(K.map(q=>pageObj("content/"+q.src)));os.forEach((o,i)=>{if(o&&o.weight!=(i+1)*10){o.weight=(i+1)*10;WJ("content/"+K[i].src,o)}})}
 function links(){const box=h("div",{style:"display:flex;flex-direction:column;gap:8px"}),
-rows=()=>box.replaceChildren(...kids().map((q,i,K)=>{const set=async(l,v)=>{q[l]=v;const p="content/"+q.src,o=await pageObj(p);if(o){o[l=="en"?"title":"title_ru"]=v;await WJ(p,o)}draw()};
-return h("div",{cls:"row",style:"align-items:flex-end"},lab("EN",inp(q.en,v=>set("en",v))),lab("RU",inp(q.ru,v=>set("ru",v))),
-btn("↑",async()=>{if(!i)return;const j=KIDS.indexOf(K[i-1]),k=KIDS.indexOf(q);[KIDS[j],KIDS[k]]=[KIDS[k],KIDS[j]];await reorder();rows();draw()},L("Up","Выше")),
-btn("↓",async()=>{if(i==K.length-1)return;const j=KIDS.indexOf(K[i+1]),k=KIDS.indexOf(q);[KIDS[j],KIDS[k]]=[KIDS[k],KIDS[j]];await reorder();rows();draw()},L("Down","Ниже")),
-btn("🗑",async()=>{if(!confirm(L("Delete this page after publishing?","Удалить эту страницу при публикации?")))return;const p="content/"+q.src;await src(p);
-if(base[p]==null)delete draft[p];else draft[p]={del:1};q.del=1;save();rows();draw()},L("Delete page","Удалить страницу")))}));
-rows();dialog(L("Links to pages","Ссылки на страницы"),box,h("div",{cls:"row"},btn("+ "+L("New page","Новая страница"),()=>newPage(rows))))}
+rows=()=>box.replaceChildren(...kids().map((q,i,K)=>{const set=async(l,v)=>{q[l]=v;const p="content/"+q.src,o=await pageObj(p);if(o){o[l=="en"?"title":"title_ru"]=v;await WJ(p,o)}render()},
+sw=async d=>{const j=KIDS.indexOf(K[i+d]),k=KIDS.indexOf(q);if(j<0)return;[KIDS[j],KIDS[k]]=[KIDS[k],KIDS[j]];await reorder();rows();render()};
+return h("div",{cls:"row",style:"align-items:flex-end"},lab("EN",inp(q.en,v=>set("en",v))),lab("RU",inp(q.ru,v=>set("ru",v))),btn("↑",()=>sw(-1),L("Up","Выше")),btn("↓",()=>sw(1),L("Down","Ниже")),
+btn("🗑",async()=>{if(!confirm(L("Delete this page when publishing?","Удалить эту страницу при публикации?")))return;const p="content/"+q.src;await src(p);
+if(base[p]==null)delete draft[p];else draft[p]={del:1};q.del=1;save();rows();render()},L("Delete page","Удалить страницу")))}));
+rows();dialog(L("Links to subpages","Ссылки на подстраницы"),box,h("div",{cls:"row"},btn("+ "+L("New subpage…","Новая подстраница…"),newPage)))}
+function preview(){const u=new URL(location.href);u.searchParams.set("preview","");const w=h("div",{id:"pvw",onclick:e=>{if(e.target==w)w.remove()}},h("iframe",{src:u.href,title:L("Phone preview","Предпросмотр на телефоне")}),
+btn(L("Close preview","Закрыть предпросмотр"),()=>w.remove()));D.body.append(w)}
 
-// ---------- map: markers, timeline events, countries ----------
-let MKon=0;
-const MP=window.MAP;
+// ---------- map: markers (form in the side panel), timeline events, countries ----------
+const MP=window.MAP;let MKon=0,PF=null;
+const KINDS=()=>[["●",L("Circle","Круг")],["★",L("Star","Звезда")],["■",L("Square","Квадрат")],["▲",L("Triangle","Треугольник")],["◆",L("Diamond","Ромб")],
+["✕",L("Cross","Крест")],["⚓",L("Anchor","Якорь")],["⚑",L("Flag","Флаг")],["♜",L("Fort","Крепость")],["◎",L("Ring","Кольцо")]],
+ll=(my,mx)=>({a:+(90-my/MP.H*180).toFixed(3),o:+(mx/MP.W*360-180).toFixed(3)}),
+saveMK=()=>{WJ(F.mk,MK);MP.markers()};
+function pform(el,key){const a=D.getElementById("p");if(PF?.key==key&&a.contains(PF))return 0;PF?.remove();PF=el;el.key=key;a.append(el);return 1}
 async function mapInit(){if(!MP)return;
 window.MK=await J(F.mk,MK);window.EV=await J(F.ev,EV);window.COU=await J(F.co,COU);MP.redraw();
-MP.onTap=(mx,my)=>{if(!MKon)return 0;const a=+(90-my/MP.H*180).toFixed(3),o=+(mx/MP.W*360-180).toFixed(3);MK.push({o,a,n:"",r:"",k:0});saveMK();mkForm(MK.length-1);return 1};
-MP.onPanel=r=>coForm(r);if(MP.sel())coForm(MP.sel());
+MP.onTap=(mx,my,i)=>{if(i!=null){MP.pickM(i);return 1}if(!MKon)return 0;MK.push({...ll(my,mx),n:"",r:""});saveMK();MP.pickM(MK.length-1);return 1};
+MP.onMarker=i=>mkForm(i);MP.onPanel=r=>coForm(r);if(MP.sel())coForm(MP.sel());
+D.getElementById("pc").addEventListener("click",()=>{PF?.remove();PF=null;const n=MK.length;window.MK=MK.filter(q=>q.n||q.r||q.ten||q.tru);if(MK.length!=n)saveMK()}); // unnamed new markers are dropped on close
 const mw=D.getElementById("mw");let dg=null;
 mw.addEventListener("pointerdown",e=>{const g=e.target.closest("[data-m]");if(!g)return;e.stopPropagation();mw.setPointerCapture(e.pointerId);dg={i:+g.dataset.m,x:e.clientX,y:e.clientY,mv:0}});
 mw.addEventListener("pointermove",e=>{if(!dg)return;dg.mv+=Math.abs(e.clientX-dg.x)+Math.abs(e.clientY-dg.y);dg.x=e.clientX;dg.y=e.clientY;if(dg.mv<4)return;
-const {mx,my}=MP.toMap(e),q=MK[dg.i];q.a=+(90-my/MP.H*180).toFixed(3);q.o=+(mx/MP.W*360-180).toFixed(3);MP.markers()});
-mw.addEventListener("pointerup",e=>{if(!dg)return;const d=dg;dg=null;if(d.mv<4)mkForm(d.i);else saveMK()});
-D.getElementById("tl")?.querySelector("#xt")?.after(h("a",{id:"xe",style:"position:absolute;right:56px;top:14px;z-index:2;font-size:16px",title:L("Edit events","Редактировать события"),onclick:events},"✎"))}
-const saveMK=()=>{WJ(F.mk,MK);MP.markers()};
-function mkForm(i){const q=MK[i];if(!q)return;const ch=()=>{saveMK()};
-const w=dialog(L("Map marker","Метка на карте"),
-h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(q.n,v=>{q.n=v;ch()})),lab(L("Name","Название")+" · RU",inp(q.r,v=>{q.r=v;ch()}))),
-h("div",{cls:"row"},lab(L("Latitude","Широта"),inp(q.a,v=>{q.a=+v;ch()},{type:"number"})),lab(L("Longitude","Долгота"),inp(q.o,v=>{q.o=+v;ch()},{type:"number"})),
-lab(L("Kind","Тип"),(()=>{const s=h("select",{cls:"ei"},...[["●",L("Circle","Круг")],["★",L("Star","Звезда")],["■",L("Square","Квадрат")],["▲",L("Triangle","Треугольник")],["◆",L("Diamond","Ромб")],
-["✕",L("Cross","Крест")],["⚓",L("Anchor","Якорь")],["⚑",L("Flag","Флаг")],["♜",L("Fort","Крепость")],["◎",L("Ring","Кольцо")]].map(([i,t],j)=>h("option",{value:j},i+" "+t)));s.value=q.k|0;s.onchange=()=>{q.k=+s.value;ch()};return s})()),
-lab(L("Font","Шрифт"),(()=>{const s=h("select",{cls:"ei"},...[["play","Play"],["exo","Exo 2"],["inter","Inter"],["a","Airborne"]].map(([v,t])=>h("option",{value:v,style:`font-family:${MP.FN[v]}`},t)));s.value=q.f||"play";s.onchange=()=>{if(s.value=="play")delete q.f;else q.f=s.value;ch()};return s})())),
-h("div",{cls:"row"},btn(L("Done","Готово"),()=>{if(!q.n&&!q.r){MK.splice(i,1);saveMK()}w.remove()}),btn(L("Delete","Удалить"),()=>{MK.splice(i,1);saveMK();w.remove()})));
-w.querySelector("input").focus()}
+const {mx,my}=MP.toMap(e);Object.assign(MK[dg.i],ll(my,mx));MP.markers()});
+mw.addEventListener("pointerup",()=>{if(!dg)return;const d=dg;dg=null;if(d.mv<4)MP.pickM(d.i);else{saveMK();if(PF?.key=="m"+d.i){PF=null;mkForm(d.i)}}});
+D.getElementById("xt")?.after(h("button",{type:"button",id:"xe",style:"position:absolute;right:56px;top:4px;z-index:2;width:44px;height:44px;font-size:18px;cursor:pointer;color:#e8e8e0a6",title:L("Edit events","Редактировать события"),onclick:events},"✎"))}
+function mkForm(i){const q=MK[i];if(!q)return;const pt=D.getElementById("pt"),px=D.getElementById("px"),
+ch=(k,v)=>{if(v===""||v==null)delete q[k];else q[k]=v;saveMK();pt.textContent=(ru()?q.r||q.n:q.n||q.r)||"";px.textContent=(ru()?q.tru||q.ten:q.ten||q.tru)||""},
+num=(k,ph)=>inp(q[k],v=>ch(k,v===""?"":+v),{type:"number",ph}),
+f=h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(q.n,v=>ch("n",v))),lab(L("Name","Название")+" · RU",inp(q.r,v=>ch("r",v)))),
+lab(L("Text","Текст")+" · EN",inp(q.ten,v=>ch("ten",v),{area:1})),lab(L("Text","Текст")+" · RU",inp(q.tru,v=>ch("tru",v),{area:1})),
+h("div",{cls:"row"},lab(L("Icon","Значок"),sel(q.k|0,KINDS().map(([s,t],j)=>[j,s+" "+t]),v=>ch("k",+v||""))),
+lab(L("Font","Шрифт"),sel(q.f||"",[["","Play"],["exo","Exo 2"],["inter","Inter"],["a","Airborne"]],v=>ch("f",v)))),
+h("div",{cls:"row"},lab(L("Shown from year","Видна с года"),num("y0","—")),lab(L("to year","по год"),num("y1","—"))),
+lab(L("Visible","Видимость"),sel(q.z|0,[[0,L("Always","Всегда")],[1,L("From medium zoom","С среднего приближения")],[2,L("Close-up only","Только вблизи")]],v=>ch("z",+v||""))),
+h("div",{cls:"row"},lab(L("Latitude","Широта"),num("a")),lab(L("Longitude","Долгота"),num("o"))),
+h("div",{cls:"row"},btn(L("Done","Готово"),()=>D.getElementById("pc").click()),btn("🗑 "+L("Delete","Удалить"),()=>{MK.splice(i,1);saveMK();PF?.remove();PF=null;D.getElementById("pc").click()})));
+if(pform(f,"m"+i)&&!q.n&&!q.r)setTimeout(()=>f.querySelector("input").focus())}
+function mkList(){const box=h("div",{cls:"ml"}),q0=inp("",v=>rows(v),{ph:L("Search","Поиск")}),
+rows=(s="")=>box.replaceChildren(...MK.map((q,i)=>[q,i]).filter(([q])=>(q.n+" "+q.r).toLowerCase().includes(s.toLowerCase())).map(([q,i])=>
+h("button",{type:"button",onclick:()=>{w.remove();MP.focus(q.o,q.a);MP.pickM(i)}},(ru()?q.r||q.n:q.n||q.r)||"—",h("small",{},q.y0!=null||q.y1!=null?`${q.y0??"…"}–${q.y1??"…"}`:""))));
+rows();const w=dialog(L("Markers","Метки")+" · "+MK.length,q0,box)}
 function events(){const box=h("div",{style:"display:flex;flex-direction:column;gap:10px"}),
 sv=()=>{EV.sort((a,b)=>a[0]-b[0]);WJ(F.ev,EV);MP.timeline()},
 rows=()=>box.replaceChildren(...EV.map((v,i)=>h("div",{cls:"row",style:"align-items:flex-end"},
 lab(L("Year","Год"),inp(v[0],x=>{v[0]=+x;WJ(F.ev,EV);MP.timeline()},{type:"number"})),
 lab("EN",inp(v[1],x=>{v[1]=x;WJ(F.ev,EV);MP.timeline()},{area:1})),lab("RU",inp(v[2],x=>{v[2]=x;WJ(F.ev,EV);MP.timeline()},{area:1})),
 btn("✕",()=>{EV.splice(i,1);sv();rows()},L("Delete","Удалить")))).map(r=>{r.firstChild.style.flex="0 0 80px";return r}));
-rows();const w=dialog(L("Timeline events","События таймлайна"),box,h("div",{cls:"row"},btn("+ "+L("Event","Событие"),()=>{EV.push([EV.at(-1)?.[0]??0,"",""]);WJ(F.ev,EV);rows();box.lastChild?.querySelector("textarea")?.focus()}),
+rows();const w=dialog(L("Timeline events","События хронологии"),box,h("div",{cls:"row"},btn("+ "+L("Event","Событие"),()=>{EV.push([MP.yr(),"",""]);WJ(F.ev,EV);rows();box.lastChild?.querySelector("textarea")?.focus()}),
 btn(L("Done","Готово"),()=>{sv();w.remove()})));w.onclick=e=>{if(e.target==w){sv();w.remove()}}}
-let CF=null;
-function coForm(r){const a=D.getElementById("p");if(!on||!a)return;if(CF?.hex==r.c&&a.contains(CF))return;CF?.remove();
-const o=COU[r.c]=COU[r.c]||{},t0=()=>{for(const k in o)if(!o[k])delete o[k];if(!Object.keys(o).length)delete COU[r.c];WJ(F.co,COU)};let tm;
+function coForm(r){const o=COU[r.c]=COU[r.c]||{},t0=()=>{for(const k in o)if(!o[k])delete o[k];if(!Object.keys(o).length)delete COU[r.c];WJ(F.co,COU)};let tm;
 const ch=(k,v)=>{o[k]=v;COU[r.c]=o;t0();clearTimeout(tm);tm=setTimeout(()=>MP.redraw(),250)};
-CF=h("div",{cls:"ef"},lab(L("Name","Название")+" · EN",inp(o.en,v=>ch("en",v),{ph:r.n0})),lab(L("Name","Название")+" · RU",inp(o.ru,v=>ch("ru",v),{ph:r.r0})),
-lab(L("Text","Текст")+" · EN",inp(o.ten,v=>ch("ten",v),{area:1})),lab(L("Text","Текст")+" · RU",inp(o.tru,v=>ch("tru",v),{area:1})));CF.hex=r.c;a.append(CF)}
+pform(h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(o.en,v=>ch("en",v),{ph:r.n0})),lab(L("Name","Название")+" · RU",inp(o.ru,v=>ch("ru",v),{ph:r.r0}))),
+lab(L("Text","Текст")+" · EN",inp(o.ten,v=>ch("ten",v),{area:1})),lab(L("Text","Текст")+" · RU",inp(o.tru,v=>ch("tru",v),{area:1}))),"c"+r.c)}
 
 // ---------- on / off ----------
-async function start(){on=1;LS.ascwEditOn=1;HT.classList.add("ed");BT.classList.add("on");
-pb=h("span",{style:"display:contents"},btn("",publish,L("Commit all changes to GitHub","Отправить все изменения на GitHub")),btn("↺",discard,L("Discard changes","Отменить изменения")));
-eb=h("div",{id:"eb"},pb,btn("⚙",token,L("GitHub access","Доступ к GitHub")),btn("Aa",texts,L("Interface texts","Тексты интерфейса")));
-et=h("div",{id:"et",hidden:""});D.body.append(eb,et);
-TX=await J(F.text,{});if(draft[F.text])showText();
-if(PAGE&&!/^map\//.test(SRC)){PG=await pageObj(PAGE);if(PG){if(draft[PAGE])showPage(PG);
-eb.append(btn("✎ "+L("Article","Статья"),()=>openAE()),btn("+ "+L("Page","Страница"),newPage),btn("🗑",delPage,L("Delete page","Удалить страницу")));
-await initKids();layout()}}
-if(MP){eb.append(btn("📍 "+L("Markers","Метки"),e=>{MKon^=1;e.currentTarget.classList.toggle("on",!!MKon);HT.classList.toggle("mke",!!MKon);if(MKon)toast(L("Click the map to add a marker; drag markers to move them, click to edit.","Клик по карте — новая метка; метки можно перетаскивать, клик — редактировать."))}),
-btn("☰ "+L("Events","События"),events));await mapInit()}
+async function start(){on=1;TX=await J(F.text,{});
+if(PV){ED=0;HT.classList.add("pv");BT.hidden=true}else{LS.ascwEditOn=1;HT.classList.add("ed");BT.classList.add("on");
+const ib=(i,t,f,ti)=>{const b=btn(i,f,ti||t);if(t)b.append(h("span",{cls:"lb"},t));return b};
+pb=h("span",{style:"display:contents"},btn("",publish,L("Send all changes to GitHub","Отправить все изменения на GitHub")),btn("↺",discard,L("Discard all unpublished changes","Отменить все неопубликованные изменения")));
+eb=h("div",{id:"eb"},pb);et=h("div",{id:"et",hidden:""});D.body.append(eb,et);if(draft[F.text])showText();
+if(PAGE&&!/^map\//.test(SRC)&&(PG=await pageObj(PAGE))){
+if(NEWP)D.title=(PG.title||"")+" · ASCW";
+eb.append(ib("↶","",()=>undo(1),L("Undo","Отменить")+" (Ctrl+Z)"),ib("↷","",()=>undo(0),L("Redo","Повторить")+" (Ctrl+Shift+Z)"),
+ib("📄",L("Page","Страница"),settings,L("Title, description, background, subpages","Название, описание, фон, подстраницы")),ib("📱",L("Phone","Телефон"),preview,L("Preview on a phone screen","Как на экране телефона")))}
+if(MP)eb.append(ib("📍",L("Add markers","Новые метки"),e=>{MKon^=1;e.currentTarget.classList.toggle("on",!!MKon);HT.classList.toggle("mke",!!MKon);
+if(MKon)toast(L("Click the map to place a marker. Drag markers to move them; click one to edit it.","Клик по карте ставит метку. Метки можно перетаскивать, клик по метке — редактировать."))},L("Place markers by clicking the map","Ставить метки кликом по карте")),
+ib("☰",L("Markers","Метки"),mkList,L("All markers","Все метки")),ib("⏱",L("Events","События"),events,L("Timeline events","События хронологии")));
+eb.append(ib("⚙","",token,L("GitHub access","Доступ к GitHub")),ib("Aa","",texts,L("Interface texts","Тексты интерфейса")));
 editable();bar();if(!tok)toast(L("Edit mode. Changes stay in this browser until you publish them (⚙ — GitHub access).","Режим редактирования. Изменения хранятся в браузере, пока вы их не опубликуете (⚙ — доступ к GitHub)."))}
+if(PV&&PAGE&&!/^map\//.test(SRC))PG=draft[PAGE]&&await pageObj(PAGE);
+if(PG){if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
+DOC=D.querySelector("article.doc")||(NEWP?(D.querySelector("main>section").replaceChildren(h("article",{cls:"doc"})),D.querySelector("article.doc")):null);
+if(DOC){await initKids();if(ED)docInit();render()}}
+if(MP&&!PV)await mapInit()}
 window.EDIT={toggle(){if(on){LS.ascwEditOn="";location.reload()}else start()}};
-D.addEventListener("lang",()=>{if(!on)return;bar();showText();if(PG)showPage(PG);draw()});
+D.addEventListener("lang",()=>{if(!on)return;bar();showText();render()});
 start();
+})();

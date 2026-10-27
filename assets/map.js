@@ -13,7 +13,7 @@ SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-9L2.6-3 9-3 4-1 5.6 7 0 3.5-5.6 7
 FN={play:"Play",exo:'"Exo 2"',inter:"Inter",a:"A"}, // marker name fonts (f)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
 P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d");
-let k=1,kk,mvT,raf,an,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+let k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
 try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
@@ -70,8 +70,11 @@ if(CO){const o=ox;o.clearRect(0,0,W,H);o.lineJoin="round";
 RG.forEach(r=>{const q=path(r);o.globalAlpha=r==R[sel]?0:.28;o.fillStyle=r.c;o.fill(q,"evenodd");o.save();o.clip(q,"evenodd");o.globalAlpha=.85;o.strokeStyle=r.c;o.lineWidth=14;o.stroke(q);o.restore()});o.globalAlpha=1}
 if(G)tq()}
 // markers live outside the zoomed layer and are re-positioned each frame, so icons and names stay crisp vectors at any zoom
-const drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="12" y="1"${q.f&&FN[q.f]?` style='font-family:${FN[q.f]},sans-serif'`:""}>${esc(mn(q))}</text></g>`).join("");posM()},
-posM=()=>{mw.querySelectorAll("g").forEach((e,i)=>{const q=MK[i];if(q)e.style.transform=`translate(${x+(q.o+180)/360*W*k}px,${y+(90-q.a)/180*H*k}px)`});
+// marker: {o lon, a lat, n / r name EN / RU, k kind, f font, ten / tru text, y0 / y1 years shown, z importance: 0 always, 1 from medium zoom, 2 close-up only}
+const mOn=q=>!(q.y0!=null&&yr<q.y0)&&!(q.y1!=null&&yr>q.y1),
+drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"}${i===ms?' class="s"':""}><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="12" y="1"${q.f&&FN[q.f]?` style='font-family:${FN[q.f]},sans-serif'`:""}>${esc(mn(q))}</text></g>`).join("");posM()},
+posM=()=>{const zl=k/fit();mw.querySelectorAll("g").forEach((e,i)=>{const q=MK[i];if(!q)return;e.style.transform=`translate(${x+(q.o+180)/360*W*k}px,${y+(90-q.a)/180*H*k}px)`;
+e.classList.toggle("z",(q.z==1&&zl<2.2)||(q.z==2&&zl<4.5))});
 // graticule labels: light, pinned to the top / left edge of the view, hidden under the button column
 const t0=Math.max(y,0)+6,l0=Math.max(x,0)+6;
 gx.querySelectorAll("span").forEach(e=>{if(e.dataset.o!=null){const X=x+(+e.dataset.o+180)/360*W*k+4;e.style.transform=`translate(${X}px,${t0}px)`;e.hidden=X<l0+40||X>m.clientWidth-zw()-70}
@@ -87,13 +90,15 @@ lvB();rs();if(G)gB()}
 function upd(){ // apply the selected year
 zt.textContent=ty.textContent=yr;
 tz.querySelectorAll(".f").forEach(f=>f.classList.toggle("a",f.dataset.y<=yr));
-if(ver()!=cv)setVer()}
+if(ver()!=cv)setVer();drawM()}
 const hit=(mx,my)=>RG.find(r=>hc.isPointInPath(path(r),mx,my,"evenodd"))?.id; // country under a map point
 function pick(id){
-id=id&&R[id]?+id:null;
+id=id&&R[id]?+id:null;if(id!=null)ms=null;
 sel=id;if(sel)panel();
-p.classList.toggle("o",!!sel);hi()}
-function panel(){if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);px.textContent=(ru()?o.tru:o.ten)||L("Placeholder text","Текст-заглушка");MAP.onPanel?.(r)}}
+p.classList.toggle("o",!!(sel||ms!=null));hi();drawM()}
+function pickM(i){ms=i;sel=null;hi();panel();p.classList.add("o");drawM()} // marker selected: its name and text in the side panel
+function panel(){if(ms!=null&&MK[ms]){const q=MK[ms];pt.textContent=mn(q);px.textContent=(ru()?q.tru||q.ten:q.ten||q.tru)||"";MAP.onMarker?.(ms);return}
+if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);px.textContent=(ru()?o.tru:o.ten)||L("Placeholder text","Текст-заглушка");MAP.onPanel?.(r)}}
 function col(on){CO=on;c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}drawOv()}
 zc.onclick=()=>col(!CO);
 
@@ -104,12 +109,13 @@ if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/
 m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];
 if(!one||mv>6||e.type!="pointerup")return;const r=m.getBoundingClientRect(),t=Date.now();
 if(t-tap<300){zoom(2,e.clientX-r.left,e.clientY-r.top,1);tap=0;return}
-tap=t;const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k;if(!MAP.onTap?.(mx,my))pick(hit(mx,my))};
+tap=t;const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k,g=D.elementFromPoint(e.clientX,e.clientY)?.closest("#mw [data-m]");
+if(g&&!MAP.onTap)return pickM(+g.dataset.m);if(!MAP.onTap?.(mx,my,g&&+g.dataset.m))pick(hit(mx,my))};
 m.onlostpointercapture=e=>{delete P[e.pointerId]};
 m.onwheel=e=>{e.preventDefault();const r=m.getBoundingClientRect();zoom(Math.exp(-e.deltaY*.002),e.clientX-r.left,e.clientY-r.top)};
 zi.onclick=()=>G?(gD=cl(gD/1.3),rq()):zoom(1.6,m.clientWidth/2,m.clientHeight/2,1);
 zo.onclick=()=>G?(gD=cl(gD*1.3),rq()):zoom(1/1.6,m.clientWidth/2,m.clientHeight/2,1);
-pc.onclick=()=>pick();
+pc.onclick=()=>{ms=null;pick()};
 
 // ---- cursor coordinates (2D) ----
 function coords(e){const r=m.getBoundingClientRect();lx=(e.clientX-r.left-x)/k;ly=(e.clientY-r.top-y)/k;showC()}
@@ -122,7 +128,7 @@ const fb=()=>{const t=D.createElement("textarea");t.value=CP;D.body.append(t);t.
 navigator.clipboard?navigator.clipboard.writeText(CP).catch(fb):fb();
 cd.textContent=L("COPIED: ","СКОПИРОВАНО: ")+CP;clearTimeout(fl);fl=setTimeout(()=>{fl=0;cd.innerHTML=CT},1200)}
 cd.onclick=copy;
-D.addEventListener("keydown",e=>{if(e.key=="Escape")tlOpen()?tlClose():pick();else if(e.code=="KeyC"&&!G&&!tlOpen()&&!getSelection().toString())copy()});
+D.addEventListener("keydown",e=>{if(e.target.closest?.("input,textarea,select,[contenteditable]"))return;if(e.key=="Escape")tlOpen()?tlClose():pick();else if(e.code=="KeyC"&&!G&&!tlOpen()&&!getSelection().toString())copy()});
 
 // ---- timeline ----
 function tlB(){
@@ -146,10 +152,10 @@ D.addEventListener("lang",()=>{rs();drawM();panel();showC();if(tlOpen())tlB();if
 addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
 const MAP=window.MAP={ // editor hooks
 redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
-markers(){drawM();if(G)tq()},SH,FN,timeline(){if(tlOpen())tlB()},
+markers(){drawM();if(G)tq()},SH,FN,pickM,yr:()=>yr,focus(o,a){if(G)sw();k=Math.max(k,fit()*3);x=m.clientWidth/2-(o+180)/360*W*k;y=m.clientHeight/2-(90-a)/180*H*k;set(1)},timeline(){if(tlOpen())tlB()},
 toMap(e){const r=m.getBoundingClientRect();return{mx:(e.clientX-r.left-x)/k,my:(e.clientY-r.top-y)/k}},
 sel:()=>sel&&R[sel],W,H};
-upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();lx=(m.clientWidth/2-x)/k;ly=(m.clientHeight/2-y)/k;showC(); // start with the view centreD.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
+upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();lx=(m.clientWidth/2-x)/k;ly=(m.clientHeight/2-y)/k;showC(); /* start with the view centre */D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
@@ -275,7 +281,7 @@ if(sel){const q=path(R[sel]),d=new Path2D;d.rect(0,0,W,H);d.addPath(q);o.save();
 o.fillStyle="#04040a";o.globalAlpha=.5;o.fill(d,"evenodd");o.restore()}
 o.fillStyle="#e8e8e0";o.textAlign="left";o.textBaseline="middle";o.lineJoin="round";o.strokeStyle="#000000b3";
 RG.forEach(r=>{const a=glyphs(r);if(!a)return;const f=a.s*s;o.font=f+"px A";o.lineWidth=f*.14;[...a.t].forEach((ch,i)=>{o.strokeText(ch,a.xs[i]*s,a.y*s);o.fillText(ch,a.xs[i]*s,a.y*s)})});
-MK.forEach(q=>{o.font=24*s+"px "+(FN[q.f]||"Play")+",sans-serif";const X=(q.o+180)/360*S,Y=(90-q.a)/180*Sh,n=mn(q).toUpperCase(),sp=new Path2D(SH[q.k|0]||SH[0]);
+MK.forEach(q=>{if(!mOn(q)||q.z==2)return;o.font=24*s+"px "+(FN[q.f]||"Play")+",sans-serif";const X=(q.o+180)/360*S,Y=(90-q.a)/180*Sh,n=mn(q).toUpperCase(),sp=new Path2D(SH[q.k|0]||SH[0]);
 o.save();o.translate(X,Y);o.scale(1.6*s,1.6*s);o.lineWidth=1.9;o.strokeStyle="#000";o.fill(sp,"evenodd");o.stroke(sp);o.restore();
 o.lineWidth=5*s;o.strokeStyle="#000000b3";o.strokeText(n,X+19*s,Y);o.fillText(n,X+19*s,Y)});
 gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,tc);gl.generateMipmap(gl.TEXTURE_2D);

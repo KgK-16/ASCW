@@ -1,5 +1,0 @@
-{{- /* text bound to a page field or an interface string: k = title | description | k:<key>, l = en | ru */ -}}
-{{- $p := .p }}{{ $k := .k }}{{ $l := .l -}}
-{{- if eq $k "title" }}{{ if eq $l "ru" }}{{ default $p.Title $p.Params.title_ru }}{{ else }}{{ $p.Title }}{{ end -}}
-{{- else if eq $k "description" }}{{ if eq $l "ru" }}{{ default $p.Description $p.Params.description_ru }}{{ else }}{{ $p.Description }}{{ end -}}
-{{- else if hasPrefix $k "k:" }}{{ with index hugo.Data.text (strings.TrimPrefix "k:" $k) }}{{ index . $l }}{{ end }}{{ end -}}
