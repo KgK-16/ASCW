@@ -216,7 +216,8 @@ st=`--x:${q.x};--y:${q.y};--w:${q.w};--f:${q.fs||16};text-align:${q.al||"left"};
 const body=q.t=="img"?(q.src?`<img src="${img(q.src)}" alt="" draggable="false">`:`<div class="ph pi">🖼</div>`)+(q["cap_"+l]?`<figcaption>${esc(q["cap_"+l])}</figcaption>`:"")
 :q.t=="hr"?"<hr>":q.t=="links"?`<ul class="bk-links">${kids().map(k=>`<li${k.nw?' class="nw"':""}><a>${esc(l=="ru"?k.ru||k.en:k.en)}</a></li>`).join("")||`<li class="ph">${L("No pages yet","Страниц пока нет")}</li>`}</ul>`
 :q.bind?`<div>${esc(bt(q.bind,l))||ph}</div>`:(md(q[l])||ph);
-return`<div class="fi f-${q.t}${sc(q)}${j===SI?" sel":""}" data-i="${j}" style="${st}">${body}<i class="rl"></i><i class="rr"></i></div>`}
+const cx=(q.x+q.w/2)/DW(),pos=cx<.4?"pl":cx>.6?"pr":"pc";
+return`<div class="fi f-${q.t} ${pos}${sc(q)}${j===SI?" sel":""}" data-i="${j}" style="${st}">${body}<i class="rl"></i><i class="rr"></i></div>`}
 function draw(){if(!LY)return;LY.fr.style.setProperty("--dw",DW());LY.fr.innerHTML=IT().map(cell).join("")+'<i class="gd gv"></i><i class="gd gh"></i>';tools()}
 function mark(){LY.fr.querySelectorAll(".sel").forEach(e=>e.classList.remove("sel"));LY.fr.querySelector(`[data-i="${SI}"]`)?.classList.add("sel");tools()} // selection without re-rendering
 function tools(){LY.tb.hidden=SI==null;if(SI==null)return;const q=IT()[SI],e=LY.fr.querySelector(`[data-i="${SI}"]`);if(!q||!e){SI=null;LY.tb.hidden=true;return}

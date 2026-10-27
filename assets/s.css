@@ -37,6 +37,7 @@ font-size:max(calc(var(--f)*100cqw/var(--dw)),min(11px,var(--f)*1px));line-heigh
 .fi.st-t{line-height:1.2}article .fi p{margin:0 0 .7em}
 article .f-img img{display:block;width:100%;margin:0;border:0}article .f-hr hr{margin:0;width:100%;border:0;border-top:1px solid;color:#6665c0;opacity:.4}article .f-hr[style*=color] hr{color:inherit;opacity:1}
 @media(max-width:700px){.fr{display:flex;flex-direction:column;gap:14px}.fi{margin:0;width:auto;align-self:stretch;font-size:max(11px,min(var(--f)*1px,var(--f)*.6px + 8px))}
+.fi.pl{align-self:flex-start}.fi.pr{align-self:flex-end}.fi.pc{align-self:center;text-align:center!important}.fi:is(.pl,.pr,.pc){width:min(100%,calc(var(--w)*1px))}
 .f-hr{width:calc(var(--w)*100%/var(--dw));align-self:center}}
 .bk-links{font:400 1em "Exo 2",sans-serif;letter-spacing:3px;text-transform:uppercase;color:#e8e8e0a6}
 article .bk-links{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.85em}article .bk-links li{margin:0}
