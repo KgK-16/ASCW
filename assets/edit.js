@@ -202,7 +202,7 @@ let LY=null,SI=null,HI=[],HR=[],DG=null;
 const IT=()=>PG.items??=(PG.body_en||PG.body_ru?[{t:"text",x:0,y:0,w:DW(),fs:16,en:PG.body_en||"",ru:PG.body_ru||""}]:[]),
 cl=(v,a,b)=>Math.min(b,Math.max(a,v)),
 snap=()=>JSON.stringify(IT()),
-DW=()=>Math.min(PG.width||765,1200)-80, // design width of the layout, px
+DW=()=>920, // design width of the layout: strip 1000 px − padding
 // fixed design system: text sizes come only from styles, colours only from the site palette, strip width up to 1200 px
 STY={"":16,h:22,k:11,t:45,s:13},PAL=[["","Default","По умолчанию"],["#e8e8e0","Light","Светлый"],["#6665c0","Accent","Акцент"],["#8d8cf0","Accent light","Светлый акцент"],["#e8e8e099","Muted","Приглушённый"]],
 fixSz=o=>{if(o.t=="text"||o.t=="links")o.fs=STY[o.st||""];else delete o.fs;if(o.col&&!PAL.some(c=>c[0]==o.col))delete o.col};
@@ -254,20 +254,14 @@ set:(l,v)=>{if(k?.startsWith("k:"))setText(k.slice(2),l,v);else if(k){PG[f(l)]=v
 start:()=>{if(!k){HI.push(LY.last);HR=[]}}})}
 function pickImg(o){const f=h("input",{type:"file",accept:"image/*"});f.onchange=async()=>{if(!f.files[0])return;o.src=await upload(f.files[0]);commit()};f.click()}
 function caption(b){dialog(L("Caption","Подпись"),...["en","ru"].map(l=>lab(l.toUpperCase(),inp(b["cap_"+l],v=>{b["cap_"+l]=v;commit(0)}))))}
-function pageSet(){const S=D.querySelector("section"),M=D.querySelector("main"),ap=()=>{S.style.setProperty("--sw",PG.width?PG.width+"px":"");
-M.style.setProperty("--bg",PG.bg?PG.bg=="none"?"none":`url(${img(PG.bg)})`:"");tools()},sv=()=>{WJ(PAGE,PG);ap()},
-rg=h("input",{type:"range",min:800,max:1200,step:100,cls:"ei"}),nv=h("span",{});rg.value=cl(PG.width||800,800,1200);nv.textContent=rg.value+" px";
-rg.oninput=()=>{const d0=DW();PG.width=+rg.value;const d1=DW(),dx=Math.round((d1-d0)/2); // items stay centred and inside the strip; their size does not change
-IT().forEach(q=>{q.w=Math.min(q.w,d1);q.x=cl(q.x+dx,0,d1-q.w)});nv.textContent=rg.value+" px";sv();draw()};
-dialog(L("Page","Страница"),lab(L("Width of the central strip","Ширина центральной ленты"),h("div",{cls:"row"},rg,nv)),
-h("div",{cls:"row"},btn(L("Background image…","Фоновое изображение…"),()=>{const f=h("input",{type:"file",accept:"image/*"});f.onchange=async()=>{if(f.files[0]){PG.bg=await upload(f.files[0]);sv()}};f.click()}),
+function pageSet(){const M=D.querySelector("main"),sv=()=>{WJ(PAGE,PG);M.style.setProperty("--bg",PG.bg?PG.bg=="none"?"none":`url(${img(PG.bg)})`:"")};
+dialog(L("Page background","Фон страницы"),h("div",{cls:"row"},btn(L("Background image…","Фоновое изображение…"),()=>{const f=h("input",{type:"file",accept:"image/*"});f.onchange=async()=>{if(f.files[0]){PG.bg=await upload(f.files[0]);sv()}};f.click()}),
 btn(L("No background","Без фона"),()=>{PG.bg="none";sv()}),btn(L("Default background","Фон по умолчанию"),()=>{delete PG.bg;sv()})))}
 function layout(){const a=D.querySelector("section article");if(!a||!PG)return;
 const fr=h("div",{cls:"fr"}),tb=h("div",{cls:"ltb",hidden:""}),
 bar2=h("div",{cls:"lad"},btn("+ "+L("Text","Текст"),()=>add("text")),btn("+ "+L("Image","Изображение"),()=>add("img")),btn("+ "+L("Links","Ссылки"),()=>add("links")),btn("+ ―",()=>add("hr"),L("Line","Линия")),
-btn("↶",()=>undo(1),"Ctrl+Z"),btn("↷",()=>undo(0),"Ctrl+Shift+Z"),btn("▭ "+L("Page","Страница"),pageSet,L("Width and background","Ширина и фон")));
-if(PG.width>1200)PG.width=1200;
-if(PG.width)D.querySelector("section").style.setProperty("--sw",PG.width+"px");if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
+btn("↶",()=>undo(1),"Ctrl+Z"),btn("↷",()=>undo(0),"Ctrl+Shift+Z"),btn("▭ "+L("Background","Фон"),pageSet,L("Page background","Фон страницы")));
+delete PG.width;if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
 a.replaceChildren(fr,bar2,tb);a.classList.add("lea");IT().forEach(fixSz);LY={el:a,fr,tb,last:snap()};draw();
 fr.addEventListener("pointerdown",down);fr.addEventListener("dragstart",e=>e.preventDefault());fr.addEventListener("selectstart",e=>e.preventDefault());fr.addEventListener("pointermove",move);fr.addEventListener("pointerup",up);fr.addEventListener("pointercancel",up);
 fr.addEventListener("dblclick",e=>{const t=(D.elementFromPoint(e.clientX,e.clientY)||e.target).closest(".fi");if(!t)return;const o=IT()[+t.dataset.i]; // pointer capture retargets dblclick

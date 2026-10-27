@@ -3,7 +3,7 @@
  "items": [
   {
    "t": "text",
-   "x": 270,
+   "x": 170,
    "y": 370,
    "w": 580,
    "al": "center",
@@ -15,18 +15,18 @@
   },
   {
    "t": "text",
-   "x": 205,
+   "x": 105,
    "y": 430,
    "w": 710,
    "al": "left",
    "fs": 45,
-   "en": "Second Continental war",
+   "en": "Second Continental War",
    "st": "t",
    "col": "#6665c0"
   },
   {
    "t": "text",
-   "x": 260,
+   "x": 160,
    "y": 530,
    "w": 600,
    "al": "center",
@@ -35,13 +35,13 @@
   },
   {
    "t": "hr",
-   "x": 504,
+   "x": 404,
    "y": 490,
    "w": 112
   },
   {
    "t": "text",
-   "x": 260,
+   "x": 160,
    "y": 320,
    "w": 600,
    "al": "center",
@@ -51,13 +51,12 @@
   },
   {
    "t": "hr",
-   "x": 504,
+   "x": 404,
    "y": 360,
    "w": 112
   }
  ],
- "width": 1200,
  "body_ru": "",
  "body_en": "",
- "description": "Archive of the Second Contitental war"
+ "description": "Archive of the Second Continental War"
 }

@@ -10,7 +10,7 @@ a:hover,.bt:hover{color:#e8e8e0}nav a[aria-current]{color:#e8e8e0;box-shadow:ins
 :focus-visible{outline:1px solid #8d8cf0;outline-offset:3px}
 main{flex:1;display:flex;justify-content:center;position:relative;isolation:isolate}
 main::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(#04040a8c,#04040a8c),var(--bg,url(bg.webp)) center/cover} /* background fixed to the screen: never stretched by long pages */
-section{width:min(var(--sw,765px),1200px,100%);padding:0 clamp(16px,4vw,40px);background:#020206e0;border:solid #6665c04d;border-width:0 1px;display:flex;flex-direction:column;justify-content:center;text-align:center}
+section{width:min(1000px,100%);padding:0 clamp(16px,4vw,40px);background:#020206e0;border:solid #6665c04d;border-width:0 1px;display:flex;flex-direction:column;justify-content:center;text-align:center}
 p{letter-spacing:5px;color:#6665c0}
 h1{font:min(45px,5vw)/1.2 A,"Exo 2",sans-serif;letter-spacing:.1em;margin:20px 0 24px}
 h1 b,hr{color:#6665c0;font-weight:inherit}

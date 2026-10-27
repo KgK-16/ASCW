@@ -22,5 +22,4 @@ s=l=>{d.lang=l;document.title=t.dataset[l];tp()};document.addEventListener("DOMC
 </nav>
 <script>{const e=document.getElementById("ed"),on=()=>{const s=document.createElement("script");s.src=e.dataset.js;document.head.append(s)};let k={};try{if(/[?&]edit\b/.test(location.search))localStorage.ascwEdit=1;k=localStorage}catch{}
 if(k.ascwEdit){e.hidden=false;e.onclick=()=>{if(window.EDIT)EDIT.toggle();else{k.ascwEditOn=1;on()}};if(k.ascwEditOn)on()}}</script>
-<main{{ with .Params.bg }} style="--bg:{{ if eq . "none" }}none{{ else }}url({{ . }}){{ end }}"{{ end }}>{{- /* strip width; the layout grid has one 60 px column (40 + 20 gap) per 60 px of it, so blocks keep their size when the strip changes */ -}}
-<section{{ with .Params.width }}{{ $w := math.Min . 1200 }} style="--sw:{{ $w }}px;--n:{{ math.Max 1 (math.Round (div (sub $w 60) 60.0)) }}"{{ end }}>
+<main{{ with .Params.bg }} style="--bg:{{ if eq . "none" }}none{{ else }}url({{ . }}){{ end }}"{{ end }}><section>
