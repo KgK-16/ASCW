@@ -27,12 +27,12 @@ two=o=>{const a=Object.values(o);return a[1]&&{d:Math.hypot(a[0].x-a[1].x,a[0].y
 ver=()=>V.reduce((a,v)=>v.y<=yr?v:a,V[0]), // latest map version not after the selected year
 bsrc=l=>U+`map/${cv.y}/b${l}.webp`;
 function glyphs(r){ // label letters keep their proportions; letter spacing stretches the name to its box width
-// set on the site (COU): lx / ly label shift, ls size factor, lo opacity
+// set on the site (COU): lx / ly label shift, ls size factor, lk extra letter spacing (in letter heights), lo opacity
 const c=COU[r.c]||{},f=c.ls||1,q=(ru()?r.sr:r.s)*f;if(!q)return null;
 const t=nm(r).toUpperCase(),n=t.length,w=(ru()?r.wr:r.w)*f;hc.font=q+"px A";
 let ws=[...t].map(ch=>hc.measureText(ch).width),nat=ws.reduce((a,v)=>a+v,0),z=q;
 if(nat>w&&w){const f=w/nat;ws=ws.map(v=>v*f);nat=w;z=q*f} // a renamed country longer than its box: smaller letters, same proportions
-const ls=n>1?Math.max(0,(w-nat)/(n-1)):0;let X=(ru()?r.xr:r.x)+(c.lx||0)-(nat+ls*(n-1))/2;
+const ls=n>1?Math.max(-.2*z,Math.max(0,(w-nat)/(n-1))+(c.lk||0)*z):0;let X=(ru()?r.xr:r.x)+(c.lx||0)-(nat+ls*(n-1))/2;
 return{t,s:+z.toFixed(1),y:(ru()?r.yr:r.y)+(c.ly||0),o:c.lo,xs:ws.map(v=>{const o=X;X+=v+ls;return o})}}
 function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>{if(el._s==src)el.src=src},()=>{})} // decode off the main thread, then swap
 
