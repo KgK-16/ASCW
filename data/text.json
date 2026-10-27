@@ -7,10 +7,6 @@
   "en": "Menu",
   "ru": "Меню"
  },
- "nav_about": {
-  "en": "About Project",
-  "ru": "О проекте"
- },
  "nav_archive": {
   "en": "Archive",
   "ru": "Архив"
@@ -22,17 +18,5 @@
  "wip": {
   "en": "Work-In-Progress",
   "ru": "В разработке"
- },
- "home_1": {
-  "en": "Archive of the",
-  "ru": "Архив"
- },
- "home_2": {
-  "en": "Second Continental War",
-  "ru": "Второй Континентальной Войны"
- },
- "home_sub": {
-  "en": "Handmade world, based on World War II and Cold War",
-  "ru": "Рукотворный мир по мотивам Второй мировой и Холодной войны"
  }
 }

@@ -91,7 +91,7 @@ D.head.append(h("style",{},`
 .lea .hh{position:absolute;left:0;right:0;bottom:-5px;height:8px;cursor:ns-resize;display:none;font-style:normal}.lea .sel .hh{display:block;background:#8d8cf066}
 .lad{display:flex;gap:4px;flex-wrap:wrap;margin:22px 0 8px;justify-content:center}
 .ltb .tbh{cursor:move;padding:0 6px;font-size:18px;line-height:28px;color:#8d8cf0;user-select:none;touch-action:none}
-.ltb{position:absolute;z-index:30;display:flex;gap:2px;flex-wrap:wrap;background:#05050df2;border:1px solid #6665c0;padding:3px;max-width:100%}.ltb .eb{min-height:28px;padding:3px 7px}
+.ltb[hidden]{display:none}.ltb{position:absolute;z-index:30;display:flex;gap:2px;flex-wrap:wrap;background:#05050df2;border:1px solid #6665c0;padding:3px;max-width:100%}.ltb .eb{min-height:28px;padding:3px 7px}
 @media(max-width:800px){#ae{width:100%}#ae .pv{border-left:0;display:none}#ae.tg .pv{display:block}#ae.tg textarea{display:none}}
 `));
 let pb,eb,et;
@@ -205,12 +205,16 @@ cl=(v,a,b)=>Math.min(b,Math.max(a,v)),r1=v=>Math.round(v*10)/10,
 snap=()=>JSON.stringify(BL());
 function commit(hist=1){if(hist){HI.push(LY.last);HR=[];if(HI.length>200)HI.shift()}PG.body_en=PG.body_ru="";WJ(PAGE,PG);LY.last=snap();draw()}
 function undo(back){const a=back?HI:HR,b=back?HR:HI;if(!a.length)return;b.push(snap());PG.blocks=JSON.parse(a.pop());SB=SI=null;LY.last=snap();PG.body_en=PG.body_ru="";WJ(PAGE,PG);draw()}
-function cell(b,i){const st=`grid-column:${(b.c|0)+1}/span ${b.w||12};text-align:${b.al||"left"};align-self:${b.va||"start"}`,l=HT.lang,
+// text bound to a page field (title, description) or to an interface string (k:<key>, data/text.json)
+const bt=(k,l)=>k.startsWith("k:")?TX[k.slice(2)]?.[l]??"":l=="ru"?PG[k+"_ru"]||PG[k]||"":PG[k]||"",
+sc=o=>(o.st?" st-"+o.st:""),col=o=>o.col?`;color:${o.col}`:"";
+function cell(b,i){const st=`grid-column:${(b.c|0)+1}/span ${b.w||12};text-align:${b.al||"left"};align-self:${b.va||"start"}${col(b)}`,l=HT.lang,
 ph=`<p class="ph">${L("Text","Текст")}</p>`;
 if(b.t=="img")return`<figure class="bk bk-img${i===SB?" sel":""}" data-b="${i}" style="${st}">${b.src?`<img src="${img(b.src)}" alt="">`:`<div class="ph pi">🖼</div>`}${b["cap_"+l]?`<figcaption>${esc(b["cap_"+l])}</figcaption>`:""}</figure>`;
 if(b.t=="cv")return`<div class="bk bk-cv${i===SB?" sel":""}" data-b="${i}" style="${st}"><div class="cv" style="aspect-ratio:100/${b.h||50}">${(b.items||[]).map((q,j)=>
-`<div class="it it-${q.t}${i===SB&&j===SI?" sel":""}" data-it="${j}" style="left:${q.x}%;top:${q.y}%;width:${q.w}%;--f:${q.fs||16};text-align:${q.al||"left"};z-index:${q.z|0}">${q.t=="img"?(q.src?`<img src="${img(q.src)}" alt="">`:`<div class="ph pi">🖼</div>`):(md(q[l])||ph)}</div>`).join("")}<i class="hh" title="${L("Height","Высота")}"></i></div></div>`;
-return`<div class="bk bk-text${i===SB?" sel":""}" data-b="${i}" style="${st}">${md(b[l])||ph}</div>`}
+`<div class="it it-${q.t}${sc(q)}${i===SB&&j===SI?" sel":""}" data-it="${j}" style="left:${q.x}%;top:${q.y}cqw;width:${q.w}%;--f:${q.fs||16};text-align:${q.al||"left"};z-index:${q.z|0}${col(q)}">${
+q.t=="img"?(q.src?`<img src="${img(q.src)}" alt="">`:`<div class="ph pi">🖼</div>`):q.t=="hr"?"<hr>":q.bind?`<div>${esc(bt(q.bind,l))||ph}</div>`:(md(q[l])||ph)}</div>`).join("")}<i class="hh" title="${L("Height","Высота")}"></i></div></div>`;
+return`<div class="bk bk-text${sc(b)}${i===SB?" sel":""}" data-b="${i}" style="${st}">${md(b[l])||ph}</div>`}
 function draw(){if(!LY)return;const B=BL();
 LY.grid.innerHTML=B.map(cell).join("");
 LY.grid.querySelectorAll(".bk,.it").forEach(e=>e.insertAdjacentHTML("beforeend",'<i class="rl"></i><i class="rr"></i>'));
@@ -222,10 +226,14 @@ const it=b.t=="cv"&&SI!=null?b.items[SI]:null,tg=it||b,set=(k,v)=>{tg[k]=v;commi
 alg=["left","center","right",...(it?[]:["justify"])].map((a,j)=>btn(["⯇","≡","⯈","☰"][j],()=>set("al",a),{left:L("Left","Влево"),center:L("Centre","По центру"),right:L("Right","Вправо"),justify:L("Justify","По ширине")}[a])),
 B=[];
 if(!it){B.push(...alg,btn("⤒",()=>set("va","start"),L("Top","Сверху")),btn("↕",()=>set("va","center"),L("Middle","По середине")),btn("⤓",()=>set("va","end"),L("Bottom","Снизу")));
-if(b.t=="cv")B.push(btn("+T",()=>addItem("text"),L("Text on canvas","Текст на холсте")),btn("+🖼",()=>addItem("img"),L("Image on canvas","Изображение на холсте")))}
+if(b.t=="cv")B.push(btn("+T",()=>addItem("text"),L("Text on canvas","Текст на холсте")),btn("+🖼",()=>addItem("img"),L("Image on canvas","Изображение на холсте")),btn("+―",()=>addItem("hr"),L("Line on canvas","Линия на холсте")))}
 else{B.push(...alg,btn("A−",()=>set("fs",Math.max(6,(it.fs||16)-2))),btn("A+",()=>set("fs",(it.fs||16)+2)),
 btn("⬆",()=>set("z",(it.z|0)+1),L("Bring forward","Выше")),btn("⬇",()=>set("z",Math.max(0,(it.z|0)-1)),L("Send backward","Ниже")))}
-if(tg.t=="text")B.push(btn("✎",()=>editText(tg),L("Edit text","Редактировать текст")));
+if(tg.t=="text"){const se=h("select",{cls:"eb",title:L("Text style","Стиль текста")},...[["",L("Text","Текст")],["k",L("Kicker","Надзаголовок")],["t",L("Title","Заголовок")],["s",L("Subtitle","Подзаголовок")]].map(([v,t])=>h("option",{value:v},t)));
+se.value=tg.st||"";se.onchange=()=>{if(se.value)tg.st=se.value;else delete tg.st;commit()};
+const cc=h("input",{type:"color",cls:"eb",title:L("Colour","Цвет"),style:"width:34px;padding:2px"});cc.value=tg.col||"#e8e8e0";cc.oninput=()=>{tg.col=cc.value;commit()};
+B.push(se,cc,btn("⌀",()=>{delete tg.col;commit()},L("Default colour","Цвет по умолчанию")),btn("✎",()=>editText(tg),L("Edit text","Редактировать текст")))}
+if(tg.t=="hr"){const cc=h("input",{type:"color",cls:"eb",title:L("Colour","Цвет"),style:"width:34px;padding:2px"});cc.value=tg.col||"#6665c0";cc.oninput=()=>{tg.col=cc.value;commit()};B.push(cc)}
 if(tg.t=="img")B.push(btn("🖼",()=>pickImg(tg),L("Choose image","Выбрать изображение")));
 if(b.t=="img"&&!it)B.push(btn("Aa",()=>caption(b),L("Caption","Подпись")));
 B.push(btn("⧉",()=>{if(it){b.items.push({...it,x:cl(it.x+3,0,95),y:cl(it.y+3,0,95)});SI=b.items.length-1}else{BL().splice(SB+1,0,JSON.parse(JSON.stringify(b)));SB++}commit()},L("Duplicate","Дублировать")),
@@ -243,17 +251,28 @@ g.onpointerup=()=>{g.onpointermove=null}};
 g.ondblclick=()=>{LS.ascwTb="";tools()};return g}
 function del(){const B=BL();if(SB==null)return;if(SI!=null){B[SB].items.splice(SI,1);SI=null}else{B.splice(SB,1);SB=null}commit()}
 function add(t){const B=BL(),b=t=="cv"?{t,c:0,w:12,h:50,items:[]}:{t,c:0,w:12,al:"left"};B.push(b);SB=B.length-1;SI=null;commit();if(t=="text")editText(b);if(t=="img")pickImg(b)}
-function addItem(t){const b=BL()[SB],q=t=="img"?{t,x:30,y:20,w:40}:{t,x:10,y:10,w:40,fs:18,al:"left"};b.items.push(q);SI=b.items.length-1;commit();if(t=="text")editText(q);else pickImg(q)}
-function editText(o){openAE(PAGE,{get:l=>o[l]||"",set:(l,v)=>{o[l]=v;PG.body_en=PG.body_ru="";WJ(PAGE,PG);LY.last=snap();draw()},start:()=>{HI.push(LY.last);HR=[]}})}
+function addItem(t){const b=BL()[SB],q=t=="img"?{t,x:30,y:20,w:40}:t=="hr"?{t,x:40,y:20,w:20}:{t,x:10,y:10,w:40,fs:18,al:"left"};b.items.push(q);SI=b.items.length-1;commit();if(t=="text")editText(q);else if(t=="img")pickImg(q)}
+function editText(o){const k=o.bind,f=l=>k+(l=="ru"?"_ru":"");
+openAE(PAGE,{get:l=>k?(k.startsWith("k:")?TX[k.slice(2)]?.[l]:PG[f(l)])||"":o[l]||"",
+set:(l,v)=>{if(k?.startsWith("k:"))setText(k.slice(2),l,v);else if(k){PG[f(l)]=v;WJ(PAGE,PG);syncAE()}else{o[l]=v;PG.body_en=PG.body_ru="";WJ(PAGE,PG);LY.last=snap()}draw()},
+start:()=>{if(!k){HI.push(LY.last);HR=[]}}})}
 function pickImg(o){const f=h("input",{type:"file",accept:"image/*"});f.onchange=async()=>{if(!f.files[0])return;o.src=await upload(f.files[0]);commit()};f.click()}
 function caption(b){dialog(L("Caption","Подпись"),...["en","ru"].map(l=>lab(l.toUpperCase(),inp(b["cap_"+l],v=>{b["cap_"+l]=v;commit(0)}))))}
+function pageSet(){const S=D.querySelector("section"),M=D.querySelector("main"),ap=()=>{S.style.setProperty("--sw",PG.width?PG.width+"px":"");
+M.style.setProperty("--bg",PG.bg?PG.bg=="none"?"none":`url(${img(PG.bg)})`:"");tools()},sv=()=>{WJ(PAGE,PG);ap()},
+rg=h("input",{type:"range",min:400,max:1600,step:5,cls:"ei"}),nv=h("span",{});rg.value=PG.width||765;nv.textContent=rg.value+" px";
+rg.oninput=()=>{PG.width=+rg.value==765?undefined:+rg.value;nv.textContent=rg.value+" px";sv()};
+dialog(L("Page","Страница"),lab(L("Width of the central strip","Ширина центральной ленты"),h("div",{cls:"row"},rg,nv)),
+h("div",{cls:"row"},btn(L("Background image…","Фоновое изображение…"),()=>{const f=h("input",{type:"file",accept:"image/*"});f.onchange=async()=>{if(f.files[0]){PG.bg=await upload(f.files[0]);sv()}};f.click()}),
+btn(L("No background","Без фона"),()=>{PG.bg="none";sv()}),btn(L("Default background","Фон по умолчанию"),()=>{delete PG.bg;sv()})))}
 function layout(){const a=D.querySelector("section article");if(!a||!PG)return;
 const grid=h("div",{cls:"lay"}),tb=h("div",{cls:"ltb",hidden:""}),
 bar2=h("div",{cls:"lad"},btn("+ "+L("Text","Текст"),()=>add("text")),btn("+ "+L("Image","Изображение"),()=>add("img")),btn("+ "+L("Canvas","Холст"),()=>add("cv")),
-btn("↶",()=>undo(1),"Ctrl+Z"),btn("↷",()=>undo(0),"Ctrl+Shift+Z"));
+btn("↶",()=>undo(1),"Ctrl+Z"),btn("↷",()=>undo(0),"Ctrl+Shift+Z"),btn("▭ "+L("Page","Страница"),pageSet,L("Width and background","Ширина и фон")));
+if(PG.width)D.querySelector("section").style.setProperty("--sw",PG.width+"px");if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
 a.replaceChildren(grid,bar2,tb);a.classList.add("lea");LY={el:a,grid,tb,last:snap()};draw();
 grid.addEventListener("pointerdown",down);grid.addEventListener("pointermove",move);grid.addEventListener("pointerup",up);grid.addEventListener("pointercancel",up);
-grid.addEventListener("dblclick",e=>{const k=e.target.closest(".bk");if(!k)return;const b=BL()[+k.dataset.b],q=e.target.closest(".it");const o=q?b.items[+q.dataset.it]:b;
+grid.addEventListener("dblclick",e=>{const t=D.elementFromPoint(e.clientX,e.clientY)||e.target,k=t.closest(".bk");if(!k)return;const b=BL()[+k.dataset.b],q=t.closest(".it");const o=q?b.items[+q.dataset.it]:b;
 if(o.t=="text")editText(o);else if(o.t=="img")pickImg(o)});
 D.addEventListener("pointerdown",e=>{if(SB!=null&&!e.target.closest(".lay,.ltb,#ae,.dl")){SB=SI=null;mark()}});
 D.addEventListener("keydown",e=>{if(!LY||e.target.closest("input,textarea,[contenteditable]"))return;const k=e.key;
@@ -294,7 +313,9 @@ lab(L("Title","Заголовок")+" · RU",ruI=inp("",()=>{})),lab(L("Address"
 h("div",{cls:"row"},btn(L("Create","Создать"),async()=>{const s=slug(sl.value);if(!s||!en.value.trim())return toast(L("Title and address are required","Нужны заголовок и адрес"),1);
 const p=`content/${dir}${s}/_index.md`;if(await read(p)!=null)return toast(L("This address is taken","Такой адрес уже занят"),1);
 const ws=await Promise.all(kids().map(l=>pageObj("content/"+l.dataset.src))),wt=Math.max(0,...ws.map(o=>o?.weight||0))+1;
-await WJ(p,{title:en.value.trim(),title_ru:ruI.value.trim(),description:"",description_ru:"",weight:wt,body_en:"",body_ru:""});
+await WJ(p,{title:en.value.trim(),title_ru:ruI.value.trim(),description:"",description_ru:"",weight:wt,body_en:"",body_ru:"",blocks:[{t:"cv",c:0,w:12,h:23.9,items:[ // same headings canvas as the other pages
+{t:"text",x:0,y:0,w:100,al:"center",bind:"k:wip",st:"k",fs:11},{t:"text",x:0,y:5,w:100,al:"center",bind:"title",st:"t",fs:45},{t:"hr",x:46.5,y:16.3,w:7},
+{t:"text",x:0,y:19.9,w:100,al:"center",bind:"description",st:"s",fs:13}]}]});
 w.remove();listNew();openAE(p)})));en.focus()}
 async function listNew(){const ul=D.querySelector("section ul")||D.querySelector("section").appendChild(h("ul"));ul.querySelectorAll(".nw").forEach(e=>e.remove());
 for(const p in draft){if(/^content\//.test(p))await src(p);const m=p.match(new RegExp(`^content/${dir.replace(/[/-]/g,"\\$&")}([^/]+)/_index\\.md$`));if(!m||draft[p].del||base[p]!=null)continue;

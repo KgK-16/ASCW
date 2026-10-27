@@ -11,9 +11,9 @@
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
 <meta name="src" content="{{ with .File }}{{ .Path }}{{ end }}">
 <nav>
-<span>{{ partial "t" "brand" }}</span>
-<div><a href="{{ "" | relURL }}">{{ partial "t" "nav_menu" }}</a><a href="{{ "about/" | relURL }}">{{ partial "t" "nav_about" }}</a><a href="{{ "archive/" | relURL }}">{{ partial "t" "nav_archive" }}</a><a href="{{ "map/" | relURL }}">{{ partial "t" "nav_map" }}</a><a id="lq"><span lang="en">EN</span><span lang="ru">РУ</span></a>{{ with resources.Get "edit.js" | js.Build (dict "minify" true "target" "es2020") | fingerprint "md5" }}<a id="ed" hidden data-js="{{ .RelPermalink }}" data-u="{{ "" | relURL }}" data-repo="{{ site.Params.repo }}" title="Edit">✎</a>{{ end }}</div>
+<span class="nl"><a id="lq"><span lang="en">EN</span><span lang="ru">РУ</span></a><span class="br">{{ partial "t" "brand" }}</span></span>
+<div><a href="{{ "" | relURL }}">{{ partial "t" "nav_menu" }}</a><a href="{{ "archive/" | relURL }}">{{ partial "t" "nav_archive" }}</a><a href="{{ "map/" | relURL }}">{{ partial "t" "nav_map" }}</a>{{ with resources.Get "edit.js" | js.Build (dict "minify" true "target" "es2020") | fingerprint "md5" }}<a id="ed" hidden data-js="{{ .RelPermalink }}" data-u="{{ "" | relURL }}" data-repo="{{ site.Params.repo }}" title="Edit">✎</a>{{ end }}</div>
 </nav>
 <script>{const e=document.getElementById("ed"),on=()=>{const s=document.createElement("script");s.src=e.dataset.js;document.head.append(s)};let k={};try{if(/[?&]edit\b/.test(location.search))localStorage.ascwEdit=1;k=localStorage}catch{}
 if(k.ascwEdit){e.hidden=false;e.onclick=()=>{if(window.EDIT)EDIT.toggle();else{k.ascwEditOn=1;on()}};if(k.ascwEditOn)on()}}</script>
-<main><section>
+<main{{ with .Params.bg }} style="--bg:{{ if eq . "none" }}none{{ else }}url({{ . }}){{ end }}"{{ end }}><section{{ with .Params.width }} style="--sw:{{ . }}px"{{ end }}>
