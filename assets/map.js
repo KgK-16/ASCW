@@ -6,7 +6,11 @@
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
 [m,c,im,ov,sv,bi,hl,sl,mw,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc]="m c im ov sv bi hl sl mw g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc".split(" ").map($),
 W=4096,H=2048,T0=320,T1=420, // visible timeline range
-SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-9L2.6-3 9-3 4-1 5.6 7 0 3.5-5.6 7-4-1-9-3-2.6-3z"], // marker shapes by kind (k)
+SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-9L2.6-3 9-3 4-1 5.6 7 0 3.5-5.6 7-4-1-9-3-2.6-3z", // marker shapes by kind (k): circle, star,
+"M-5-5h10v10h-10z","M0-7L7 5H-7z","M0-7L6 0 0 7-6 0z","M-6-4L-4-6 0-2 4-6 6-4 2 0 6 4 4 6 0 2-4 6-6 4-2 0z", // square, triangle, diamond, cross,
+"M-1-7h2v2.2a2.2 2.2 0 1 1-2 0zM-1-1.5h2v6.3a5 5 0 0 0 3.8-3.3l-1.6-.5L7-1l1 4.5-1.5-.4A7 7 0 0 1-6.5 3.1L-8 3.5-7-1l2.8 2-1.6.5a5 5 0 0 0 3.8 3.3z", // anchor,
+"M-5-8h1.6v16h-1.6zM-3.4-8H6l-2.5 3.5L6-1h-9.4z","M-6-6h2.4v2h2.4v-2h2.4v2h2.4v-2H6v12h-12z","M-6 0a6 6 0 1 0 12 0a6 6 0 1 0-12 0zM-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0z"], // flag, fort, ring
+FN={play:"Play",exo:'"Exo 2"',inter:"Inter",a:"A"}, // marker name fonts (f)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
 P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d");
 let k=1,kk,mvT,raf,an,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
@@ -43,7 +47,7 @@ const n=W*k*devicePixelRatio,l=n>4500?3:n>2200?2:n>1100?1:0; // image levels 102
 if(l>lv){if(lv<0&&l)im.src=U+"map/g0.webp"; // light preview while the sharp level loads
 lv=l;load(im,U+`map/g${l}.webp`);lvB()}}
 function lvB(){if(lv<0)return;bi.hidden=!cv.b;if(cv.b)load(bi,bsrc(lv))}
-function apply(){raf=0;c.classList.toggle("t",!!an);c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
+function apply(){raf=0;c.classList.toggle("t",!!an);mw.classList.toggle("t",!!an);posM();c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
 c.classList.add("mv");clearTimeout(mvT);mvT=setTimeout(rest,250)} // while moving: GPU layer only, no restyle/repaint
 function rest(){c.classList.remove("mv");if(k!=kk)c.style.setProperty("--k",kk=k)} // after: zoom-dependent widths, crisp re-raster
 function zoom(f,px,py,anim){const k2=Math.min(Math.max(k*f,fit()),kmax());x=px-(px-x)*k2/k;y=py-(py-y)*k2/k;k=k2;set(anim)}
@@ -65,7 +69,10 @@ function drawOv(){ // country colours as one raster layer (cheap to pan/zoom): l
 if(CO){const o=ox;o.clearRect(0,0,W,H);o.lineJoin="round";
 RG.forEach(r=>{const q=path(r);o.globalAlpha=r==R[sel]?0:.28;o.fillStyle=r.c;o.fill(q,"evenodd");o.save();o.clip(q,"evenodd");o.globalAlpha=.85;o.strokeStyle=r.c;o.lineWidth=14;o.stroke(q);o.restore()});o.globalAlpha=1}
 if(G)tq()}
-const drawM=()=>mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}" transform="translate(${(q.o+180)/360*W} ${(90-q.a)/180*H})"><g class="ms"><path d="${SH[q.k|0]}"/><text x="12" y="1">${mn(q)}</text></g></g>`).join("");
+// markers live outside the zoomed layer and are re-positioned each frame, so icons and names stay crisp vectors at any zoom
+const drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="12" y="1"${q.f&&FN[q.f]?` style='font-family:${FN[q.f]},sans-serif'`:""}>${esc(mn(q))}</text></g>`).join("");posM()},
+posM=()=>mw.querySelectorAll("g").forEach((e,i)=>{const q=MK[i];if(q)e.style.transform=`translate(${x+(q.o+180)/360*W*k}px,${y+(90-q.a)/180*H*k}px)`}),
+esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;");
 
 function names(){RG.forEach(r=>{r.n0??=r.name;r.r0??=r.ru;const o=COU[r.c]||{};r.name=o.en||r.n0;r.ru=o.ru||r.r0})} // names edited on the site win over the generated ones
 function setVer(){ // switch to the map version of the selected year
@@ -133,7 +140,7 @@ D.addEventListener("lang",()=>{rs();drawM();panel();showC();if(tlOpen())tlB();if
 addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
 const MAP=window.MAP={ // editor hooks
 redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
-markers(){drawM();if(G)tq()},timeline(){if(tlOpen())tlB()},
+markers(){drawM();if(G)tq()},SH,FN,timeline(){if(tlOpen())tlB()},
 toMap(e){const r=m.getBoundingClientRect();return{mx:(e.clientX-r.left-x)/k,my:(e.clientY-r.top-y)/k}},
 sel:()=>sel&&R[sel],W,H};
 upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
@@ -262,9 +269,8 @@ if(sel){const q=path(R[sel]),d=new Path2D;d.rect(0,0,W,H);d.addPath(q);o.save();
 o.fillStyle="#04040a";o.globalAlpha=.5;o.fill(d,"evenodd");o.restore()}
 o.fillStyle="#e8e8e0";o.textAlign="left";o.textBaseline="middle";o.lineJoin="round";o.strokeStyle="#000000b3";
 RG.forEach(r=>{const a=glyphs(r);if(!a)return;const f=a.s*s;o.font=f+"px A";o.lineWidth=f*.14;[...a.t].forEach((ch,i)=>{o.strokeText(ch,a.xs[i]*s,a.y*s);o.fillText(ch,a.xs[i]*s,a.y*s)})});
-o.font=24*s+"px Play,sans-serif";
-MK.forEach(q=>{const X=(q.o+180)/360*S,Y=(90-q.a)/180*Sh,n=mn(q).toUpperCase(),sp=new Path2D(SH[q.k|0]);
-o.save();o.translate(X,Y);o.scale(1.6*s,1.6*s);o.lineWidth=1.9;o.strokeStyle="#000";o.fill(sp);o.stroke(sp);o.restore();
+MK.forEach(q=>{o.font=24*s+"px "+(FN[q.f]||"Play")+",sans-serif";const X=(q.o+180)/360*S,Y=(90-q.a)/180*Sh,n=mn(q).toUpperCase(),sp=new Path2D(SH[q.k|0]||SH[0]);
+o.save();o.translate(X,Y);o.scale(1.6*s,1.6*s);o.lineWidth=1.9;o.strokeStyle="#000";o.fill(sp,"evenodd");o.stroke(sp);o.restore();
 o.lineWidth=5*s;o.strokeStyle="#000000b3";o.strokeText(n,X+19*s,Y);o.fillText(n,X+19*s,Y)});
 gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,tc);gl.generateMipmap(gl.TEXTURE_2D);
 const h=hs.getContext("2d");h.clearRect(0,0,S,Sh); // selection outline: own texture, drawn after lighting so it is always bright

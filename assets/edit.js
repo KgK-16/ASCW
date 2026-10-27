@@ -348,7 +348,9 @@ function mkForm(i){const q=MK[i];if(!q)return;const ch=()=>{saveMK()};
 const w=dialog(L("Map marker","Метка на карте"),
 h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(q.n,v=>{q.n=v;ch()})),lab(L("Name","Название")+" · RU",inp(q.r,v=>{q.r=v;ch()}))),
 h("div",{cls:"row"},lab(L("Latitude","Широта"),inp(q.a,v=>{q.a=+v;ch()},{type:"number"})),lab(L("Longitude","Долгота"),inp(q.o,v=>{q.o=+v;ch()},{type:"number"})),
-lab(L("Kind","Тип"),(()=>{const s=h("select",{cls:"ei"},h("option",{value:0},"● "+L("City","Город")),h("option",{value:1},"★ "+L("Capital","Столица")));s.value=q.k|0;s.onchange=()=>{q.k=+s.value;ch()};return s})())),
+lab(L("Kind","Тип"),(()=>{const s=h("select",{cls:"ei"},...[["●",L("Circle","Круг")],["★",L("Star","Звезда")],["■",L("Square","Квадрат")],["▲",L("Triangle","Треугольник")],["◆",L("Diamond","Ромб")],
+["✕",L("Cross","Крест")],["⚓",L("Anchor","Якорь")],["⚑",L("Flag","Флаг")],["♜",L("Fort","Крепость")],["◎",L("Ring","Кольцо")]].map(([i,t],j)=>h("option",{value:j},i+" "+t)));s.value=q.k|0;s.onchange=()=>{q.k=+s.value;ch()};return s})()),
+lab(L("Font","Шрифт"),(()=>{const s=h("select",{cls:"ei"},...[["play","Play"],["exo","Exo 2"],["inter","Inter"],["a","Airborne"]].map(([v,t])=>h("option",{value:v,style:`font-family:${MP.FN[v]}`},t)));s.value=q.f||"play";s.onchange=()=>{if(s.value=="play")delete q.f;else q.f=s.value;ch()};return s})())),
 h("div",{cls:"row"},btn(L("Done","Готово"),()=>{if(!q.n&&!q.r){MK.splice(i,1);saveMK()}w.remove()}),btn(L("Delete","Удалить"),()=>{MK.splice(i,1);saveMK();w.remove()})));
 w.querySelector("input").focus()}
 function events(){const box=h("div",{style:"display:flex;flex-direction:column;gap:10px"}),
