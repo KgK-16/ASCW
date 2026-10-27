@@ -90,6 +90,7 @@ D.head.append(h("style",{},`
 .lea .it .rl,.lea .it .rr{display:none}.lea .it.sel .rl,.lea .it.sel .rr{display:block;background:#e8b04a88}
 .lea .hh{position:absolute;left:0;right:0;bottom:-5px;height:8px;cursor:ns-resize;display:none;font-style:normal}.lea .sel .hh{display:block;background:#8d8cf066}
 .lad{display:flex;gap:4px;flex-wrap:wrap;margin:22px 0 8px;justify-content:center}
+.ltb .tbh{cursor:move;padding:0 6px;font-size:18px;line-height:28px;color:#8d8cf0;user-select:none;touch-action:none}
 .ltb{position:absolute;z-index:30;display:flex;gap:2px;flex-wrap:wrap;background:#05050df2;border:1px solid #6665c0;padding:3px;max-width:100%}.ltb .eb{min-height:28px;padding:3px 7px}
 @media(max-width:800px){#ae{width:100%}#ae .pv{border-left:0;display:none}#ae.tg .pv{display:block}#ae.tg textarea{display:none}}
 `));
@@ -229,9 +230,17 @@ if(tg.t=="img")B.push(btn("🖼",()=>pickImg(tg),L("Choose image","Выбрат�
 if(b.t=="img"&&!it)B.push(btn("Aa",()=>caption(b),L("Caption","Подпись")));
 B.push(btn("⧉",()=>{if(it){b.items.push({...it,x:cl(it.x+3,0,95),y:cl(it.y+3,0,95)});SI=b.items.length-1}else{BL().splice(SB+1,0,JSON.parse(JSON.stringify(b)));SB++}commit()},L("Duplicate","Дублировать")),
 btn("🗑",del,L("Delete","Удалить")));
-LY.tb.replaceChildren(...B);
+LY.tb.replaceChildren(grip(),...B);
 const r=e.getBoundingClientRect(),pr=LY.el.getBoundingClientRect(),ir=it&&e.querySelector(`[data-it="${SI}"]`)?.getBoundingClientRect(),t=ir||r;
-LY.tb.style.top=Math.max(0,t.top-pr.top-LY.tb.offsetHeight-6)+"px";LY.tb.style.left=cl(t.left-pr.left,0,Math.max(0,pr.width-LY.tb.offsetWidth))+"px"}
+let fx=null;try{fx=JSON.parse(LS.ascwTb||"null")}catch{} // toolbar moved by the user stays where it was put (fixed on screen)
+if(fx){LY.tb.style.position="fixed";LY.tb.style.left=cl(fx.x,0,innerWidth-LY.tb.offsetWidth)+"px";LY.tb.style.top=cl(fx.y,48,innerHeight-LY.tb.offsetHeight)+"px";return}
+LY.tb.style.position="";const hgt=LY.tb.offsetHeight+6,above=t.top-pr.top-hgt; // otherwise above the element, or below it when there is no room
+LY.tb.style.top=(t.top-hgt<56?t.bottom-pr.top+6:above)+"px";LY.tb.style.left=cl(t.left-pr.left,0,Math.max(0,pr.width-LY.tb.offsetWidth))+"px"}
+function grip(){const g=h("span",{cls:"tbh",title:L("Drag the panel; double-click — back to the element","Перетащите панель; двойной клик — вернуть к элементу")},"⠿");
+g.onpointerdown=e=>{e.preventDefault();g.setPointerCapture(e.pointerId);const r=LY.tb.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top;
+g.onpointermove=m=>{const x=m.clientX-ox,y=m.clientY-oy;LS.ascwTb=JSON.stringify({x,y});LY.tb.style.position="fixed";LY.tb.style.left=cl(x,0,innerWidth-r.width)+"px";LY.tb.style.top=cl(y,48,innerHeight-r.height)+"px"};
+g.onpointerup=()=>{g.onpointermove=null}};
+g.ondblclick=()=>{LS.ascwTb="";tools()};return g}
 function del(){const B=BL();if(SB==null)return;if(SI!=null){B[SB].items.splice(SI,1);SI=null}else{B.splice(SB,1);SB=null}commit()}
 function add(t){const B=BL(),b=t=="cv"?{t,c:0,w:12,h:50,items:[]}:{t,c:0,w:12,al:"left"};B.push(b);SB=B.length-1;SI=null;commit();if(t=="text")editText(b);if(t=="img")pickImg(b)}
 function addItem(t){const b=BL()[SB],q=t=="img"?{t,x:30,y:20,w:40}:{t,x:10,y:10,w:40,fs:18,al:"left"};b.items.push(q);SI=b.items.length-1;commit();if(t=="text")editText(q);else pickImg(q)}
