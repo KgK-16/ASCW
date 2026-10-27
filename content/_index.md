@@ -20,7 +20,7 @@
    "w": 710,
    "al": "left",
    "fs": 45,
-   "en": "SECOND CONTINENTAL WAR",
+   "en": "Second Continental war",
    "st": "t",
    "col": "#6665c0"
   },
@@ -58,5 +58,6 @@
  ],
  "width": 1200,
  "body_ru": "",
- "body_en": ""
+ "body_en": "",
+ "description": "Archive of the Second Contitental war"
 }
