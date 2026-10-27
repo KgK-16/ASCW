@@ -5,7 +5,7 @@
 // < selection: everything else dimmed, outline on top < graticule, labels, markers.
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
 [m,c,im,ov,sv,bi,hl,sl,mw,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc]="m c im ov sv bi hl sl mw g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc".split(" ").map($),
-W=4096,H=2048,T0=300,T1=420, // visible timeline range
+W=4096,H=2048,T0=320,T1=420, // visible timeline range
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-9L2.6-3 9-3 4-1 5.6 7 0 3.5-5.6 7-4-1-9-3-2.6-3z"], // marker shapes by kind (k)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
 P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d");
