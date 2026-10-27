@@ -27,8 +27,8 @@ two=o=>{const a=Object.values(o);return a[1]&&{d:Math.hypot(a[0].x-a[1].x,a[0].y
 ver=()=>V.reduce((a,v)=>v.y<=yr?v:a,V[0]), // latest map version not after the selected year
 bsrc=l=>U+`map/${cv.y}/b${l}.webp`;
 function glyphs(r){ // label letters keep their proportions; letter spacing stretches the name to its box width
-// set on the site (COU): lx / ly label shift, ls size factor, lk extra letter spacing (in letter heights), lo opacity
-const c=COU[r.c]||{},f=c.ls||1,q=(ru()?r.sr:r.s)*f;if(!q)return null;
+// set on the site (COU): lx / ly label shift, lz letter size in pt of the 4096 px map (1 pt = 4/3 px), lk extra letter spacing (in letter heights), lo opacity
+const c=COU[r.c]||{},q0=ru()?r.sr:r.s;if(!q0)return null;const f=c.lz?c.lz/.75/q0:1,q=q0*f;
 const t=nm(r).toUpperCase(),n=t.length,w=(ru()?r.wr:r.w)*f;hc.font=q+"px A";
 let ws=[...t].map(ch=>hc.measureText(ch).width),nat=ws.reduce((a,v)=>a+v,0),z=q;
 if(nat>w&&w){const f=w/nat;ws=ws.map(v=>v*f);nat=w;z=q*f} // a renamed country longer than its box: smaller letters, same proportions
