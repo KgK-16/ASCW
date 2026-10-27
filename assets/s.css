@@ -35,6 +35,9 @@ article figcaption{font-size:12px;color:#e8e8e099;margin-top:6px}
 .cv{position:relative;container-type:inline-size;width:100%}
 .it{position:absolute;font-size:calc(var(--f)*100cqw/700);line-height:1.35}article .it p{margin:0 0 .4em}article .it>:last-child,article .it>div>:last-child{margin-bottom:0}
 @media(max-width:700px){.bk{grid-column:1/-1!important}}
+.bk-links{font:400 16.5px "Exo 2",sans-serif;letter-spacing:3px;text-transform:uppercase;color:#e8e8e0a6}
+article .bk-links{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.85em}article .bk-links li{margin:0}
+article .bk-links a{font:inherit;letter-spacing:inherit;color:inherit;text-decoration:none}article .bk-links a:hover{color:#e8e8e0}
 .st-k{font-family:"Exo 2",sans-serif;font-weight:300;font-style:normal;letter-spacing:.45em;color:#6665c0;text-transform:uppercase}
 .st-t{font-family:A,"Exo 2",sans-serif;font-weight:400;font-style:normal;letter-spacing:.1em;line-height:1.2;color:#e8e8e0;text-transform:uppercase}
 .st-s{font-family:Inter,sans-serif;font-weight:300;font-style:italic;letter-spacing:1px;color:#e8e8e066}

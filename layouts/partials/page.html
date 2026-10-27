@@ -4,5 +4,6 @@
 <hr>
 <i class="ds"><span lang="en" data-f="description">{{ .Description }}</span><span lang="ru" data-f="description_ru">{{ default .Description .Params.description_ru }}</span></i>{{ end }}
 {{ partial "layout" . }}
-{{ with .Pages }}<ul>{{ range . }}<li><a href="{{ .RelPermalink }}"><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></a>{{ end }}</ul>{{ end }}
+{{ $links := false }}{{ range .Params.blocks }}{{ if eq .t "links" }}{{ $links = true }}{{ end }}{{ end }}
+{{ if not $links }}{{ with .Pages }}<ul>{{ range . }}<li><a href="{{ .RelPermalink }}"><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></a>{{ end }}</ul>{{ end }}{{ end }}
 </section></main>
