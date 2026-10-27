@@ -4,15 +4,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {{- $en := cond .IsHome "ASCW" (print .Title " · ASCW") }}{{ $ru := cond .IsHome "ASCW" (print (default .Title .Params.title_ru) " · ASCW") }}
 <title data-en="{{ $en }}" data-ru="{{ $ru }}">{{ $en }}</title>
-<script>{const d=document.documentElement,t=document.querySelector("title"),s=l=>{d.lang=l;document.title=t.dataset[l]};let l;try{l=localStorage.ascwLang}catch{}s((l||navigator.language||"").slice(0,2)=="ru"?"ru":"en");document.addEventListener("click",e=>{if(e.target.closest("#lq")){const n=d.lang=="ru"?"en":"ru";s(n);try{localStorage.ascwLang=n}catch{}document.dispatchEvent(new Event("lang"))}})}</script>
+{{- $desc := .Description | default .Params.description_ru | default site.Params.description }}{{ $img := cond (and .Params.bg (ne .Params.bg "none")) .Params.bg ("bg.webp" | relURL) }}
+{{ with $desc }}<meta name="description" content="{{ . }}">{{ end }}
+<meta property="og:type" content="website"><meta property="og:site_name" content="ASCW"><meta property="og:title" content="{{ $en }}"><meta property="og:url" content="{{ .Permalink }}">
+{{ with $desc }}<meta property="og:description" content="{{ . }}">{{ end }}<meta property="og:image" content="{{ $img | absURL }}"><meta name="twitter:card" content="summary_large_image">
+{{ with site.Params.favicon }}<link rel="icon" href="{{ . | relURL }}">{{ end }}
+<script>{const d=document.documentElement,t=document.querySelector("title"),tp=()=>document.querySelectorAll("[data-ten]").forEach(e=>{const v=e.dataset[d.lang=="ru"?"tru":"ten"];e.title=v;e.setAttribute("aria-label",v)}),
+s=l=>{d.lang=l;document.title=t.dataset[l];tp()};document.addEventListener("DOMContentLoaded",tp);let l;try{l=localStorage.ascwLang}catch{}s((l||navigator.language||"").slice(0,2)=="ru"?"ru":"en");document.addEventListener("click",e=>{if(e.target.closest("#lq")){const n=d.lang=="ru"?"en":"ru";s(n);try{localStorage.ascwLang=n}catch{}document.dispatchEvent(new Event("lang"))}})}</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400&family=Inter:ital,wght@1,300{{ if eq .Section "map" }}&family=Play{{ end }}&display=swap" rel="stylesheet">
 <link rel="preload" href="{{ "fonts/a.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
 <meta name="src" content="{{ with .File }}{{ .Path }}{{ end }}">
-<nav>
-<span class="nl"><a id="lq"><span lang="en">EN</span><span lang="ru">РУ</span></a><span class="br">{{ partial "t" "brand" }}</span></span>
-<div><a href="{{ "" | relURL }}">{{ partial "t" "nav_menu" }}</a><a href="{{ "archive/" | relURL }}">{{ partial "t" "nav_archive" }}</a><a href="{{ "map/" | relURL }}">{{ partial "t" "nav_map" }}</a>{{ with resources.Get "edit.js" | js.Build (dict "minify" true "target" "es2020") | fingerprint "md5" }}<a id="ed" hidden data-js="{{ .RelPermalink }}" data-u="{{ "" | relURL }}" data-repo="{{ site.Params.repo }}" title="Edit">✎</a>{{ end }}</div>
+<nav aria-label="ASCW">
+<span class="nl"><button type="button" id="lq" class="bt"{{ with index hugo.Data.text "tip_lang" }} data-ten="{{ .en }}" data-tru="{{ .ru }}" title="{{ .en }}" aria-label="{{ .en }}"{{ end }}><span lang="en">EN</span><span lang="ru">РУ</span></button><span class="br">{{ partial "t" "brand" }}</span></span>
+<div><a href="{{ "" | relURL }}"{{ if .IsHome }} aria-current="page"{{ end }}>{{ partial "t" "nav_menu" }}</a><a href="{{ "archive/" | relURL }}"{{ if eq .Section "archive" }} aria-current="page"{{ end }}>{{ partial "t" "nav_archive" }}</a><a href="{{ "map/" | relURL }}"{{ if eq .Section "map" }} aria-current="page"{{ end }}>{{ partial "t" "nav_map" }}</a>{{ with resources.Get "edit.js" | js.Build (dict "minify" true "target" "es2020") | fingerprint "md5" }}<button type="button" id="ed" class="bt" hidden data-js="{{ .RelPermalink }}" data-u="{{ "" | relURL }}" data-repo="{{ site.Params.repo }}"{{ with index hugo.Data.text "tip_edit" }} data-ten="{{ .en }}" data-tru="{{ .ru }}" title="{{ .en }}" aria-label="{{ .en }}"{{ end }}>✎</button>{{ end }}</div>
 </nav>
 <script>{const e=document.getElementById("ed"),on=()=>{const s=document.createElement("script");s.src=e.dataset.js;document.head.append(s)};let k={};try{if(/[?&]edit\b/.test(location.search))localStorage.ascwEdit=1;k=localStorage}catch{}
 if(k.ascwEdit){e.hidden=false;e.onclick=()=>{if(window.EDIT)EDIT.toggle();else{k.ascwEditOn=1;on()}};if(k.ascwEditOn)on()}}</script>

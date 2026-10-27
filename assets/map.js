@@ -4,7 +4,7 @@
 // Layers: geographic base (static/map/g*.webp) < country colours: light tint + inner colour band (canvas, toggleable) < country shapes for clicks/hover (svg) < borders of the version (static/map/<year>/b*.webp)
 // < selection: everything else dimmed, outline on top < graticule, labels, markers.
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
-[m,c,im,ov,sv,bi,hl,sl,mw,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc]="m c im ov sv bi hl sl mw g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc".split(" ").map($),
+[m,c,im,ov,sv,bi,hl,sl,mw,gx,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc,ld]="m c im ov sv bi hl sl mw gx g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc ld".split(" ").map($),
 W=4096,H=2048,T0=320,T1=420, // visible timeline range
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-9L2.6-3 9-3 4-1 5.6 7 0 3.5-5.6 7-4-1-9-3-2.6-3z", // marker shapes by kind (k): circle, star,
 "M-5-5h10v10h-10z","M0-7L7 5H-7z","M0-7L6 0 0 7-6 0z","M-6-4L-4-6 0-2 4-6 6-4 2 0 6 4 4 6 0 2-4 6-6 4-2 0z", // square, triangle, diamond, cross,
@@ -54,11 +54,11 @@ function zoom(f,px,py,anim){const k2=Math.min(Math.max(k*f,fit()),kmax());x=px-(
 
 function rs(){ // (re)build the SVG overlays: country shapes, graticule, labels
 let s="",q="",l="",t="";
-for(let i=-180;i<=180;i+=15){const X=(i+180)/360*W;q+=`<path${i?"":' class="e"'} d="M${X} 0V${H}"/>`;if(i%30==0&&i<180)l+=`<text x="${X+4}" y="38">${deg(i)}</text>`}
-for(let i=-75;i<=75;i+=15){const Y=(90-i)/180*H;q+=`<path${i?"":' class="e"'} d="M0 ${Y}H${W}"/>`;if(i%30==0)l+=`<text x="10" y="${Y-8}">${deg(i,1)}</text>`}
+for(let i=-180;i<=180;i+=15){const X=(i+180)/360*W;q+=`<path${i?"":' class="e"'} d="M${X} 0V${H}"/>`;if(i%30==0&&i<180)l+=`<span data-o="${i}">${deg(i)}</span>`}
+for(let i=-75;i<=75;i+=15){const Y=(90-i)/180*H;q+=`<path${i?"":' class="e"'} d="M0 ${Y}H${W}"/>`;if(i%30==0)l+=`<span data-a="${i}">${deg(i,1)}</span>`}
 RG.forEach(r=>{s+=`<path id="r${r.id}" data-i="${r.id}" style="--c:${r.c}" fill-rule="evenodd" d="${r.d}"/>`;const a=glyphs(r);
 if(a)t+=`<text x="${a.xs.map(v=>v.toFixed(1)).join(" ")}" y="${a.y}" font-size="${a.s}">${a.t}</text>`});
-sv.innerHTML=s;sl.innerHTML=`<g class="gr">${q}</g><g class="gl">${l}</g><g class="lb">${t}</g>`;
+sv.innerHTML=s;sl.innerHTML=`<g class="gr">${q}</g><g class="lb">${t}</g>`;gx.innerHTML=l;posM();
 RG.forEach(r=>r.el=$("r"+r.id));
 hi()}
 function hi(){ // selection layer above the borders: the rest of the map is dimmed, the country keeps its own relief colours
@@ -71,7 +71,12 @@ RG.forEach(r=>{const q=path(r);o.globalAlpha=r==R[sel]?0:.28;o.fillStyle=r.c;o.f
 if(G)tq()}
 // markers live outside the zoomed layer and are re-positioned each frame, so icons and names stay crisp vectors at any zoom
 const drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="12" y="1"${q.f&&FN[q.f]?` style='font-family:${FN[q.f]},sans-serif'`:""}>${esc(mn(q))}</text></g>`).join("");posM()},
-posM=()=>mw.querySelectorAll("g").forEach((e,i)=>{const q=MK[i];if(q)e.style.transform=`translate(${x+(q.o+180)/360*W*k}px,${y+(90-q.a)/180*H*k}px)`}),
+posM=()=>{mw.querySelectorAll("g").forEach((e,i)=>{const q=MK[i];if(q)e.style.transform=`translate(${x+(q.o+180)/360*W*k}px,${y+(90-q.a)/180*H*k}px)`});
+// graticule labels: light, pinned to the top / left edge of the view, hidden under the button column
+const t0=Math.max(y,0)+6,l0=Math.max(x,0)+6;
+gx.querySelectorAll("span").forEach(e=>{if(e.dataset.o!=null){const X=x+(+e.dataset.o+180)/360*W*k+4;e.style.transform=`translate(${X}px,${t0}px)`;e.hidden=X<l0+40||X>m.clientWidth-zw()-70}
+else{const Y=y+(90-e.dataset.a)/180*H*k-18;e.style.transform=`translate(${l0}px,${Y}px)`;e.hidden=Y<t0+18||Y>m.clientHeight-30}})},
+zw=()=>D.querySelector(".z").offsetWidth+12,
 esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;");
 
 function names(){RG.forEach(r=>{r.n0??=r.name;r.r0??=r.ru;const o=COU[r.c]||{};r.name=o.en||r.n0;r.ru=o.ru||r.r0})} // names edited on the site win over the generated ones
@@ -92,7 +97,7 @@ function panel(){if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);px.t
 function col(on){CO=on;c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}drawOv()}
 zc.onclick=()=>col(!CO);
 
-m.onpointerdown=e=>{m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0};
+m.onpointerdown=e=>{if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0};
 m.onpointermove=e=>{coords(e);const q=P[e.pointerId];if(!q)return;
 const o=two(P),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;mv+=Math.abs(dx)+Math.abs(dy);
 if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/o.d,n.x-r.left,n.y-r.top)}else{x+=dx;y+=dy;set()}};
@@ -136,6 +141,7 @@ tz.onclick=e=>{const f=e.target.closest(".f");if(f){yr=tr.value=+f.dataset.y;upd
 zt.onclick=()=>{tl.classList.add("o");tlB();tw.scrollLeft=60+(yr-T0)*PY-tw.clientWidth/2};
 xt.onclick=tlClose;
 
+if(matchMedia("(hover:none)").matches){const z=D.querySelector(".z");z.classList.add("hint");setTimeout(()=>z.classList.remove("hint"),3500);z.addEventListener("pointerdown",()=>z.classList.remove("hint"),{once:true})}
 D.addEventListener("lang",()=>{rs();drawM();panel();showC();if(tlOpen())tlB();if(G)tq()});
 addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
 const MAP=window.MAP={ // editor hooks
@@ -143,11 +149,11 @@ redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
 markers(){drawM();if(G)tq()},SH,FN,timeline(){if(tlOpen())tlB()},
 toMap(e){const r=m.getBoundingClientRect();return{mx:(e.clientX-r.left-x)/k,my:(e.clientY-r.top-y)/k}},
 sel:()=>sel&&R[sel],W,H};
-upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
+upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();lx=(m.clientWidth/2-x)/k;ly=(m.clientHeight/2-y)/k;showC(); // start with the view centreD.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
-let gl,gc,tc,tx2,hs,ht,bc,bb,tex,bp,pp,sp,fp,tb,pb,eb,gD=3,ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0;
+let gl,gc,tc,tx2,hs,ht,bc,bb,tex,bp,pp,sp,fp,tb,pb,eb,gD=3,ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0,FD;
 const GP={},cl=v=>Math.min(4.5,Math.max(1.6,v)),
 SW=(v=>{const l=Math.hypot(...v);return v.map(a=>a/l)})([.62,.32,.72]),
 SPIN=6.2832/430,CLOUD=[1/600,1/950], // one turn in ~7 min; cloud layers drift (uv/s)
@@ -155,7 +161,7 @@ ry=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[c*v[0]+s*v[2],v[1],-s*v[0]+c
 rx=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[v[0],c*v[1]-s*v[2],s*v[1]+c*v[2]]},
 rq=()=>{if(!loop&&G){last=0;loop=requestAnimationFrame(tick)}}, // render loop runs while the globe is shown
 tq=()=>{tdirty=1;rq()}; // texture rebuilds are coalesced to one per frame
-function tick(t){loop=0;if(!G||D.hidden)return;const dt=last?Math.min((t-last)/1e3,.1):0;last=t;tm+=dt;sa+=dt*SPIN;dr();loop=requestAnimationFrame(tick)}
+function tick(t){loop=0;if(!G||D.hidden)return;const dt=last?Math.min((t-last)/1e3,.1):0;last=t;tm+=dt;sa+=dt*SPIN;dr();if(FD){gl.finish();const f=FD;FD=0;requestAnimationFrame(f)}loop=requestAnimationFrame(tick)}
 D.addEventListener("visibilitychange",rq);
 const PR="#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n",
 NZ=`float h3(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}float n3(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z);}float fb(vec3 x){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*n3(x);x=x*2.03+vec3(1.7,9.2,3.1);a*=.5;}return s;}`,
@@ -221,7 +227,7 @@ for(let j=0;j<48;j++)for(let i=0;i<96;i++){const a=j*97+i;ix.push(a,a+1,a+97,a+1
 pb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,pb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(b),gl.STATIC_DRAW);
 eb=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,eb);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(ix),gl.STATIC_DRAW);
 // clouds: rendered once into a texture
-const CW=Math.min(4096,gl.getParameter(gl.MAX_TEXTURE_SIZE));gl.activeTexture(gl.TEXTURE1);const ct=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,ct);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,CW,CW/2,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+const CW=Math.min(matchMedia("(pointer:coarse)").matches||innerWidth<900?2048:4096,gl.getParameter(gl.MAX_TEXTURE_SIZE));gl.activeTexture(gl.TEXTURE1);const ct=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,ct);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,CW,CW/2,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);tp();
 const fo=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,fo);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,ct,0);
 gl.viewport(0,0,CW,CW/2);gl.useProgram(cp);gl.uniform2f(cp.u.rs,CW,CW/2);gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0);gl.drawArrays(gl.TRIANGLES,0,3);
@@ -285,5 +291,5 @@ pick(hit(mx,my))}
 function sw(){G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";if(G)gB()}
 function gB(){ // borders of the current version for the globe texture
 const v=cv;if(!v.b)return tq();const i=new Image;i.onload=()=>{if(v!=cv)return;const o=bb.getContext("2d");o.clearRect(0,0,bb.width,bb.height);o.drawImage(i,0,0,bb.width,bb.height);tq()};i.src=bsrc(2)} // 4096 px level = globe texture size
-zg.onclick=()=>{if(gl)return sw();if(busy)return;busy=1;const i=new Image;i.onerror=()=>busy=0;
-i.onload=()=>Promise.all([D.fonts.load("20px A"),D.fonts.load("20px Play")]).then(()=>{if(gi(i))sw()});i.src=U+"map/g2.webp"}; // 4096 px level
+zg.onclick=()=>{if(gl)return sw();if(busy)return;busy=1;ld.hidden=false;zg.setAttribute("aria-busy","true");const i=new Image,done=()=>{busy=0;ld.hidden=true;zg.removeAttribute("aria-busy")};i.onerror=done;
+i.onload=()=>Promise.all([D.fonts.load("20px A"),D.fonts.load("20px Play")]).then(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r)))).then(()=>{if(gi(i)){FD=done;sw()}else done()}); /* the spinner stays until the first globe frame is drawn (shaders compile on the first draw) */i.src=U+"map/g2.webp"}; // 4096 px level

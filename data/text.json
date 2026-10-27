@@ -18,5 +18,41 @@
  "wip": {
   "en": "Work-In-Progress",
   "ru": "В разработке"
+ },
+ "tip_lang": {
+  "en": "Switch language",
+  "ru": "Сменить язык"
+ },
+ "tip_edit": {
+  "en": "Edit mode",
+  "ru": "Режим редактирования"
+ },
+ "tip_3d": {
+  "en": "3D globe / flat map",
+  "ru": "Глобус / плоская карта"
+ },
+ "tip_tl": {
+  "en": "Timeline: choose a year",
+  "ru": "Хронология: выбрать год"
+ },
+ "tip_col": {
+  "en": "Country colours on / off",
+  "ru": "Раскраска стран вкл / выкл"
+ },
+ "tip_in": {
+  "en": "Zoom in",
+  "ru": "Приблизить"
+ },
+ "tip_out": {
+  "en": "Zoom out",
+  "ru": "Отдалить"
+ },
+ "tip_close": {
+  "en": "Close",
+  "ru": "Закрыть"
+ },
+ "tip_copy": {
+  "en": "Copy coordinates (C)",
+  "ru": "Скопировать координаты (C)"
  }
 }
