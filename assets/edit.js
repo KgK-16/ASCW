@@ -181,7 +181,7 @@ case"card":return`<aside class="b-card"${di}>${b.src?`<img src="${img(b.src)}" a
 case"cols":return`<div class="b-cols"${di}>${(b.c||[]).map((c,j)=>`<div class="cell">${c.t=="img"?`<figure class="b-img">${c.src?`<img src="${img(c.src)}" alt=""${ED?` data-pick="" data-c="${j}"`:""}>`:ED?`<button type="button" class="pi" data-pick="" data-c="${j}">🖼</button>`:""}${E("figcaption",b,c,"cap_","plain",` data-c="${j}"`)}</figure>`
 :E("div",b,c,"","block",` data-c="${j}"`)}</div>`).join("")}</div>`;
 case"hr":return`<hr class="b-hr"${di}>`;
-case"links":return`<ul class="b-links"${di}>${kids().map(q=>`<li${q.nw?' class="nw"':""}><a href="${U+q.src.replace(/_index\.md$/,"")}">${esc(l=="ru"?q.ru||q.en:q.en)}</a></li>`).join("")||(ED?`<li>${L("No subpages yet — add one in the block menu ⠿","Подстраниц пока нет — добавьте в меню блока ⠿")}</li>`:"")}</ul>`}
+case"links":return`<ul class="b-links"${di}>${shown(b).map(q=>`<li${q.nw?' class="nw"':""}><a href="${U+q.src.replace(/_index\.md$/,"")}">${esc(l=="ru"?q.ru||q.en:q.en)}</a></li>`).join("")||(ED?`<li>${L("No subpages yet — add one in the block menu ⠿","Подстраниц пока нет — добавьте в меню блока ⠿")}</li>`:"")}</ul>`}
 return""}
 function render(){if(!DOC)return;const a=D.activeElement?.closest?.("[data-f]"),ai=a?.closest("[data-i]")?.dataset.i,af=a?.dataset.f;
 DOC.innerHTML=B().map(rb).join("")+(ED&&!B().length?`<button type="button" class="eb" data-act="first" style="display:block;margin:0 auto">+ ${L("Add the first block","Добавить первый блок")}</button>`:"");
@@ -210,7 +210,7 @@ f:()=>{snapN();b.c[j]=c.t=="img"?{t:"text"}:{t:"img"};store();render()}})),b.t==
 if(b.t=="head")items.push({i:"↕",t:L("Centred on the screen","По центру экрана"),on:!!b.tall,f:()=>set("tall",b.tall?null:true)},
 {i:"B",t:L("Second (accent) line","Вторая (акцентная) строка"),on:!!(b.a_en||b.a_ru||b.acc),f:()=>{snapN();if(b.a_en||b.a_ru||b.acc){delete b.a_en;delete b.a_ru;delete b.acc}else b.acc=true;store();render()}},
 ...(b.t_en||b.t_ru||b.d_en||b.d_ru?[{i:"↺",t:L("Use the page title and description","Взять название и описание страницы"),f:()=>{snapN();["t_en","t_ru","d_en","d_ru"].forEach(k=>delete b[k]);store();render()}}]:[]),"-");
-if(b.t=="links")items.push({i:"✎",t:L("Edit links…","Ссылки…"),f:links},{i:"+",t:L("New subpage…","Новая подстраница…"),f:()=>newPage()},"-");
+if(b.t=="links")items.push({i:"✎",t:L("Edit links…","Ссылки…"),f:()=>links(b)},{i:"+",t:L("New subpage…","Новая подстраница…"),f:()=>newPage()},"-");
 items.push({i:"↑",t:L("Move up","Выше"),f:()=>move(i,i-1)},{i:"↓",t:L("Move down","Ниже"),f:()=>move(i,i+1)},
 {i:"⧉",t:L("Duplicate","Дублировать"),f:()=>insert(JSON.parse(JSON.stringify(b)),i+1,0)},{i:"🗑",t:L("Delete","Удалить"),f:()=>{snapN();B().splice(i,1);CB=null;store();render()}});
 if(!i)items.splice(items.findIndex(x=>x.i=="↑"),1);if(i==N-1)items.splice(items.findIndex(x=>x.i=="↓"),1);menu(x,y,items)}
@@ -314,13 +314,17 @@ h("div",{cls:"row"},lab(L("Background","Фон"),h("div",{cls:"row"},btn(L("Imag
 btn(L("None","Без фона"),()=>{PG.bg="none";store();bgv()}),btn(L("Default","По умолчанию"),()=>{delete PG.bg;store();bgv()})))),
 h("div",{style:"font-size:12px;color:#e8e8e080"},L("Address: ","Адрес: ")+U+dir),h("div",{cls:"row"},btn("+ "+L("New subpage…","Новая подстраница…"),newPage),btn("🗑 "+L("Delete page","Удалить страницу"),delPage)))}
 async function reorder(){const K=kids(),os=await Promise.all(K.map(q=>pageObj("content/"+q.src)));os.forEach((o,i)=>{if(o&&o.weight!=(i+1)*10){o.weight=(i+1)*10;WJ("content/"+K[i].src,o)}})}
-function links(){const box=h("div",{style:"display:flex;flex-direction:column;gap:8px"}),
-rows=()=>box.replaceChildren(...kids().map((q,i,K)=>{const set=async(l,v)=>{q[l]=v;const p="content/"+q.src,o=await pageObj(p);if(o){o[l=="en"?"title":"title_ru"]=v;await WJ(p,o)}render()},
-sw=async d=>{const j=KIDS.indexOf(K[i+d]),k=KIDS.indexOf(q);if(j<0)return;[KIDS[j],KIDS[k]]=[KIDS[k],KIDS[j]];await reorder();rows();render()};
+// the links block lists the subpages; "hide" (list of page sources) takes pages out of this list without deleting them
+const shown=b=>kids().filter(q=>!(b.hide||[]).includes(q.src));
+function links(b){const box=h("div",{style:"display:flex;flex-direction:column;gap:8px"}),hid=h("div",{style:"display:flex;flex-direction:column;gap:6px"}),
+vis=(q,on)=>{snapN();b.hide=(b.hide||[]).filter(x=>x!=q.src);if(!on)b.hide.push(q.src);if(!b.hide.length)delete b.hide;store();render();rows()},
+rows=()=>{box.replaceChildren(...shown(b).map((q,i,K)=>{const set=async(l,v)=>{q[l]=v;const p="content/"+q.src,o=await pageObj(p);if(o){o[l=="en"?"title":"title_ru"]=v;await WJ(p,o)}render()},
+sw=async d=>{const j=KIDS.indexOf(K[i+d]),k=KIDS.indexOf(q);if(!K[i+d])return;[KIDS[j],KIDS[k]]=[KIDS[k],KIDS[j]];await reorder();rows();render()};
 return h("div",{cls:"row",style:"align-items:flex-end"},lab("EN",inp(q.en,v=>set("en",v))),lab("RU",inp(q.ru,v=>set("ru",v))),btn("↑",()=>sw(-1),L("Up","Выше")),btn("↓",()=>sw(1),L("Down","Ниже")),
-btn("🗑",async()=>{if(!confirm(L("Delete this page when publishing?","Удалить эту страницу при публикации?")))return;const p="content/"+q.src;await src(p);
-if(base[p]==null)delete draft[p];else draft[p]={del:1};q.del=1;save();rows();render()},L("Delete page","Удалить страницу")))}));
-rows();dialog(L("Links to subpages","Ссылки на подстраницы"),box,h("div",{cls:"row"},btn("+ "+L("New subpage…","Новая подстраница…"),newPage)))}
+btn("✕",()=>vis(q,0),L("Remove from this list (the page stays on the site)","Убрать из списка (страница остаётся на сайте)")))}));
+const H=kids().filter(q=>(b.hide||[]).includes(q.src));hid.replaceChildren(...(H.length?[h("div",{style:"font:400 11px 'Exo 2',sans-serif;letter-spacing:1px;color:#e8e8e099;text-transform:uppercase;margin-top:6px"},L("Not in the list","Не в списке"))]:[]),
+...H.map(q=>h("div",{cls:"row"},h("span",{},ru()?q.ru||q.en:q.en),btn("+ "+L("Add to the list","Добавить в список"),()=>vis(q,1)))))};
+rows();dialog(L("Links to subpages","Ссылки на подстраницы"),box,hid,h("div",{cls:"row"},btn("+ "+L("New subpage…","Новая подстраница…"),newPage)))}
 function preview(){const u=new URL(location.href);u.searchParams.set("preview","");const w=h("div",{id:"pvw",onclick:e=>{if(e.target==w)w.remove()}},h("iframe",{src:u.href,title:L("Phone preview","Предпросмотр на телефоне")}),
 btn(L("Close preview","Закрыть предпросмотр"),()=>w.remove()));D.body.append(w)}
 

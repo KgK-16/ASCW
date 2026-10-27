@@ -2,7 +2,7 @@
    head  — kicker, title (+ accent line), line, description; defaults to the page title and description
    h     — heading (lv 2 | 3)      p — paragraph      quote — quote (+ cite)      list — list (ord) of <li> items
    img   — image (al: center | full | left | right) + caption      card — fact card (title, rows of key / value, image), floats right
-   cols  — two columns of text or image      hr — divider      links — links to the subpages */ -}}
+   cols  — two columns of text or image      hr — divider      links — links to the subpages (hide: page sources left out) */ -}}
 {{- $P := . }}{{ $T := hugo.Data.text -}}
 {{- range $b := .Params.blocks }}
 {{- if eq $b.t "head" }}<header class="b-head{{ if $b.tall }} tall{{ end }}">
@@ -18,5 +18,5 @@
 {{- with $b.rows }}<dl>{{ range . }}<div>{{ partial "tx" (dict "b" . "f" "k_" "tag" "dt") }}{{ partial "tx" (dict "b" . "f" "v_" "tag" "dd") }}</div>{{ end }}</dl>{{ end }}</aside>
 {{- else if eq $b.t "cols" }}<div class="b-cols">{{ range $b.c }}<div class="cell">{{ if eq .t "img" }}<figure class="b-img">{{ with .src }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}{{ partial "tx" (dict "b" . "f" "cap_" "tag" "figcaption") }}</figure>{{ else }}{{ partial "tx" (dict "b" . "f" "" "tag" "div") }}{{ end }}</div>{{ end }}</div>
 {{- else if eq $b.t "hr" }}<hr class="b-hr">
-{{- else if eq $b.t "links" }}<ul class="b-links">{{ range $P.Pages }}<li><a href="{{ .RelPermalink }}"><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></a>{{ end }}</ul>
+{{- else if eq $b.t "links" }}<ul class="b-links">{{ $h := $b.hide | default slice }}{{ range $P.Pages }}{{ if not (in $h .File.Path) }}<li><a href="{{ .RelPermalink }}"><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></a>{{ end }}{{ end }}</ul>
 {{- end }}{{ end -}}
