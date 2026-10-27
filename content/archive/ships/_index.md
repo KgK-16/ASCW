@@ -6,50 +6,42 @@
  "weight": 2,
  "body_en": "",
  "body_ru": "",
- "blocks": [
+ "items": [
   {
-   "t": "cv",
-   "c": 0,
-   "w": 12,
-   "h": 23.9,
-   "items": [
-    {
-     "t": "text",
-     "x": 0,
-     "y": 0,
-     "w": 100,
-     "al": "center",
-     "bind": "k:wip",
-     "st": "k",
-     "fs": 11
-    },
-    {
-     "t": "text",
-     "x": 0,
-     "y": 5.0,
-     "w": 100,
-     "al": "center",
-     "bind": "title",
-     "st": "t",
-     "fs": 45
-    },
-    {
-     "t": "hr",
-     "x": 46.5,
-     "y": 16.3,
-     "w": 7
-    },
-    {
-     "t": "text",
-     "x": 0,
-     "y": 19.9,
-     "w": 100,
-     "al": "center",
-     "bind": "description",
-     "st": "s",
-     "fs": 13
-    }
-   ]
+   "t": "text",
+   "al": "center",
+   "bind": "k:wip",
+   "st": "k",
+   "fs": 11,
+   "x": 0,
+   "y": 0,
+   "w": 685
+  },
+  {
+   "t": "text",
+   "al": "center",
+   "bind": "title",
+   "st": "t",
+   "fs": 45,
+   "x": 0,
+   "y": 34,
+   "w": 685
+  },
+  {
+   "t": "hr",
+   "x": 319,
+   "y": 112,
+   "w": 48
+  },
+  {
+   "t": "text",
+   "al": "center",
+   "bind": "description",
+   "st": "s",
+   "fs": 13,
+   "x": 0,
+   "y": 136,
+   "w": 685
   }
  ]
 }

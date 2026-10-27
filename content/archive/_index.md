@@ -3,12 +3,13 @@
  "title_ru": "Архив",
  "body_en": "",
  "body_ru": "",
- "blocks": [
+ "items": [
   {
    "t": "links",
-   "c": 0,
-   "w": 12,
-   "al": "center"
+   "al": "center",
+   "x": 0,
+   "y": 0,
+   "w": 685
   }
  ]
 }

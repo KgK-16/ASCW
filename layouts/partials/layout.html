@@ -1,15 +1,13 @@
-{{- /* article layout: blocks on a 12-column grid and free canvases; the same markup is drawn by assets/edit.js */ -}}
-{{- $P := . -}}
-<article>{{ with .Params.blocks }}<div class="lay">{{ range $b := . }}
-{{- $st := printf "grid-column:%v/span %v;text-align:%s;align-self:%s%s" (add (default 0 $b.c) 1) (default 12 $b.w) (default "left" $b.al) (default "start" $b.va) (cond (isset $b "col") (printf ";color:%s" $b.col) "") | safeCSS -}}
-{{- if eq $b.t "text" }}<div class="bk bk-text{{ with $b.st }} st-{{ . }}{{ end }}" style="{{ $st }}">{{ range slice "en" "ru" }}<div lang="{{ . }}">{{ with or (index $b .) $b.en }}{{ $P.RenderString (dict "display" "block") . }}{{ end }}</div>{{ end }}</div>
-{{- else if eq $b.t "img" }}<figure class="bk bk-img" style="{{ $st }}">{{ with $b.src }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}{{ range $l := slice "en" "ru" }}{{ with or (index $b (print "cap_" $l)) $b.cap_en }}<figcaption lang="{{ $l }}">{{ . }}</figcaption>{{ end }}{{ end }}</figure>
-{{- else if eq $b.t "links" }}<ul class="bk bk-links{{ with $b.st }} st-{{ . }}{{ end }}" style="{{ $st }}">{{ range $P.Pages }}<li><a href="{{ .RelPermalink }}"><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></a>{{ end }}</ul>
-{{- else if eq $b.t "cv" }}<div class="bk bk-cv" style="{{ $st }}"><div class="cv" style="{{ printf "aspect-ratio:100/%v;--cw:%v" (default 50 $b.h) (sub (mul (default 12 $b.w) 60) 20) | safeCSS }}">{{ range $q := $b.items }}
-{{- $s2 := printf "left:%v%%;top:%vcqw;width:%v%%;--f:%v;text-align:%s;z-index:%v%s" $q.x $q.y $q.w (default 16 $q.fs) (default "left" $q.al) (default 0 $q.z) (cond (isset $q "col") (printf ";color:%s" $q.col) "") | safeCSS -}}
-<div class="it it-{{ $q.t }}{{ with $q.st }} st-{{ . }}{{ end }}" style="{{ $s2 }}">
-{{- if eq $q.t "img" }}{{ with $q.src }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}
-{{- else if eq $q.t "hr" }}<hr>
-{{- else }}{{ range $l := slice "en" "ru" }}<div lang="{{ $l }}">{{ with $q.bind }}{{ partial "bind" (dict "p" $P "k" . "l" $l) }}{{ else }}{{ with or (index $q $l) $q.en }}{{ $P.RenderString (dict "display" "block") . }}{{ end }}{{ end }}</div>{{ end }}{{ end }}</div>
-{{- end }}</div></div>{{ end }}{{ end }}</div>
+{{- /* free layout: rectangles with text, images, links or a line placed anywhere in the strip.
+   items: [{t:"text"|"img"|"links"|"hr", x, y, w (px of the design width), st (style), col, al, z, en, ru, bind, src, cap_en, cap_ru}]
+   The same markup is drawn by assets/edit.js. Narrower screens scale the layout; phones stack the items top to bottom. */ -}}
+{{- $P := . }}{{ $dw := sub (math.Min (default 765 .Params.width) 1200) 80 -}}
+<article>{{ with .Params.items }}<div class="fr" style="--dw:{{ $dw }}">{{ range sort . "y" }}{{ $q := . }}
+{{- $s := printf "--x:%v;--y:%v;--w:%v;--f:%v;text-align:%s;z-index:%v%s" .x .y .w (default 16 .fs) (default "left" .al) (default 0 .z) (cond (isset . "col") (printf ";color:%s" .col) "") | safeCSS -}}
+<div class="fi f-{{ .t }}{{ with .st }} st-{{ . }}{{ end }}" style="{{ $s }}">
+{{- if eq .t "img" }}{{ with .src }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}{{ range $l := slice "en" "ru" }}{{ with or (index $q (print "cap_" $l)) $q.cap_en }}<figcaption lang="{{ $l }}">{{ . }}</figcaption>{{ end }}{{ end }}
+{{- else if eq .t "hr" }}<hr>
+{{- else if eq .t "links" }}<ul class="bk-links">{{ range $P.Pages }}<li><a href="{{ .RelPermalink }}"><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></a>{{ end }}</ul>
+{{- else }}{{ range $l := slice "en" "ru" }}<div lang="{{ $l }}">{{ with $q.bind }}{{ partial "bind" (dict "p" $P "k" . "l" $l) }}{{ else }}{{ with or (index $q $l) $q.en }}{{ $P.RenderString (dict "display" "block") . }}{{ end }}{{ end }}</div>{{ end }}{{ end -}}
+</div>{{ end }}</div>
 {{- else }}{{ range slice "en" "ru" }}<div lang="{{ . }}" data-f="body_{{ . }}">{{ with index $P.Params (print "body_" .) }}{{ $P.RenderString (dict "display" "block") . }}{{ end }}</div>{{ end }}{{ end }}</article>
