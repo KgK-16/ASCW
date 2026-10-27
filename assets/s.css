@@ -16,8 +16,8 @@ h1 b,hr{color:#6665c0;font-weight:inherit}
 html[lang=ru] [lang=en],html[lang=en] [lang=ru]{display:none}
 hr{width:48px;margin:0 auto 24px;border:0;border-top:1px solid;opacity:.4}
 i{font:italic 300 13px Inter,sans-serif;letter-spacing:1px;text-transform:none;color:#e8e8e066}
-/* page document: one readable column (≈70 characters); images, cards and columns may use the full strip */
-.doc{--cw:680px;width:100%;padding:56px 0 72px;text-align:left;text-transform:none;font:400 16px/1.7 Inter,sans-serif;color:#e8e8e0d9;overflow-wrap:break-word;display:flow-root}
+/* page document: text, images, cards and columns share the full width of the strip */
+.doc{--cw:100%;width:100%;padding:56px 0 72px;text-align:left;text-transform:none;font:400 16px/1.7 Inter,sans-serif;color:#e8e8e0d9;overflow-wrap:break-word;display:flow-root}
 .doc>*{max-width:var(--cw);margin:0 auto 1.1em}
 section:has(.doc){justify-content:flex-start}
 .doc :is(h2,h3,h4){font:400 22px/1.3 "Exo 2",sans-serif;text-transform:uppercase;letter-spacing:2px;color:#e8e8e0;margin-top:1.8em;margin-bottom:.6em}.doc h3{font-size:17px;letter-spacing:1.5px}
