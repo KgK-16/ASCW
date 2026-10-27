@@ -74,7 +74,7 @@ D.head.append(h("style",{},`
 .ed .doc .b-cols .cell{outline:1px dashed #6665c033;outline-offset:6px;min-height:40px}
 #gut{position:absolute;z-index:30;display:flex;gap:2px;transform:translateX(calc(-100% - 10px))}#gut[hidden]{display:none}
 #gut button{width:26px;height:26px;font:400 15px/24px "Exo 2",sans-serif;color:#8d8cf0;background:#05050df2;border:1px solid #6665c066;cursor:pointer;touch-action:none}#gut button:hover{color:#fff;border-color:#8d8cf0}
-#gut .hd{cursor:grab}#gut.nr{transform:translateX(-100%)}.ed .doc{position:relative;padding-bottom:140px}
+#gut .hd{cursor:grab}#gut.nr{transform:translateX(-100%)}#gut.rt{transform:translateX(10px)}.ed .doc{position:relative;padding-bottom:140px}
 #eb .lb{margin-left:5px}@media(max-width:700px){#eb .lb{display:none}#eb{left:8px;bottom:8px;max-width:calc(100% - 16px);gap:3px}#eb .eb{padding:6px 8px;font-size:12px}}
 .mn{position:fixed;z-index:46;background:#05050d;border:1px solid #6665c0;min-width:220px;max-height:min(70vh,520px);overflow:auto;padding:4px;display:flex;flex-direction:column;text-transform:none;font:400 13px "Exo 2",sans-serif;box-shadow:0 8px 30px #000a}
 .mn button{display:flex;gap:10px;align-items:center;text-align:left;padding:7px 10px;color:#e8e8e0;cursor:pointer;letter-spacing:.3px}.mn button:hover,.mn button.f{background:#6665c040}
@@ -196,8 +196,10 @@ for(const x of l){let v=b[x]||"";if(b.t=="list")v=v.replace(/<\/li><li>/g,"<br>"
 if(b.cite_en)n.cite_en=b.cite_en;if(b.cite_ru)n.cite_ru=b.cite_ru;B()[i]=n;store();render();focusF(i)}
 // block gutter: + inserts after the block, ⠿ opens the block menu (click) or moves the block (drag)
 function gutAt(i){if(!gut)return;const k=i!=null&&DOC.querySelector(`[data-i="${i}"]`);gut.hidden=!k;DOC.querySelectorAll(".cur").forEach(e=>e.classList.remove("cur"));if(!k)return;
-k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClientRect(),lx=r.left-d.left,nr=r.left<70;gut.classList.toggle("nr",nr); // phones: above the right end
-gut.style.top=r.top-d.top-(nr?30:0)+"px";gut.style.left=(nr?r.right-d.left:lx)+"px";gut.dataset.i=i}
+k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClientRect(),
+rt=getComputedStyle(k).float=="right"&&r.right+70<innerWidth, // right-floated card / image: buttons on its outer side, not over the wrapping text
+nr=!rt&&r.left<70;gut.classList.toggle("nr",nr);gut.classList.toggle("rt",rt); // phones: above the right end
+gut.style.top=r.top-d.top-(nr?30:0)+"px";gut.style.left=(nr||rt?r.right:r.left)-d.left+"px";gut.dataset.i=i}
 function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],f:()=>{const b=mk(t[0]);if(replace){snapN();B()[i]=b;store();render();b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}))}
 function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>{snapN();if(v==null)delete b[k];else b[k]=v;store();render()},items=[];
 if(TXT.has(b.t))items.push(...TYPES().slice(0,6).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h2"&&b.t=="h"&&b.lv!=3)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-");
@@ -223,7 +225,7 @@ h("button",{type:"button",cls:"hd",title:L("Drag to move · click for block opti
 dln=h("div",{id:"dln",hidden:""});
 ift=h("div",{id:"ift",hidden:""},...[["B","bold",L("Bold","Жирный")+" (Ctrl+B)"],["I","italic",L("Italic","Курсив")+" (Ctrl+I)"],["S","strikeThrough",L("Strikethrough","Зачёркнутый")],["🔗","link",L("Link","Ссылка")+" (Ctrl+K)"],["⌫","removeFormat",L("Clear formatting","Убрать оформление")]]
 .map(([t,c,ti])=>h("button",{type:"button",title:ti,"aria-label":ti,onmousedown:e=>{e.preventDefault();fmt2(c)}},t)));D.body.append(ift);
-DOC.addEventListener("mouseover",e=>{const k=e.target.closest("[data-i]");if(k&&!DG)gutAt(CB=+k.dataset.i)});
+let hT;DOC.addEventListener("mouseover",e=>{if(gut.contains(e.target))return clearTimeout(hT);const k=e.target.closest("[data-i]");clearTimeout(hT);if(k&&!DG&&+k.dataset.i!==CB)hT=setTimeout(()=>gutAt(CB=+k.dataset.i),250)});
 DOC.addEventListener("pointerdown",e=>{const k=e.target.closest("[data-i]");if(k)gutAt(CB=+k.dataset.i)});
 DOC.addEventListener("focusin",e=>{const k=e.target.closest("[data-i]");if(k)gutAt(CB=+k.dataset.i)});
 DOC.addEventListener("input",e=>{const el=e.target.closest("[data-f]");if(!el)return;const k=el.closest("[data-i]"),i=+k.dataset.i,b=B()[i],l=HT.lang,f=el.dataset.f,m=el.dataset.m;
