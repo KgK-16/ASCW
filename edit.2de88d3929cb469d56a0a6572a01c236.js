@@ -196,7 +196,7 @@ for(const x of l){let v=b[x]||"";if(b.t=="list")v=v.replace(/<\/li><li>/g,"<br>"
 if(b.cite_en)n.cite_en=b.cite_en;if(b.cite_ru)n.cite_ru=b.cite_ru;B()[i]=n;store();render();focusF(i)}
 // block gutter: + inserts after the block, ⠿ opens the block menu (click) or moves the block (drag)
 function gutAt(i){if(!gut)return;const k=i!=null&&DOC.querySelector(`[data-i="${i}"]`);gut.hidden=!k;DOC.querySelectorAll(".cur").forEach(e=>e.classList.remove("cur"));if(!k)return;
-k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClientRect(),lx=Math.max(r.left-d.left,(d.width-680)/2),nr=lx<70;gut.classList.toggle("nr",nr); // phones: above the right end
+k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClientRect(),lx=r.left-d.left,nr=r.left<70;gut.classList.toggle("nr",nr); // phones: above the right end
 gut.style.top=r.top-d.top-(nr?30:0)+"px";gut.style.left=(nr?r.right-d.left:lx)+"px";gut.dataset.i=i}
 function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],f:()=>{const b=mk(t[0]);if(replace){snapN();B()[i]=b;store();render();b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}))}
 function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>{snapN();if(v==null)delete b[k];else b[k]=v;store();render()},items=[];
