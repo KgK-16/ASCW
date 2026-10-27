@@ -79,6 +79,18 @@ D.head.append(h("style",{},`
 .ed li.nw a{color:#e8b04a}
 .ed #mw g{pointer-events:auto;cursor:grab}.mke #m{cursor:crosshair}
 .ed aside .ef{display:flex;flex-direction:column;gap:6px;margin-top:14px;text-align:left}.ed aside .ef textarea{min-height:90px}
+#ae.nb .tb,#ae.nb .bd{display:none}#ae.nb{bottom:auto}#ae.tx .fl,#ae.tx .ft{display:none}
+.lea{position:relative}.lea .lay{min-height:80px;outline:1px dashed #6665c055;outline-offset:6px}
+.lea .lay{background-image:repeating-linear-gradient(90deg,#6665c012 0 calc((100% - 220px)/12),transparent 0 calc((100% - 220px)/12 + 20px))}
+.lea .bk{position:relative;outline:1px dashed #6665c066;cursor:grab;min-height:28px;touch-action:none}.lea .bk:hover{outline-color:#8d8cf0}.lea .bk.sel{outline:1px solid #8d8cf0}
+.lea .drag .bk{cursor:grabbing}.lea .ph{opacity:.35}.lea .pi{font-size:28px;text-align:center;padding:24px;border:1px dashed #6665c0}
+.lea .rl,.lea .rr{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;display:none}.lea .rl{left:-5px}.lea .rr{right:-5px}.lea .sel>.rl,.lea .sel>.rr{display:block;background:#8d8cf066}
+.lea .cv{background-image:linear-gradient(#6665c022 1px,transparent 1px),linear-gradient(90deg,#6665c022 1px,transparent 1px);background-size:5% 5%;outline:1px dashed #6665c066}
+.lea .it{outline:1px dashed #6665c088;cursor:move;min-height:12px}.lea .it.sel{outline:1px solid #e8b04a}
+.lea .it .rl,.lea .it .rr{display:none}.lea .it.sel .rl,.lea .it.sel .rr{display:block;background:#e8b04a88}
+.lea .hh{position:absolute;left:0;right:0;bottom:-5px;height:8px;cursor:ns-resize;display:none;font-style:normal}.lea .sel .hh{display:block;background:#8d8cf066}
+.lad{display:flex;gap:4px;flex-wrap:wrap;margin:22px 0 8px;justify-content:center}
+.ltb{position:absolute;z-index:30;display:flex;gap:2px;flex-wrap:wrap;background:#05050df2;border:1px solid #6665c0;padding:3px;max-width:100%}.ltb .eb{min-height:28px;padding:3px 7px}
 @media(max-width:800px){#ae{width:100%}#ae .pv{border-left:0;display:none}#ae.tg .pv{display:block}#ae.tg textarea{display:none}}
 `));
 let pb,eb,et;
@@ -136,8 +148,8 @@ dialog(L("Interface texts","Тексты интерфейса"),...rows)}
 // ---------- article editor ----------
 let AE=null,AL="en",AP=null,AO=null;
 const nameOf=o=>o&&(o.title||"");
-async function openAE(p=PAGE){AP=p;AO=p==PAGE?PG:await pageObj(p);if(!AO)return toast(L("Page source not found","Исходник страницы не найден"),1);
-AL=HT.lang;AE?.remove();
+async function openAE(p=PAGE,tg=null){AP=p;AO=p==PAGE?PG:await pageObj(p);if(!AO)return toast(L("Page source not found","Исходник страницы не найден"),1);
+AL=HT.lang;AE?.remove();const T=tg||(p!=PAGE?{get:l=>AO["body_"+l]||"",set:(l,v)=>upd("body_"+l,v)}:null);
 const ta=h("textarea",{cls:"ei",spellcheck:"true",placeholder:L("Article text (Markdown)","Текст статьи (Markdown)")}),pv=h("div",{cls:"pv"},h("article")),
 F2=h("div",{cls:"fl"}),ft=h("div",{cls:"ft"});
 const tab=l=>btn(l.toUpperCase(),()=>{AL=l;fill()}),tabs=[tab("en"),tab("ru")];
@@ -149,15 +161,15 @@ tool("B","Ctrl+B",()=>wrap("**")),tool("I","Ctrl+I",()=>wrap("*")),tool("S",L("S
 tool("❝",L("Quote","Цитата"),()=>pre("> ")),tool("•",L("List","Список"),()=>pre("- ")),tool("1.",L("Numbered list","Нумерованный список"),()=>pre("1. ")),
 tool("🔗","Ctrl+K",link),tool("🖼",L("Image","Изображение"),pick),tool("▦",L("Table","Таблица"),()=>ins("\n| | |\n|---|---|\n| | |\n")),
 tool("―",L("Divider","Разделитель"),()=>ins("\n\n---\n\n")),tool("</>",L("Code","Код"),()=>wrap("`"))),
-h("div",{cls:"bd"},ta,pv),ft);
+h("div",{cls:"bd"},ta,pv),ft);if(!T)AE.classList.add("nb");else if(tg)AE.classList.add("tx");
 D.body.append(AE);
 function fill(){tabs.forEach((b,i)=>b.classList.toggle("on",["en","ru"][i]==AL));const s=AL=="ru"?"_ru":"";
 F2.replaceChildren(lab(L("Title","Заголовок")+" · "+AL.toUpperCase(),inp(AO["title"+s],v=>upd("title"+s,v))),
 lab(L("Description","Описание")+" · "+AL.toUpperCase(),inp(AO["description"+s],v=>upd("description"+s,v))));
-ta.value=AO["body_"+AL]||"";render()}
+ta.value=T?T.get(AL):"";render()}
 const render=()=>{pv.firstChild.innerHTML=md(ta.value)};
 function upd(f,v){AO[f]=v;WJ(AP,AO);if(AP==PAGE)showPage(PG)}
-ta.oninput=()=>{upd("body_"+AL,ta.value);render()};
+let st=0;ta.oninput=()=>{if(!st){st=1;T.start?.()}T.set(AL,ta.value);render()};
 ft.append(L("Order","Порядок")+":",inp(AO.weight,v=>upd("weight",+v||0),{type:"number"}),h("span",{cls:"sp"},AP.replace(/^content\/|\/?_index\.md$/g,"")||"/"));
 // editing helpers keep the browser's undo history (execCommand insertText)
 function put(t,s0,s1){ta.focus();if(!D.execCommand(t?"insertText":"delete",false,t))ta.setRangeText(t,ta.selectionStart,ta.selectionEnd,"end");
@@ -176,12 +188,93 @@ if(!(e.ctrlKey||e.metaKey))return;const k=e.key.toLowerCase();if(k=="b"){e.preve
 ta.onpaste=e=>{const f=[...e.clipboardData.files].find(f=>f.type.startsWith("image/"));if(f){e.preventDefault();up(f)}};
 ta.ondragover=e=>e.preventDefault();ta.ondrop=e=>{const f=[...e.dataTransfer.files].find(f=>f.type.startsWith("image/"));if(f){e.preventDefault();up(f)}};
 AE.sync=()=>{if(AP==PAGE){const a=D.activeElement;F2.querySelectorAll("input").forEach((e,i)=>{if(e!=a)e.value=AO[(i?"description":"title")+(AL=="ru"?"_ru":"")]??""})}};
-fill()}
+fill();if(tg)ta.focus()}
 const syncAE=()=>AE?.sync?.();
 function upload(file){return new Promise(res=>{const r=new FileReader;r.onload=()=>{
 const ext=(file.name.match(/\.(\w+)$/)?.[1]||file.type.split("/")[1]||"png").toLowerCase(),
 nm=(file.name.replace(/\.\w+$/,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"img")+"-"+Date.now().toString(36)+"."+ext,u=U+"img/"+nm;
 draft["static/img/"+nm]={b:r.result.split(",")[1]};blobs[u]=URL.createObjectURL(file);save();res(u)};r.readAsDataURL(file)})}
+
+// ---------- article layout: blocks on a 12-column grid + free canvases (same markup as layouts/partials/page.html) ----------
+// block: {t:"text",c,w,al,va,en,ru} | {t:"img",c,w,al,va,src,cap_en,cap_ru} | {t:"cv",c,w,h,items:[{t:"text"|"img",x,y,w,fs,al,z,en,ru,src}]}
+// c = first column (0..11), w = width in columns, h = canvas height in % of its width; item x,y,w in % of the canvas, fs = font size in px at 700 px width
+let LY=null,SB=null,SI=null,HI=[],HR=[],DG=null;
+const BL=()=>PG.blocks??=(PG.body_en||PG.body_ru?[{t:"text",c:0,w:12,en:PG.body_en||"",ru:PG.body_ru||""}]:[]),
+cl=(v,a,b)=>Math.min(b,Math.max(a,v)),r1=v=>Math.round(v*10)/10,
+snap=()=>JSON.stringify(BL());
+function commit(hist=1){if(hist){HI.push(LY.last);HR=[];if(HI.length>200)HI.shift()}PG.body_en=PG.body_ru="";WJ(PAGE,PG);LY.last=snap();draw()}
+function undo(back){const a=back?HI:HR,b=back?HR:HI;if(!a.length)return;b.push(snap());PG.blocks=JSON.parse(a.pop());SB=SI=null;LY.last=snap();PG.body_en=PG.body_ru="";WJ(PAGE,PG);draw()}
+function cell(b,i){const st=`grid-column:${(b.c|0)+1}/span ${b.w||12};text-align:${b.al||"left"};align-self:${b.va||"start"}`,l=HT.lang,
+ph=`<p class="ph">${L("Text","Текст")}</p>`;
+if(b.t=="img")return`<figure class="bk bk-img${i===SB?" sel":""}" data-b="${i}" style="${st}">${b.src?`<img src="${img(b.src)}" alt="">`:`<div class="ph pi">🖼</div>`}${b["cap_"+l]?`<figcaption>${esc(b["cap_"+l])}</figcaption>`:""}</figure>`;
+if(b.t=="cv")return`<div class="bk bk-cv${i===SB?" sel":""}" data-b="${i}" style="${st}"><div class="cv" style="aspect-ratio:100/${b.h||50}">${(b.items||[]).map((q,j)=>
+`<div class="it it-${q.t}${i===SB&&j===SI?" sel":""}" data-it="${j}" style="left:${q.x}%;top:${q.y}%;width:${q.w}%;--f:${q.fs||16};text-align:${q.al||"left"};z-index:${q.z|0}">${q.t=="img"?(q.src?`<img src="${img(q.src)}" alt="">`:`<div class="ph pi">🖼</div>`):(md(q[l])||ph)}</div>`).join("")}<i class="hh" title="${L("Height","Высота")}"></i></div></div>`;
+return`<div class="bk bk-text${i===SB?" sel":""}" data-b="${i}" style="${st}">${md(b[l])||ph}</div>`}
+function draw(){if(!LY)return;const B=BL();
+LY.grid.innerHTML=B.map(cell).join("");
+LY.grid.querySelectorAll(".bk,.it").forEach(e=>e.insertAdjacentHTML("beforeend",'<i class="rl"></i><i class="rr"></i>'));
+tools()}
+function mark(){LY.grid.querySelectorAll(".sel").forEach(e=>e.classList.remove("sel")); // selection without re-rendering (keeps double-click working)
+const k=LY.grid.querySelector(`[data-b="${SB}"]`);k?.classList.add("sel");if(SI!=null)k?.querySelector(`[data-it="${SI}"]`)?.classList.add("sel");tools()}
+function tools(){LY.tb.hidden=SB==null;if(SB==null)return;const b=BL()[SB],e=LY.grid.querySelector(`[data-b="${SB}"]`);if(!b||!e){SB=null;LY.tb.hidden=true;return}
+const it=b.t=="cv"&&SI!=null?b.items[SI]:null,tg=it||b,set=(k,v)=>{tg[k]=v;commit()},
+alg=["left","center","right",...(it?[]:["justify"])].map((a,j)=>btn(["⯇","≡","⯈","☰"][j],()=>set("al",a),{left:L("Left","Влево"),center:L("Centre","По центру"),right:L("Right","Вправо"),justify:L("Justify","По ширине")}[a])),
+B=[];
+if(!it){B.push(...alg,btn("⤒",()=>set("va","start"),L("Top","Сверху")),btn("↕",()=>set("va","center"),L("Middle","По середине")),btn("⤓",()=>set("va","end"),L("Bottom","Снизу")));
+if(b.t=="cv")B.push(btn("+T",()=>addItem("text"),L("Text on canvas","Текст на холсте")),btn("+🖼",()=>addItem("img"),L("Image on canvas","Изображение на холсте")))}
+else{B.push(...alg,btn("A−",()=>set("fs",Math.max(6,(it.fs||16)-2))),btn("A+",()=>set("fs",(it.fs||16)+2)),
+btn("⬆",()=>set("z",(it.z|0)+1),L("Bring forward","Выше")),btn("⬇",()=>set("z",Math.max(0,(it.z|0)-1)),L("Send backward","Ниже")))}
+if(tg.t=="text")B.push(btn("✎",()=>editText(tg),L("Edit text","Редактировать текст")));
+if(tg.t=="img")B.push(btn("🖼",()=>pickImg(tg),L("Choose image","Выбрать изображение")));
+if(b.t=="img"&&!it)B.push(btn("Aa",()=>caption(b),L("Caption","Подпись")));
+B.push(btn("⧉",()=>{if(it){b.items.push({...it,x:cl(it.x+3,0,95),y:cl(it.y+3,0,95)});SI=b.items.length-1}else{BL().splice(SB+1,0,JSON.parse(JSON.stringify(b)));SB++}commit()},L("Duplicate","Дублировать")),
+btn("🗑",del,L("Delete","Удалить")));
+LY.tb.replaceChildren(...B);
+const r=e.getBoundingClientRect(),pr=LY.el.getBoundingClientRect(),ir=it&&e.querySelector(`[data-it="${SI}"]`)?.getBoundingClientRect(),t=ir||r;
+LY.tb.style.top=Math.max(0,t.top-pr.top-LY.tb.offsetHeight-6)+"px";LY.tb.style.left=cl(t.left-pr.left,0,Math.max(0,pr.width-LY.tb.offsetWidth))+"px"}
+function del(){const B=BL();if(SB==null)return;if(SI!=null){B[SB].items.splice(SI,1);SI=null}else{B.splice(SB,1);SB=null}commit()}
+function add(t){const B=BL(),b=t=="cv"?{t,c:0,w:12,h:50,items:[]}:{t,c:0,w:12,al:"left"};B.push(b);SB=B.length-1;SI=null;commit();if(t=="text")editText(b);if(t=="img")pickImg(b)}
+function addItem(t){const b=BL()[SB],q=t=="img"?{t,x:30,y:20,w:40}:{t,x:10,y:10,w:40,fs:18,al:"left"};b.items.push(q);SI=b.items.length-1;commit();if(t=="text")editText(q);else pickImg(q)}
+function editText(o){openAE(PAGE,{get:l=>o[l]||"",set:(l,v)=>{o[l]=v;PG.body_en=PG.body_ru="";WJ(PAGE,PG);LY.last=snap();draw()},start:()=>{HI.push(LY.last);HR=[]}})}
+function pickImg(o){const f=h("input",{type:"file",accept:"image/*"});f.onchange=async()=>{if(!f.files[0])return;o.src=await upload(f.files[0]);commit()};f.click()}
+function caption(b){dialog(L("Caption","Подпись"),...["en","ru"].map(l=>lab(l.toUpperCase(),inp(b["cap_"+l],v=>{b["cap_"+l]=v;commit(0)}))))}
+function layout(){const a=D.querySelector("section article");if(!a||!PG)return;
+const grid=h("div",{cls:"lay"}),tb=h("div",{cls:"ltb",hidden:""}),
+bar2=h("div",{cls:"lad"},btn("+ "+L("Text","Текст"),()=>add("text")),btn("+ "+L("Image","Изображение"),()=>add("img")),btn("+ "+L("Canvas","Холст"),()=>add("cv")),
+btn("↶",()=>undo(1),"Ctrl+Z"),btn("↷",()=>undo(0),"Ctrl+Shift+Z"));
+a.replaceChildren(grid,bar2,tb);a.classList.add("lea");LY={el:a,grid,tb,last:snap()};draw();
+grid.addEventListener("pointerdown",down);grid.addEventListener("pointermove",move);grid.addEventListener("pointerup",up);grid.addEventListener("pointercancel",up);
+grid.addEventListener("dblclick",e=>{const k=e.target.closest(".bk");if(!k)return;const b=BL()[+k.dataset.b],q=e.target.closest(".it");const o=q?b.items[+q.dataset.it]:b;
+if(o.t=="text")editText(o);else if(o.t=="img")pickImg(o)});
+D.addEventListener("pointerdown",e=>{if(SB!=null&&!e.target.closest(".lay,.ltb,#ae,.dl")){SB=SI=null;mark()}});
+D.addEventListener("keydown",e=>{if(!LY||e.target.closest("input,textarea,[contenteditable]"))return;const k=e.key;
+if((e.ctrlKey||e.metaKey)&&k.toLowerCase()=="z"){e.preventDefault();undo(!e.shiftKey);return}
+if(SB==null)return;if(k=="Delete"||k=="Backspace"){e.preventDefault();del();return}
+const b=BL()[SB],it=SI!=null&&b.items[SI],d=e.shiftKey?2:.5,mv={ArrowLeft:[-d,0],ArrowRight:[d,0],ArrowUp:[0,-d],ArrowDown:[0,d]}[k];
+if(mv&&it){e.preventDefault();it.x=r1(cl(it.x+mv[0],0,100-it.w));it.y=r1(cl(it.y+mv[1],0,99));commit()}
+else if(mv&&!it&&mv[0]){e.preventDefault();b.c=cl((b.c|0)+Math.sign(mv[0]),0,12-(b.w||12));commit()}});
+addEventListener("resize",()=>tools())}
+// drag: move / resize blocks on the grid (snapped to columns), move / resize canvas items freely (0.1 %), canvas height
+function down(e){const k=e.target.closest(".bk");if(!k||e.button)return;const i=+k.dataset.b,b=BL()[i],q=e.target.closest(".it"),hd=e.target.closest(".rl,.rr,.hh");
+SB=i;SI=q?+q.dataset.it:null;
+const g=LY.grid,gr=g.getBoundingClientRect(),cs=getComputedStyle(g),gap=parseFloat(cs.columnGap)||0,cw=(gr.width+gap)/12,cv=k.querySelector(".cv")?.getBoundingClientRect();
+DG={x:e.clientX,y:e.clientY,i,b,cw,cv,m:hd?hd.className:q?"it":"bk",o:JSON.parse(JSON.stringify(b)),moved:0,it:SI!=null?b.items[SI]:null,itR:q?.getBoundingClientRect()};
+g.setPointerCapture(e.pointerId);mark()}
+function move(e){if(!DG)return;const dx=e.clientX-DG.x,dy=e.clientY-DG.y;if(!DG.moved&&Math.hypot(dx,dy)<4)return;
+if(!DG.moved){DG.moved=1;HI.push(LY.last);HR=[];LY.grid.classList.add("drag")}
+const b=DG.b,o=DG.o,B=BL(),W12=n=>Math.round(n/DG.cw);
+if(DG.m=="it"){const it=DG.it,o2=o.items[SI];it.x=r1(cl(o2.x+dx/DG.cv.width*100,0,100-it.w));it.y=r1(cl(o2.y+dy/DG.cv.width*100,-5,(b.h||50)-1))}
+else if(DG.m=="rr"&&DG.it){const o2=o.items[SI];DG.it.w=r1(cl(o2.w+dx/DG.cv.width*100,3,100-DG.it.x))}
+else if(DG.m=="rl"&&DG.it){const o2=o.items[SI],nx=cl(o2.x+dx/DG.cv.width*100,0,o2.x+o2.w-3);DG.it.x=r1(nx);DG.it.w=r1(o2.w+o2.x-nx)}
+else if(DG.m=="hh"){b.h=r1(cl((o.h||50)+dy/DG.cv.width*100,5,300))}
+else if(DG.m=="rr"){b.w=cl((o.w||12)+W12(dx),1,12-(b.c|0))}
+else if(DG.m=="rl"){const c=cl((o.c|0)+W12(dx),0,(o.c|0)+(o.w||12)-1);b.c=c;b.w=(o.c|0)+(o.w||12)-c}
+else{b.c=cl((o.c|0)+W12(dx),0,12-(b.w||12)); // horizontal: columns; vertical: position among the other blocks
+const els=[...LY.grid.querySelectorAll(".bk")].filter(x=>+x.dataset.b!=DG.i);let n=0;
+for(const x of els){const r=x.getBoundingClientRect();if(r.bottom<e.clientY||(r.top<=e.clientY&&e.clientY<=r.bottom&&r.left+r.width/2<e.clientX))n++}
+const cur=B.indexOf(b);if(n!=cur){B.splice(cur,1);B.splice(n,0,b);DG.i=SB=n}}
+draw()}
+function up(e){if(!DG)return;const d=DG;DG=null;LY.grid.classList.remove("drag");if(d.moved){PG.body_en=PG.body_ru="";WJ(PAGE,PG);LY.last=snap();draw()}}
 
 // ---------- pages: new, delete, order ----------
 const dir=SRC.replace(/_index\.md$/,"");
@@ -252,10 +345,10 @@ TX=await J(F.text,{});if(draft[F.text])showText();
 if(PAGE&&!/^map\//.test(SRC)){PG=await pageObj(PAGE);if(PG){if(draft[PAGE])showPage(PG);
 eb.append(btn("✎ "+L("Article","Статья"),()=>openAE()),btn("+ "+L("Page","Страница"),newPage),btn("🗑",delPage,L("Delete page","Удалить страницу")));
 D.querySelectorAll("section ul li").forEach((l,i)=>{const p=D.querySelectorAll("section ul li a")[i]?.getAttribute("href");if(p)l.dataset.src=decodeURI(p).replace(U,"")+"_index.md"});
-order();listNew()}}
+order();listNew();layout()}}
 if(MP){eb.append(btn("📍 "+L("Markers","Метки"),e=>{MKon^=1;e.currentTarget.classList.toggle("on",!!MKon);HT.classList.toggle("mke",!!MKon);if(MKon)toast(L("Click the map to add a marker; drag markers to move them, click to edit.","Клик по карте — новая метка; метки можно перетаскивать, клик — редактировать."))}),
 btn("☰ "+L("Events","События"),events));await mapInit()}
 editable();bar();if(!tok)toast(L("Edit mode. Changes stay in this browser until you publish them (⚙ — GitHub access).","Режим редактирования. Изменения хранятся в браузере, пока вы их не опубликуете (⚙ — доступ к GitHub)."))}
 window.EDIT={toggle(){if(on){LS.ascwEditOn="";location.reload()}else start()}};
-D.addEventListener("lang",()=>{if(!on)return;bar();showText();if(PG)showPage(PG)});
+D.addEventListener("lang",()=>{if(!on)return;bar();showText();if(PG)showPage(PG);draw()});
 start();

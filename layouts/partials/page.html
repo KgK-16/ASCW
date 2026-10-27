@@ -3,6 +3,14 @@
 <h1><span lang="en" data-f="title">{{ .Title }}</span><span lang="ru" data-f="title_ru">{{ default .Title .Params.title_ru }}</span></h1>
 <hr>
 <i class="ds"><span lang="en" data-f="description">{{ .Description }}</span><span lang="ru" data-f="description_ru">{{ default .Description .Params.description_ru }}</span></i>
-<article>{{ range slice "en" "ru" }}<div lang="{{ . }}" data-f="body_{{ . }}">{{ with index $.Params (print "body_" .) }}{{ $.RenderString (dict "display" "block") . }}{{ end }}</div>{{ end }}</article>
+<article>{{ with .Params.blocks }}<div class="lay">{{ range $b := . }}
+{{- $st := printf "grid-column:%v/span %v;text-align:%s;align-self:%s" (add (default 0 $b.c) 1) (default 12 $b.w) (default "left" $b.al) (default "start" $b.va) | safeCSS -}}
+{{- if eq $b.t "text" }}<div class="bk bk-text" style="{{ $st }}">{{ range slice "en" "ru" }}<div lang="{{ . }}">{{ with or (index $b .) $b.en }}{{ $.RenderString (dict "display" "block") . }}{{ end }}</div>{{ end }}</div>
+{{- else if eq $b.t "img" }}<figure class="bk bk-img" style="{{ $st }}">{{ with $b.src }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}{{ range $l := slice "en" "ru" }}{{ with or (index $b (print "cap_" $l)) $b.cap_en }}<figcaption lang="{{ $l }}">{{ . }}</figcaption>{{ end }}{{ end }}</figure>
+{{- else if eq $b.t "cv" }}<div class="bk bk-cv" style="{{ $st }}"><div class="cv" style="{{ printf "aspect-ratio:100/%v" (default 50 $b.h) | safeCSS }}">{{ range $q := $b.items }}
+{{- $s2 := printf "left:%v%%;top:%v%%;width:%v%%;--f:%v;text-align:%s;z-index:%v" $q.x $q.y $q.w (default 16 $q.fs) (default "left" $q.al) (default 0 $q.z) | safeCSS -}}
+<div class="it" style="{{ $s2 }}">{{ if eq $q.t "img" }}{{ with $q.src }}<img src="{{ . }}" alt="" loading="lazy">{{ end }}{{ else }}{{ range slice "en" "ru" }}<div lang="{{ . }}">{{ with or (index $q .) $q.en }}{{ $.RenderString (dict "display" "block") . }}{{ end }}</div>{{ end }}{{ end }}</div>
+{{- end }}</div></div>{{ end }}{{ end }}</div>
+{{- else }}{{ range slice "en" "ru" }}<div lang="{{ . }}" data-f="body_{{ . }}">{{ with index $.Params (print "body_" .) }}{{ $.RenderString (dict "display" "block") . }}{{ end }}</div>{{ end }}{{ end }}</article>
 {{ with .Pages }}<ul>{{ range . }}<li><a href="{{ .RelPermalink }}"><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></a>{{ end }}</ul>{{ end }}
 </section></main>
