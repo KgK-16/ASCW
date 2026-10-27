@@ -22,7 +22,7 @@ section{width:100%;padding:0;border:0;position:relative;overflow:hidden}
 #c .lb text{text-anchor:start;stroke-width:.14em}
 #gx{position:absolute;left:0;top:0;pointer-events:none;z-index:2}#gx span{position:absolute;left:0;top:0;white-space:nowrap;font:400 12px "Exo 2",sans-serif;letter-spacing:1px;color:#e8e8e0b3;text-shadow:0 0 3px #000,0 0 2px #000}
 .t #gx span,#mw.t~#gx span{transition:transform .25s}
-#mw{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}#mw g{pointer-events:auto;cursor:pointer}#mw g.z,#mw g[hidden]{display:none}#mw g.s path{fill:#e8b04a}#mw.t g{transition:transform .25s}
+#mw{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}#mw g{pointer-events:auto;cursor:pointer;transition:opacity .3s,visibility .3s}#mw g.z{opacity:0;visibility:hidden;pointer-events:none}#mw g[hidden]{display:none}#mw g.s path{fill:#e8b04a}#mw.t g{transition:transform .25s,opacity .3s,visibility .3s}
 #mw path{fill:#e8e8e0;stroke:#000;stroke-width:1.5px;stroke-linejoin:round}
 #mw text{font-family:Play,sans-serif;font-weight:400;font-size:15px;letter-spacing:1px;text-transform:uppercase;paint-order:stroke;stroke:#000b;stroke-width:3px;stroke-linejoin:round;fill:#e8e8e0;dominant-baseline:central}
 .z{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;border:1px solid #6665c04d;z-index:9}
@@ -34,7 +34,7 @@ section{width:100%;padding:0;border:0;position:relative;overflow:hidden}
 .z button::after{content:attr(aria-label);position:absolute;right:calc(100% + 8px);top:50%;transform:translateY(-50%);white-space:nowrap;font:400 12px/1 "Exo 2",sans-serif;letter-spacing:.5px;text-transform:none;color:#e8e8e0;background:#020206f2;border:1px solid #6665c04d;padding:6px 8px;opacity:0;pointer-events:none;transition:opacity .15s}
 .z button:hover::after,.z button:focus-visible::after,.z.hint button::after{opacity:1}
 .z i{display:inline-block;width:12px;height:12px;border:1px solid #e8e8e0a6;vertical-align:-1px}.z .on i{background:linear-gradient(135deg,#5e0a22 33%,#1c4690 33% 66%,#b77d2b 66%)}
-aside{position:absolute;left:0;top:0;bottom:0;width:min(280px,100%);padding:24px 20px;background:#020206f2;border-right:1px solid #6665c04d;z-index:9;display:flex;flex-direction:column;justify-content:center;transform:translateX(-101%);transition:transform .25s}
+aside{position:absolute;left:0;top:0;bottom:0;width:min(560px,100%);padding:24px 20px;background:#020206f2;border-right:1px solid #6665c04d;z-index:9;display:flex;flex-direction:column;justify-content:center;transform:translateX(-101%);transition:transform .25s}
 aside.o{transform:none}
 aside h1{font-size:32px}#px{white-space:pre-line;max-height:45vh;overflow:auto}
 aside>button{position:absolute;right:6px;top:2px;font-size:20px;width:40px;height:40px;cursor:pointer;color:#e8e8e0a6}

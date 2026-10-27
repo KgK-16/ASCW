@@ -86,8 +86,9 @@ D.head.append(h("style",{},`
 #pvw{position:fixed;inset:0;z-index:55;background:#020206e6;display:flex;align-items:center;justify-content:center;gap:16px;flex-direction:column}
 #pvw iframe{width:390px;height:min(844px,calc(100vh - 90px));border:1px solid #6665c0;border-radius:16px;background:#04040a}
 .ed aside{justify-content:flex-start;overflow:auto;padding-top:44px}.ed aside .ef{display:flex;flex-direction:column;gap:8px;margin-top:14px;text-align:left}.ed aside .ef textarea{min-height:80px}
-.ef .row>label{min-width:0}@media(max-width:700px){.ed aside{height:62%}body:has(#p.o) :is(#eb,#et),.ed aside.o~#cd{display:none}}body:has(#p.o) :is(#eb,#et){left:292px}
-.ed #mw g{cursor:grab}.ed #mw g.z:not([hidden]){display:inline;opacity:.45} /* markers hidden at this zoom stay reachable for editing */.mke #m{cursor:crosshair}
+.ef .row>label{min-width:0}@media(max-width:700px){.ed aside{height:62%}body:has(#p.o) :is(#eb,#et),.ed aside.o~#cd{display:none}}body:has(#p.o) :is(#eb,#et){left:572px}
+.lbe #sl .lb text{pointer-events:auto;cursor:move}.lbe #sl .lb text:hover{fill:#e8b04a}.ef input[type=range]{padding:0;accent-color:#8d8cf0}
+.ed #mw g{cursor:grab}.mke #m{cursor:crosshair}
 .ml{display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow:auto}.ml button{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:6px 8px;color:#e8e8e0;cursor:pointer;font:400 14px Inter,sans-serif}.ml button:hover{background:#6665c040}.ml small{color:#e8e8e080}
 `));
 let pb,eb,et;
@@ -340,7 +341,7 @@ function pform(el,key){const a=D.getElementById("p");if(PF?.key==key&&a.contains
 async function mapInit(){if(!MP)return;
 window.MK=await J(F.mk,MK);window.EV=await J(F.ev,EV);window.COU=await J(F.co,COU);MP.redraw();
 MP.onTap=(mx,my,i)=>{if(i!=null){MP.pickM(i);return 1}if(!MKon)return 0;MK.push({...ll(my,mx),n:"",r:""});saveMK();MP.pickM(MK.length-1);return 1};
-MP.onMarker=i=>mkForm(i);MP.onPanel=r=>coForm(r);if(MP.sel())coForm(MP.sel());
+MP.onMarker=i=>mkForm(i);lbInit();MP.onPanel=r=>coForm(r);if(MP.sel())coForm(MP.sel());
 D.getElementById("pc").addEventListener("click",()=>{PF?.remove();PF=null;const n=MK.length;window.MK=MK.filter(q=>q.n||q.r||q.ten||q.tru);if(MK.length!=n)saveMK()}); // unnamed new markers are dropped on close
 const mw=D.getElementById("mw");let dg=null;
 mw.addEventListener("pointerdown",e=>{const g=e.target.closest("[data-m]");if(!g)return;e.stopPropagation();mw.setPointerCapture(e.pointerId);dg={i:+g.dataset.m,x:e.clientX,y:e.clientY,mv:0}});
@@ -372,10 +373,21 @@ lab("EN",inp(v[1],x=>{v[1]=x;WJ(F.ev,EV);MP.timeline()},{area:1})),lab("RU",inp(
 btn("✕",()=>{EV.splice(i,1);sv();rows()},L("Delete","Удалить")))).map(r=>{r.firstChild.style.flex="0 0 80px";return r}));
 rows();const w=dialog(L("Timeline events","События хронологии"),box,h("div",{cls:"row"},btn("+ "+L("Event","Событие"),()=>{EV.push([MP.yr(),"",""]);WJ(F.ev,EV);rows();box.lastChild?.querySelector("textarea")?.focus()}),
 btn(L("Done","Готово"),()=>{sv();w.remove()})));w.onclick=e=>{if(e.target==w){sv();w.remove()}}}
-function coForm(r){const o=COU[r.c]=COU[r.c]||{},t0=()=>{for(const k in o)if(!o[k])delete o[k];if(!Object.keys(o).length)delete COU[r.c];WJ(F.co,COU)};let tm;
-const ch=(k,v)=>{o[k]=v;COU[r.c]=o;t0();clearTimeout(tm);tm=setTimeout(()=>MP.redraw(),250)};
+function coForm(r){const o=COU[r.c]=COU[r.c]||{},t0=()=>{for(const k in o)if(o[k]===""||o[k]==null||(k=="ls"||k=="lo")&&o[k]==1||(k=="lx"||k=="ly")&&!o[k])delete o[k];if(!Object.keys(o).length)delete COU[r.c];WJ(F.co,COU)};let tm;
+const ch=(k,v,t=250)=>{o[k]=v;COU[r.c]=o;t0();clearTimeout(tm);tm=setTimeout(()=>MP.redraw(),t)},
+rng=(k,a,b,st,f)=>{const i=h("input",{type:"range",min:a,max:b,step:st,cls:"ei"}),n=h("span",{});i.value=o[k]??1;const sh=()=>n.textContent=" "+Math.round(i.value*100)+"%";sh();
+i.oninput=()=>{sh();ch(k,+i.value,60)};return lab(h("span",{},f,n),i)};
 pform(h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(o.en,v=>ch("en",v),{ph:r.n0})),lab(L("Name","Название")+" · RU",inp(o.ru,v=>ch("ru",v),{ph:r.r0}))),
-lab(L("Text","Текст")+" · EN",inp(o.ten,v=>ch("ten",v),{area:1})),lab(L("Text","Текст")+" · RU",inp(o.tru,v=>ch("tru",v),{area:1}))),"c"+r.c)}
+lab(L("Text","Текст")+" · EN",inp(o.ten,v=>ch("ten",v),{area:1})),lab(L("Text","Текст")+" · RU",inp(o.tru,v=>ch("tru",v),{area:1})),
+h("div",{cls:"row"},rng("ls",.3,3,.05,L("Name size","Размер названия")),rng("lo",0,1,.05,L("Name opacity","Прозрачность названия"))),
+h("div",{cls:"row"},btn(L("Name back to its place","Вернуть название на место"),()=>{delete o.lx;delete o.ly;ch("lx",0,0)}))),"c"+r.c)}
+// country names: drag in the "names" mode (the shift is stored in countries.json as lx / ly, map pixels)
+function lbInit(){const sl=D.getElementById("sl");let dg=null;
+sl.addEventListener("pointerdown",e=>{const t=e.target.closest("text[data-i]");if(!t||!LBon)return;e.stopPropagation();e.preventDefault();sl.setPointerCapture(e.pointerId);dg={t,id:+t.dataset.i,a:MP.toMap(e),mv:0}});
+sl.addEventListener("pointermove",e=>{if(!dg)return;const b=MP.toMap(e),dx=b.mx-dg.a.mx,dy=b.my-dg.a.my;dg.mv=Math.max(dg.mv,Math.abs(dx)+Math.abs(dy));dg.dx=dx;dg.dy=dy;dg.t.setAttribute("transform",`translate(${dx} ${dy})`)});
+sl.addEventListener("pointerup",()=>{if(!dg)return;const d=dg;dg=null;MP.pick(d.id);const r=MP.sel();if(!r)return;
+if(d.mv>1){const o=COU[r.c]=COU[r.c]||{};o.lx=Math.round((o.lx||0)+d.dx);o.ly=Math.round((o.ly||0)+d.dy);WJ(F.co,COU);PF?.remove();PF=null;coForm(r);MP.redraw()}})}
+let LBon=0;
 
 // ---------- on / off ----------
 async function start(){on=1;TX=await J(F.text,{});
@@ -387,9 +399,11 @@ if(PAGE&&!/^map\//.test(SRC)&&(PG=await pageObj(PAGE))){
 if(NEWP)D.title=(PG.title||"")+" · ASCW";
 eb.append(ib("↶","",()=>undo(1),L("Undo","Отменить")+" (Ctrl+Z)"),ib("↷","",()=>undo(0),L("Redo","Повторить")+" (Ctrl+Shift+Z)"),
 ib("📄",L("Page","Страница"),settings,L("Title, description, background, subpages","Название, описание, фон, подстраницы")),ib("📱",L("Phone","Телефон"),preview,L("Preview on a phone screen","Как на экране телефона")))}
-if(MP)eb.append(ib("📍",L("Add markers","Новые метки"),e=>{MKon^=1;e.currentTarget.classList.toggle("on",!!MKon);HT.classList.toggle("mke",!!MKon);
+if(MP)eb.append(ib("📍",L("Add markers","Новые метки"),e=>{MKon^=1;e.currentTarget.classList.toggle("on",!!MKon);HT.classList.toggle("mke",!!MKon);if(MKon&&LBon)D.getElementById("lbb").click();
 if(MKon)toast(L("Click the map to place a marker. Drag markers to move them; click one to edit it.","Клик по карте ставит метку. Метки можно перетаскивать, клик по метке — редактировать."))},L("Place markers by clicking the map","Ставить метки кликом по карте")),
-ib("☰",L("Markers","Метки"),mkList,L("All markers","Все метки")),ib("⏱",L("Events","События"),events,L("Timeline events","События хронологии")));
+ib("☰",L("Markers","Метки"),mkList,L("All markers","Все метки")),
+(b=>(b.id="lbb",b))(ib("🏷",L("Country names","Названия стран"),e=>{LBon^=1;e.currentTarget.classList.toggle("on",!!LBon);HT.classList.toggle("lbe",!!LBon);if(LBon&&MKon)eb.querySelector(".eb.on:not(#lbb)")?.click();
+if(LBon)toast(L("Drag country names to move them; click a name to change its size and opacity.","Названия стран можно перетаскивать; клик по названию — размер и прозрачность."))},L("Move and adjust country names","Двигать и настраивать названия стран"))),ib("⏱",L("Events","События"),events,L("Timeline events","События хронологии")));
 eb.append(ib("⚙","",token,L("GitHub access","Доступ к GitHub")),ib("Aa","",texts,L("Interface texts","Тексты интерфейса")));
 editable();bar();if(!tok)toast(L("Edit mode. Changes stay in this browser until you publish them (⚙ — GitHub access).","Режим редактирования. Изменения хранятся в браузере, пока вы их не опубликуете (⚙ — доступ к GitHub)."))}
 if(PV&&PAGE&&!/^map\//.test(SRC))PG=draft[PAGE]&&await pageObj(PAGE);

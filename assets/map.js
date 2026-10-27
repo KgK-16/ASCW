@@ -27,12 +27,13 @@ two=o=>{const a=Object.values(o);return a[1]&&{d:Math.hypot(a[0].x-a[1].x,a[0].y
 ver=()=>V.reduce((a,v)=>v.y<=yr?v:a,V[0]), // latest map version not after the selected year
 bsrc=l=>U+`map/${cv.y}/b${l}.webp`;
 function glyphs(r){ // label letters keep their proportions; letter spacing stretches the name to its box width
-const q=ru()?r.sr:r.s;if(!q)return null;
-const t=nm(r).toUpperCase(),n=t.length,w=ru()?r.wr:r.w;hc.font=q+"px A";
+// set on the site (COU): lx / ly label shift, ls size factor, lo opacity
+const c=COU[r.c]||{},f=c.ls||1,q=(ru()?r.sr:r.s)*f;if(!q)return null;
+const t=nm(r).toUpperCase(),n=t.length,w=(ru()?r.wr:r.w)*f;hc.font=q+"px A";
 let ws=[...t].map(ch=>hc.measureText(ch).width),nat=ws.reduce((a,v)=>a+v,0),z=q;
 if(nat>w&&w){const f=w/nat;ws=ws.map(v=>v*f);nat=w;z=q*f} // a renamed country longer than its box: smaller letters, same proportions
-const ls=n>1?Math.max(0,(w-nat)/(n-1)):0;let X=(ru()?r.xr:r.x)-(nat+ls*(n-1))/2;
-return{t,s:+z.toFixed(1),y:ru()?r.yr:r.y,xs:ws.map(v=>{const o=X;X+=v+ls;return o})}}
+const ls=n>1?Math.max(0,(w-nat)/(n-1)):0;let X=(ru()?r.xr:r.x)+(c.lx||0)-(nat+ls*(n-1))/2;
+return{t,s:+z.toFixed(1),y:(ru()?r.yr:r.y)+(c.ly||0),o:c.lo,xs:ws.map(v=>{const o=X;X+=v+ls;return o})}}
 function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>{if(el._s==src)el.src=src},()=>{})} // decode off the main thread, then swap
 
 // ---- flat map ----
@@ -57,7 +58,7 @@ let s="",q="",l="",t="";
 for(let i=-180;i<=180;i+=15){const X=(i+180)/360*W;q+=`<path${i?"":' class="e"'} d="M${X} 0V${H}"/>`;if(i%30==0&&i<180)l+=`<span data-o="${i}">${deg(i)}</span>`}
 for(let i=-75;i<=75;i+=15){const Y=(90-i)/180*H;q+=`<path${i?"":' class="e"'} d="M0 ${Y}H${W}"/>`;if(i%30==0)l+=`<span data-a="${i}">${deg(i,1)}</span>`}
 RG.forEach(r=>{s+=`<path id="r${r.id}" data-i="${r.id}" style="--c:${r.c}" fill-rule="evenodd" d="${r.d}"/>`;const a=glyphs(r);
-if(a)t+=`<text x="${a.xs.map(v=>v.toFixed(1)).join(" ")}" y="${a.y}" font-size="${a.s}">${a.t}</text>`});
+if(a)t+=`<text data-i="${r.id}"${a.o!=null?` opacity="${a.o}"`:""} x="${a.xs.map(v=>v.toFixed(1)).join(" ")}" y="${a.y}" font-size="${a.s}">${a.t}</text>`});
 sv.innerHTML=s;sl.innerHTML=`<g class="gr">${q}</g><g class="lb">${t}</g>`;gx.innerHTML=l;posM();
 RG.forEach(r=>r.el=$("r"+r.id));
 hi()}
@@ -72,9 +73,10 @@ if(G)tq()}
 // markers live outside the zoomed layer and are re-positioned each frame, so icons and names stay crisp vectors at any zoom
 // marker: {o lon, a lat, n / r name EN / RU, k kind, f font, ten / tru text, y0 / y1 years shown, z importance: 0 always, 1 from medium zoom, 2 close-up only}
 const mOn=q=>!(q.y0!=null&&yr<q.y0)&&!(q.y1!=null&&yr>q.y1),
-drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"}${i===ms?' class="s"':""}><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="12" y="1"${q.f&&FN[q.f]?` style='font-family:${FN[q.f]},sans-serif'`:""}>${esc(mn(q))}</text></g>`).join("");posM()},
+far=(q,zl=k/fit())=>(q.z==1&&zl<2.2)||(q.z==2&&zl<4.5),
+drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"} class="${far(q)?"z":""}${i===ms?" s":""}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="12" y="1"${q.f&&FN[q.f]?` style='font-family:${FN[q.f]},sans-serif'`:""}>${esc(mn(q))}</text></g>`).join("");posM()},
 posM=()=>{const zl=k/fit();mw.querySelectorAll("g").forEach((e,i)=>{const q=MK[i];if(!q)return;e.style.transform=`translate(${x+(q.o+180)/360*W*k}px,${y+(90-q.a)/180*H*k}px)`;
-e.classList.toggle("z",(q.z==1&&zl<2.2)||(q.z==2&&zl<4.5))});
+e.classList.toggle("z",far(q,zl))});
 // graticule labels: light, pinned to the top / left edge of the view, hidden under the button column
 const t0=Math.max(y,0)+6,l0=Math.max(x,0)+6;
 gx.querySelectorAll("span").forEach(e=>{if(e.dataset.o!=null){const X=x+(+e.dataset.o+180)/360*W*k+4;e.style.transform=`translate(${X}px,${t0}px)`;e.hidden=X<l0+40||X>m.clientWidth-zw()-70}
@@ -152,9 +154,9 @@ D.addEventListener("lang",()=>{rs();drawM();panel();showC();if(tlOpen())tlB();if
 addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
 const MAP=window.MAP={ // editor hooks
 redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
-markers(){drawM();if(G)tq()},SH,FN,pickM,yr:()=>yr,focus(o,a){if(G)sw();k=Math.max(k,fit()*3);x=m.clientWidth/2-(o+180)/360*W*k;y=m.clientHeight/2-(90-a)/180*H*k;set(1)},timeline(){if(tlOpen())tlB()},
+markers(){drawM();if(G)tq()},SH,FN,pickM,yr:()=>yr,focus(o,a){if(G)sw();k=Math.max(k,fit()*5);x=m.clientWidth/2-(o+180)/360*W*k;y=m.clientHeight/2-(90-a)/180*H*k;set(1)},timeline(){if(tlOpen())tlB()},
 toMap(e){const r=m.getBoundingClientRect();return{mx:(e.clientX-r.left-x)/k,my:(e.clientY-r.top-y)/k}},
-sel:()=>sel&&R[sel],W,H};
+sel:()=>sel&&R[sel],pick,W,H};
 upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();lx=(m.clientWidth/2-x)/k;ly=(m.clientHeight/2-y)/k;showC(); /* start with the view centre */D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
@@ -280,7 +282,7 @@ o.strokeStyle="#000000b3";o.lineWidth=3;o.beginPath();o.moveTo(S/2,0);o.lineTo(S
 if(sel){const q=path(R[sel]),d=new Path2D;d.rect(0,0,W,H);d.addPath(q);o.save();o.scale(s,s);o.lineJoin="round";
 o.fillStyle="#04040a";o.globalAlpha=.5;o.fill(d,"evenodd");o.restore()}
 o.fillStyle="#e8e8e0";o.textAlign="left";o.textBaseline="middle";o.lineJoin="round";o.strokeStyle="#000000b3";
-RG.forEach(r=>{const a=glyphs(r);if(!a)return;const f=a.s*s;o.font=f+"px A";o.lineWidth=f*.14;[...a.t].forEach((ch,i)=>{o.strokeText(ch,a.xs[i]*s,a.y*s);o.fillText(ch,a.xs[i]*s,a.y*s)})});
+RG.forEach(r=>{const a=glyphs(r);if(!a)return;const f=a.s*s;o.font=f+"px A";o.lineWidth=f*.14;o.globalAlpha=a.o??1;[...a.t].forEach((ch,i)=>{o.strokeText(ch,a.xs[i]*s,a.y*s);o.fillText(ch,a.xs[i]*s,a.y*s)})});o.globalAlpha=1;
 MK.forEach(q=>{if(!mOn(q)||q.z==2)return;o.font=24*s+"px "+(FN[q.f]||"Play")+",sans-serif";const X=(q.o+180)/360*S,Y=(90-q.a)/180*Sh,n=mn(q).toUpperCase(),sp=new Path2D(SH[q.k|0]||SH[0]);
 o.save();o.translate(X,Y);o.scale(1.6*s,1.6*s);o.lineWidth=1.9;o.strokeStyle="#000";o.fill(sp,"evenodd");o.stroke(sp);o.restore();
 o.lineWidth=5*s;o.strokeStyle="#000000b3";o.strokeText(n,X+19*s,Y);o.fillText(n,X+19*s,Y)});
