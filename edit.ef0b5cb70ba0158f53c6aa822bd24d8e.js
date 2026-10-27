@@ -16,11 +16,11 @@ try{draft=JSON.parse(LS.ascwDraft||"{}")}catch{}
 
 // ---------- storage: draft, GitHub ----------
 function save(){try{LS.ascwDraft=JSON.stringify(draft)}catch{toast(L("Draft too big to keep after closing the page — publish first","Черновик слишком большой, чтобы пережить закрытие страницы — сначала опубликуйте"),1)}bar()}
-async function gh(p,o={}){const r=await fetch(`https://api.github.com/repos/${REPO}/${p}`,{cache:"no-store",...o,headers:{Authorization:"Bearer "+tok,Accept:o.raw?"application/vnd.github.raw+json":"application/vnd.github+json",...(o.body?{"Content-Type":"application/json"}:{})}});
+async function gh(p,o={}){const r=await fetch(`https://api.github.com/repos/${REPO}/${p}`,{cache:"no-store",...o,headers:{...(tok?{Authorization:"Bearer "+tok}:{}),Accept:o.raw?"application/vnd.github.raw+json":"application/vnd.github+json",...(o.body?{"Content-Type":"application/json"}:{})}});
 if(!r.ok)throw Error(r.status+" "+(await r.text()).slice(0,200));return o.raw?r.text():r.json()}
 function src(p){ // current published source of a file (null if it does not exist); one request per file, writes stay in call order
 return pend[p]??=(async()=>{if(p in base)return base[p];
-try{base[p]=tok?await gh(`contents/${p}?ref=${BR}`,{raw:1}):await fetch(`https://raw.githubusercontent.com/${REPO}/${BR}/${p}?${Date.now()}`,{cache:"no-store"}).then(r=>r.ok?r.text():Promise.reject(r.status))}
+try{base[p]=await gh(`contents/${p}?ref=${BR}`,{raw:1}).catch(e=>/^404/.test(e.message)?Promise.reject(e):fetch(`https://raw.githubusercontent.com/${REPO}/${BR}/${p}?${Date.now()}`,{cache:"no-store"}).then(r=>r.ok?r.text():Promise.reject(r.status)))}
 catch(e){if(!/404/.test(e))console.warn(p,e);base[p]=null}return base[p]})()}
 async function read(p){const d=draft[p];return d?d.del?null:d.t:src(p)}
 async function write(p,t){await src(p);if(t===base[p])delete draft[p];else draft[p]={t};save()}
@@ -184,7 +184,7 @@ case"hr":return`<hr class="b-hr"${di}>`;
 case"links":return`<ul class="b-links"${di}>${kids().map(q=>`<li${q.nw?' class="nw"':""}><a href="${U+q.src.replace(/_index\.md$/,"")}">${esc(l=="ru"?q.ru||q.en:q.en)}</a></li>`).join("")||(ED?`<li>${L("No subpages yet — add one in the block menu ⠿","Подстраниц пока нет — добавьте в меню блока ⠿")}</li>`:"")}</ul>`}
 return""}
 function render(){if(!DOC)return;const a=D.activeElement?.closest?.("[data-f]"),ai=a?.closest("[data-i]")?.dataset.i,af=a?.dataset.f;
-DOC.innerHTML=B().map(rb).join("")+(ED&&!B().length?`<p class="ph" style="text-align:center;color:#e8e8e080">${L("Empty page — press + to add a block","Пустая страница — нажмите +, чтобы добавить блок")}</p>`:"");
+DOC.innerHTML=B().map(rb).join("")+(ED&&!B().length?`<button type="button" class="eb" data-act="first" style="display:block;margin:0 auto">+ ${L("Add the first block","Добавить первый блок")}</button>`:"");
 if(ED){DOC.append(gut,dln);if(CB!=null&&!DOC.querySelector(`[data-i="${CB}"]`))CB=null;gutAt(CB)}
 if(ai!=null)focusF(+ai,af)}
 function focusF(i,f,end=1){const k=DOC.querySelector(`[data-i="${i}"]`);if(!k)return;const e=f!=null?(k.matches(`[data-f="${f}"]`)?k:k.querySelector(`[data-f="${f}"]`)):k.matches("[data-f]")?k:k.querySelector("[data-f]");
@@ -236,6 +236,7 @@ snap1();sv(b,o,f,l,m=="plain"?esc(el.textContent):clean(el.innerHTML,m));store()
 DOC.addEventListener("keydown",keys);
 DOC.addEventListener("paste",paste);
 DOC.addEventListener("click",e=>{const p=e.target.closest("[data-pick]");if(p){const k=p.closest("[data-i]"),b=B()[+k.dataset.i];pickImg(p.dataset.c!=null?b.c[+p.dataset.c]:b);return}
+const fb=e.target.closest("[data-act=first]");if(fb){const r=fb.getBoundingClientRect();addMenu(-1,r.left,r.bottom+4);return}
 const a=e.target.closest("[data-act=row]");if(a){const b=B()[+a.closest("[data-i]").dataset.i];snapN();(b.rows??=[]).push({});store();render()}
 if(e.target.closest("a")&&e.target.closest("[contenteditable]"))e.preventDefault()});
 // drag & drop of image files: a new image block where the file is dropped
@@ -387,6 +388,7 @@ eb.append(ib("⚙","",token,L("GitHub access","Доступ к GitHub")),ib("Aa"
 editable();bar();if(!tok)toast(L("Edit mode. Changes stay in this browser until you publish them (⚙ — GitHub access).","Режим редактирования. Изменения хранятся в браузере, пока вы их не опубликуете (⚙ — доступ к GitHub)."))}
 if(PV&&PAGE&&!/^map\//.test(SRC))PG=draft[PAGE]&&await pageObj(PAGE);
 if(PG){if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
+if(!Array.isArray(PG.blocks)){PG.blocks=[{t:"head"},...(D.getElementById("kids")?[{t:"links"}]:[])];delete PG.items;delete PG.body_en;delete PG.body_ru;delete PG.width}
 DOC=D.querySelector("article.doc")||(NEWP?(D.querySelector("main>section").replaceChildren(h("article",{cls:"doc"})),D.querySelector("article.doc")):null);
 if(DOC){await initKids();if(ED)docInit();render()}}
 if(MP&&!PV)await mapInit()}
