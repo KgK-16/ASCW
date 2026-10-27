@@ -373,13 +373,13 @@ lab("EN",inp(v[1],x=>{v[1]=x;WJ(F.ev,EV);MP.timeline()},{area:1})),lab("RU",inp(
 btn("✕",()=>{EV.splice(i,1);sv();rows()},L("Delete","Удалить")))).map(r=>{r.firstChild.style.flex="0 0 80px";return r}));
 rows();const w=dialog(L("Timeline events","События хронологии"),box,h("div",{cls:"row"},btn("+ "+L("Event","Событие"),()=>{EV.push([MP.yr(),"",""]);WJ(F.ev,EV);rows();box.lastChild?.querySelector("textarea")?.focus()}),
 btn(L("Done","Готово"),()=>{sv();w.remove()})));w.onclick=e=>{if(e.target==w){sv();w.remove()}}}
-function coForm(r){const o=COU[r.c]=COU[r.c]||{},t0=()=>{for(const k in o)if(o[k]===""||o[k]==null||(k=="ls"||k=="lo")&&o[k]==1||(k=="lx"||k=="ly"||k=="lk")&&!o[k])delete o[k];if(!Object.keys(o).length)delete COU[r.c];WJ(F.co,COU)};let tm;
+function coForm(r){const o=COU[r.c]=COU[r.c]||{},t0=()=>{for(const k in o)if(o[k]===""||o[k]==null||k=="lo"&&o[k]==1||(k=="lx"||k=="ly"||k=="lk")&&!o[k])delete o[k];if(!Object.keys(o).length)delete COU[r.c];WJ(F.co,COU)};let tm;
 const ch=(k,v,t=250)=>{o[k]=v;COU[r.c]=o;t0();clearTimeout(tm);tm=setTimeout(()=>MP.redraw(),t)},
-rng=(k,a,b,st,f,d=1)=>{const i=h("input",{type:"range",min:a,max:b,step:st,cls:"ei"}),n=h("span",{});i.value=o[k]??d;const sh=()=>n.textContent=" "+Math.round(i.value*100)+"%";sh();
+rng=(k,a,b,st,f,d=1,u=v=>Math.round(v*100)+"%")=>{const i=h("input",{type:"range",min:a,max:b,step:st,cls:"ei"}),n=h("span",{style:"text-transform:none"});i.value=o[k]??d;const sh=()=>n.textContent=" "+u(i.value);sh();
 i.oninput=()=>{sh();ch(k,+i.value,60)};return lab(h("span",{},f,n),i)};
 pform(h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(o.en,v=>ch("en",v),{ph:r.n0})),lab(L("Name","Название")+" · RU",inp(o.ru,v=>ch("ru",v),{ph:r.r0}))),
 lab(L("Text","Текст")+" · EN",inp(o.ten,v=>ch("ten",v),{area:1})),lab(L("Text","Текст")+" · RU",inp(o.tru,v=>ch("tru",v),{area:1})),
-h("div",{cls:"row"},rng("ls",.3,3,.05,L("Name size","Размер названия")),rng("lo",0,1,.05,L("Name opacity","Прозрачность названия"))),
+h("div",{cls:"row"},rng("lz",4,150,1,L("Name size","Размер названия"),Math.round((ru()?r.sr:r.s)*.75),v=>v+" pt"),rng("lo",0,1,.05,L("Name opacity","Прозрачность названия"))),
 h("div",{cls:"row"},rng("lk",-.2,1.5,.02,L("Letter spacing","Расстояние между буквами"),0),h("div",{})),
 h("div",{cls:"row"},btn(L("Name back to its place","Вернуть название на место"),()=>{delete o.lx;delete o.ly;ch("lx",0,0)}))),"c"+r.c)}
 // country names: drag in the "names" mode (the shift is stored in countries.json as lx / ly, map pixels)
