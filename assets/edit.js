@@ -206,6 +206,11 @@ DW=()=>920, // design width of the layout: strip 1000 px − padding
 // fixed design system: text sizes come only from styles, colours only from the site palette, strip width up to 1200 px
 STY={"":16,h:22,k:11,t:45,s:13},PAL=[["","Default","По умолчанию"],["#e8e8e0","Light","Светлый"],["#6665c0","Accent","Акцент"],["#8d8cf0","Accent light","Светлый акцент"],["#e8e8e099","Muted","Приглушённый"]],
 fixSz=o=>{if(o.t=="text"||o.t=="links")o.fs=STY[o.st||""];else delete o.fs;if(o.col&&!PAL.some(c=>c[0]==o.col))delete o.col};
+// base page layout: kicker, page title, line, page description — centred at the top of the strip
+const TPL=()=>[{t:"text",al:"center",bind:"k:wip",st:"k",fs:11,x:118,y:0,w:685},{t:"text",al:"center",bind:"title",st:"t",fs:45,x:118,y:34,w:685},{t:"hr",x:436,y:112,w:48},
+{t:"text",al:"center",bind:"description",st:"s",fs:13,x:118,y:136,w:685}];
+function tpl(){const I=IT(),H=180;if(I.some(q=>q.y<H))I.forEach(q=>q.y+=H); // existing items move down so nothing overlaps
+I.unshift(...TPL());SI=null;commit()}
 function commit(hist=1){if(hist){HI.push(LY.last);HR=[];if(HI.length>200)HI.shift()}PG.body_en=PG.body_ru="";WJ(PAGE,PG);LY.last=snap();draw()}
 function undo(back){const a=back?HI:HR,b=back?HR:HI;if(!a.length)return;b.push(snap());PG.items=JSON.parse(a.pop());SI=null;LY.last=snap();PG.body_en=PG.body_ru="";WJ(PAGE,PG);draw()}
 // text bound to a page field (title, description) or to an interface string (k:<key>, data/text.json)
@@ -259,7 +264,7 @@ dialog(L("Page background","Фон страницы"),h("div",{cls:"row"},btn(L(
 btn(L("No background","Без фона"),()=>{PG.bg="none";sv()}),btn(L("Default background","Фон по умолчанию"),()=>{delete PG.bg;sv()})))}
 function layout(){const a=D.querySelector("section article");if(!a||!PG)return;
 const fr=h("div",{cls:"fr"}),tb=h("div",{cls:"ltb",hidden:""}),
-bar2=h("div",{cls:"lad"},btn("+ "+L("Text","Текст"),()=>add("text")),btn("+ "+L("Image","Изображение"),()=>add("img")),btn("+ "+L("Links","Ссылки"),()=>add("links")),btn("+ ―",()=>add("hr"),L("Line","Линия")),
+bar2=h("div",{cls:"lad"},btn("▤ "+L("Layout","Макет"),tpl,L("Add the base layout: kicker, title, line, description","Добавить базовый макет: надзаголовок, название, линия, описание")),btn("+ "+L("Text","Текст"),()=>add("text")),btn("+ "+L("Image","Изображение"),()=>add("img")),btn("+ "+L("Links","Ссылки"),()=>add("links")),btn("+ ―",()=>add("hr"),L("Line","Линия")),
 btn("↶",()=>undo(1),"Ctrl+Z"),btn("↷",()=>undo(0),"Ctrl+Shift+Z"),btn("▭ "+L("Background","Фон"),pageSet,L("Page background","Фон страницы")));
 delete PG.width;if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
 a.replaceChildren(fr,bar2,tb);a.classList.add("lea");IT().forEach(fixSz);LY={el:a,fr,tb,last:snap()};draw();
@@ -310,9 +315,7 @@ lab(L("Title","Заголовок")+" · RU",ruI=inp("",()=>{})),lab(L("Address"
 h("div",{cls:"row"},btn(L("Create","Создать"),async()=>{const s=slug(sl.value);if(!s||!en.value.trim())return toast(L("Title and address are required","Нужны заголовок и адрес"),1);
 const p=`content/${dir}${s}/_index.md`;if(await read(p)!=null)return toast(L("This address is taken","Такой адрес уже занят"),1);
 const ws=await Promise.all(kids().map(q=>pageObj("content/"+q.src))),wt=Math.max(0,...ws.map(o=>o?.weight||0))+1;
-await WJ(p,{title:en.value.trim(),title_ru:ruI.value.trim(),description:"",description_ru:"",weight:wt,body_en:"",body_ru:"",items:[ // same headings as the other pages
-{t:"text",al:"center",bind:"k:wip",st:"k",fs:11,x:0,y:0,w:685},{t:"text",al:"center",bind:"title",st:"t",fs:45,x:0,y:34,w:685},{t:"hr",x:319,y:112,w:48},
-{t:"text",al:"center",bind:"description",st:"s",fs:13,x:0,y:136,w:685}]});
+await WJ(p,{title:en.value.trim(),title_ru:ruI.value.trim(),description:"",description_ru:"",weight:wt,body_en:"",body_ru:"",items:TPL()});
 KIDS.push({src:p.slice(8),en:en.value.trim(),ru:ruI.value.trim()||en.value.trim(),nw:1,w:wt});w.remove();draw();done?.();
 toast(L("The page appears on the site after publishing","Страница появится на сайте после публикации"))})));en.focus()}
 async function delPage(){if(!PAGE||!/\/.+\//.test(PAGE.replace(/^content\//,"")))return toast(L("Top-level pages cannot be deleted","Страницы верхнего уровня удалить нельзя"),1);
