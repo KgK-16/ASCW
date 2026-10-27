@@ -4,3 +4,6 @@ disableKinds = ["taxonomy", "term", "RSS", "sitemap"]
 
 [minify]
 disableJS = true  # inline map script is already minified by esbuild (js.Build); re-minifying breaks it
+
+[params]
+repo = "KgK-16/ASCW"  # the site editor commits here

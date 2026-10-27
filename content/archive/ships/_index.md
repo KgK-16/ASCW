@@ -1,7 +1,9 @@
----
-title: Ships
-weight: 2
-description: Known models of ships
-title_ru: "Корабли"
-description_ru: "Известные модели кораблей"
----
+{
+ "title": "Ships",
+ "title_ru": "Корабли",
+ "description": "Known models of ships",
+ "description_ru": "Известные модели кораблей",
+ "weight": 2,
+ "body_en": "",
+ "body_ru": ""
+}

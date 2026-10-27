@@ -2,6 +2,7 @@
 // usage: node tools/measure.js   (needs playwright)
 const {chromium}=require('playwright'),fs=require('fs'),path=require('path');
 (async()=>{const root=path.join(__dirname,'..'),L=JSON.parse(fs.readFileSync(path.join(__dirname,'labels.json')));
+const CO=fs.existsSync(path.join(root,'assets/countries.json'))?JSON.parse(fs.readFileSync(path.join(root,'assets/countries.json'))):{};L.forEach(l=>{const o=CO[l.hex]||{};l.en=o.en||l.en;l.ru=o.ru||l.ru}); // site edits win
 const f=fs.readFileSync(path.join(root,'static/fonts/a.woff2')).toString('base64');
 const b=await chromium.launch(),pg=await b.newPage();
 await pg.setContent(`<style>@font-face{font-family:A;src:url(data:font/woff2;base64,${f})}</style><canvas id=c></canvas>`);

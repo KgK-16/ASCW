@@ -9,8 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400&family=Inter:ital,wght@1,300{{ if eq .Section "map" }}&family=Play{{ end }}&display=swap" rel="stylesheet">
 <link rel="preload" href="{{ "fonts/a.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
+<meta name="src" content="{{ with .File }}{{ .Path }}{{ end }}">
 <nav>
-<span><span lang="en">Powered by Redfront Strategic Sciences</span><span lang="ru">При поддержке Redfront Strategic Sciences</span></span>
-<div><a href="{{ "" | relURL }}"><span lang="en">Menu</span><span lang="ru">Меню</span></a><a href="{{ "about/" | relURL }}"><span lang="en">About Project</span><span lang="ru">О проекте</span></a><a href="{{ "archive/" | relURL }}"><span lang="en">Archive</span><span lang="ru">Архив</span></a><a href="{{ "map/" | relURL }}"><span lang="en">World Map</span><span lang="ru">Карта мира</span></a><a id="lq"><span lang="en">EN</span><span lang="ru">РУ</span></a></div>
+<span>{{ partial "t" "brand" }}</span>
+<div><a href="{{ "" | relURL }}">{{ partial "t" "nav_menu" }}</a><a href="{{ "about/" | relURL }}">{{ partial "t" "nav_about" }}</a><a href="{{ "archive/" | relURL }}">{{ partial "t" "nav_archive" }}</a><a href="{{ "map/" | relURL }}">{{ partial "t" "nav_map" }}</a><a id="lq"><span lang="en">EN</span><span lang="ru">РУ</span></a>{{ with resources.Get "edit.js" | js.Build (dict "minify" true "target" "es2020") | fingerprint "md5" }}<a id="ed" hidden data-js="{{ .RelPermalink }}" data-u="{{ "" | relURL }}" data-repo="{{ site.Params.repo }}" title="Edit">✎</a>{{ end }}</div>
 </nav>
+<script>{const e=document.getElementById("ed"),on=()=>{const s=document.createElement("script");s.src=e.dataset.js;document.head.append(s)};let k={};try{if(/[?&]edit\b/.test(location.search))localStorage.ascwEdit=1;k=localStorage}catch{}
+if(k.ascwEdit){e.hidden=false;e.onclick=()=>{if(window.EDIT)EDIT.toggle();else{k.ascwEditOn=1;on()}};if(k.ascwEditOn)on()}}</script>
 <main><section>

@@ -1,7 +1,8 @@
 {{ partial "top" . }}
-<p><span lang="en">Work-In-Progress</span><span lang="ru">В разработке</span></p>
-<h1><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></h1>
+<p>{{ partial "t" "wip" }}</p>
+<h1><span lang="en" data-f="title">{{ .Title }}</span><span lang="ru" data-f="title_ru">{{ default .Title .Params.title_ru }}</span></h1>
 <hr>
-{{ with .Description }}<i><span lang="en">{{ . }}</span><span lang="ru">{{ default . $.Params.description_ru }}</span></i>{{ end }}
+<i class="ds"><span lang="en" data-f="description">{{ .Description }}</span><span lang="ru" data-f="description_ru">{{ default .Description .Params.description_ru }}</span></i>
+<article>{{ range slice "en" "ru" }}<div lang="{{ . }}" data-f="body_{{ . }}">{{ with index $.Params (print "body_" .) }}{{ $.RenderString (dict "display" "block") . }}{{ end }}</div>{{ end }}</article>
 {{ with .Pages }}<ul>{{ range . }}<li><a href="{{ .RelPermalink }}"><span lang="en">{{ .Title }}</span><span lang="ru">{{ default .Title .Params.title_ru }}</span></a>{{ end }}</ul>{{ end }}
 </section></main>

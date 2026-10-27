@@ -6,7 +6,7 @@ Krita file layout (layer names matter):
       "borders"   black lines, always shown       -> static/map/<year>/b0..b3.webp
       "countries" flat fills, one hex per country -> vector territories in assets/map.json
   other groups (e.g. weather) are ignored.
-Countries are matched by hex from tools/labels.json; unknown colours are reported.
+Countries are matched by hex from tools/labels.json (names may be overridden by assets/countries.json); unknown colours are reported.
 Run `node tools/measure.js` after changing names in labels.json.
 """
 import sys,os,re,json,zipfile,ctypes,subprocess,tempfile
@@ -15,6 +15,9 @@ import numpy as np,cv2
 from PIL import Image
 T=os.path.dirname(os.path.abspath(__file__));R=os.path.dirname(T)
 LB=json.load(open(T+'/labels.json'));EM=json.load(open(T+'/emw.json'))
+CO=json.load(open(R+'/assets/countries.json')) if os.path.exists(R+'/assets/countries.json') else {}
+for l in LB:                       # names edited on the site (assets/countries.json) win over labels.json
+    o=CO.get(l['hex'],{});l['en']=o.get('en') or l['en'];l['ru']=o.get('ru') or l['ru']
 W4,H4=4096,2048            # map coordinate space used by the site
 
 def lzf():

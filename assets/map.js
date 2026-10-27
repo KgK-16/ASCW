@@ -1,5 +1,6 @@
 // ASCW world map: flat raster + SVG viewer, timeline overlay and WebGL globe.
-// Globals injected by layouts/map/list.html: U (base URL), V (map versions: [{y:year,b:has borders,r:[countries]}]), MK (markers), EV (timeline events).
+// Globals injected by layouts/map/list.html: U (base URL), V (map versions: [{y:year,b:has borders,r:[countries]}]), MK (markers), EV (timeline events),
+// COU (country names/texts by hex colour, edited on the site). window.MAP is the hook for the site editor (assets/edit.js).
 // Layers: geographic base (static/map/g*.webp) < country colours: light tint + inner colour band (canvas, toggleable) < country shapes for clicks/hover (svg) < borders of the version (static/map/<year>/b*.webp)
 // < selection: everything else dimmed, outline on top < graticule, labels, markers.
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
@@ -24,9 +25,10 @@ bsrc=l=>U+`map/${cv.y}/b${l}.webp`;
 function glyphs(r){ // label letters keep their proportions; letter spacing stretches the name to its box width
 const q=ru()?r.sr:r.s;if(!q)return null;
 const t=nm(r).toUpperCase(),n=t.length,w=ru()?r.wr:r.w;hc.font=q+"px A";
-const ws=[...t].map(ch=>hc.measureText(ch).width),nat=ws.reduce((a,v)=>a+v,0),ls=n>1?Math.max(0,(w-nat)/(n-1)):0;
-let X=(ru()?r.xr:r.x)-(nat+ls*(n-1))/2;
-return{t,s:q,y:ru()?r.yr:r.y,xs:ws.map(v=>{const o=X;X+=v+ls;return o})}}
+let ws=[...t].map(ch=>hc.measureText(ch).width),nat=ws.reduce((a,v)=>a+v,0),z=q;
+if(nat>w&&w){const f=w/nat;ws=ws.map(v=>v*f);nat=w;z=q*f} // a renamed country longer than its box: smaller letters, same proportions
+const ls=n>1?Math.max(0,(w-nat)/(n-1)):0;let X=(ru()?r.xr:r.x)-(nat+ls*(n-1))/2;
+return{t,s:+z.toFixed(1),y:ru()?r.yr:r.y,xs:ws.map(v=>{const o=X;X+=v+ls;return o})}}
 function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>{if(el._s==src)el.src=src},()=>{})} // decode off the main thread, then swap
 
 // ---- flat map ----
@@ -63,10 +65,11 @@ function drawOv(){ // country colours as one raster layer (cheap to pan/zoom): l
 if(CO){const o=ox;o.clearRect(0,0,W,H);o.lineJoin="round";
 RG.forEach(r=>{const q=path(r);o.globalAlpha=r==R[sel]?0:.28;o.fillStyle=r.c;o.fill(q,"evenodd");o.save();o.clip(q,"evenodd");o.globalAlpha=.85;o.strokeStyle=r.c;o.lineWidth=14;o.stroke(q);o.restore()});o.globalAlpha=1}
 if(G)tq()}
-const drawM=()=>mw.innerHTML=MK.map(q=>`<g transform="translate(${(q.o+180)/360*W} ${(90-q.a)/180*H})"><g class="ms"><path d="${SH[q.k|0]}"/><text x="12" y="1">${mn(q)}</text></g></g>`).join("");
+const drawM=()=>mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}" transform="translate(${(q.o+180)/360*W} ${(90-q.a)/180*H})"><g class="ms"><path d="${SH[q.k|0]}"/><text x="12" y="1">${mn(q)}</text></g></g>`).join("");
 
+function names(){RG.forEach(r=>{r.n0??=r.name;r.r0??=r.ru;const o=COU[r.c]||{};r.name=o.en||r.n0;r.ru=o.ru||r.r0})} // names edited on the site win over the generated ones
 function setVer(){ // switch to the map version of the selected year
-cv=ver();RG=cv.r;R={};RG.forEach(r=>R[r.id]=r);
+cv=ver();RG=cv.r;R={};RG.forEach(r=>R[r.id]=r);names();
 if(sel&&!R[sel]){sel=null;p.classList.remove("o")}else panel();
 lvB();rs();if(G)gB()}
 function upd(){ // apply the selected year
@@ -78,7 +81,7 @@ function pick(id){
 id=id&&R[id]?+id:null;
 sel=id;if(sel)panel();
 p.classList.toggle("o",!!sel);hi()}
-function panel(){if(sel){const r=R[sel];pt.textContent=nm(r);px.textContent=r.text||L("Placeholder text","Текст-заглушка")}}
+function panel(){if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);px.textContent=(ru()?o.tru:o.ten)||L("Placeholder text","Текст-заглушка");MAP.onPanel?.(r)}}
 function col(on){CO=on;c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}drawOv()}
 zc.onclick=()=>col(!CO);
 
@@ -89,7 +92,7 @@ if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/
 m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];
 if(!one||mv>6||e.type!="pointerup")return;const r=m.getBoundingClientRect(),t=Date.now();
 if(t-tap<300){zoom(2,e.clientX-r.left,e.clientY-r.top,1);tap=0;return}
-tap=t;pick(hit((e.clientX-r.left-x)/k,(e.clientY-r.top-y)/k))};
+tap=t;const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k;if(!MAP.onTap?.(mx,my))pick(hit(mx,my))};
 m.onlostpointercapture=e=>{delete P[e.pointerId]};
 m.onwheel=e=>{e.preventDefault();const r=m.getBoundingClientRect();zoom(Math.exp(-e.deltaY*.002),e.clientX-r.left,e.clientY-r.top)};
 zi.onclick=()=>G?(gD=cl(gD/1.3),rq()):zoom(1.6,m.clientWidth/2,m.clientHeight/2,1);
@@ -128,6 +131,11 @@ xt.onclick=tlClose;
 
 D.addEventListener("lang",()=>{rs();drawM();panel();showC();if(tlOpen())tlB();if(G)tq()});
 addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
+const MAP=window.MAP={ // editor hooks
+redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
+markers(){drawM();if(G)tq()},timeline(){if(tlOpen())tlB()},
+toMap(e){const r=m.getBoundingClientRect();return{mx:(e.clientX-r.left-x)/k,my:(e.clientY-r.top-y)/k}},
+sel:()=>sel&&R[sel],W,H};
 upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----

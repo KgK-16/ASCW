@@ -1,7 +1,9 @@
----
-title: Anthrite
-weight: 3
-description: The anomalous antiferromagnetic material enabling levitation of airships
-title_ru: "Антрит"
-description_ru: "Аномальный антиферромагнитный материал, позволяющий воздушным кораблям левитировать"
----
+{
+ "title": "Anthrite",
+ "title_ru": "Антрит",
+ "description": "The anomalous antiferromagnetic material enabling levitation of airships",
+ "description_ru": "Аномальный антиферромагнитный материал, позволяющий воздушным кораблям левитировать",
+ "weight": 3,
+ "body_en": "",
+ "body_ru": ""
+}
