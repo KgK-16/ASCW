@@ -67,7 +67,7 @@ D.head.append(h("style",{},`
 .ed [data-k][contenteditable]{outline:1px dashed #6665c0aa;outline-offset:3px;cursor:text}
 /* document editor */
 .ed .doc [contenteditable]{outline:none;cursor:text}.ed .doc :is([contenteditable],li[data-ph]):empty::before{content:attr(data-ph);color:#e8e8e040;font-style:italic;pointer-events:none}
-.ed .doc [data-i]{position:relative}.ed .doc [data-i].cur{box-shadow:-14px 0 0 -12px #6665c0}
+.ed .doc [data-i]{position:relative}.ed .doc :is(.b-card,.al-left,.al-right){z-index:1} /* floats stay above the text that wraps them */.ed .doc [data-i].cur{box-shadow:-14px 0 0 -12px #6665c0}
 .ed .doc .b-img img,.ed .doc .b-card img{cursor:pointer}.ed .doc .pi{display:block;width:100%;padding:36px 12px;border:1px dashed #6665c0;color:#e8e8e080;font:400 13px "Exo 2",sans-serif;cursor:pointer;text-align:center}
 .ed .doc .b-links .nw a{color:#e8b04a}.ed .doc .b-links a{pointer-events:none}
 .ed .doc .add{display:block;margin:4px 0 0;font:400 12px "Exo 2",sans-serif;color:#8d8cf0;cursor:pointer;text-transform:none;letter-spacing:.5px}
