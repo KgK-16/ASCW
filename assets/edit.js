@@ -255,7 +255,7 @@ function pickImg(o){const f=h("input",{type:"file",accept:"image/*"});f.onchange
 function caption(b){dialog(L("Caption","Подпись"),...["en","ru"].map(l=>lab(l.toUpperCase(),inp(b["cap_"+l],v=>{b["cap_"+l]=v;commit(0)}))))}
 function pageSet(){const S=D.querySelector("section"),M=D.querySelector("main"),ap=()=>{S.style.setProperty("--sw",PG.width?PG.width+"px":"");
 M.style.setProperty("--bg",PG.bg?PG.bg=="none"?"none":`url(${img(PG.bg)})`:"");tools()},sv=()=>{WJ(PAGE,PG);ap()},
-rg=h("input",{type:"range",min:420,max:1200,step:10,cls:"ei"}),nv=h("span",{});rg.value=Math.min(PG.width||765,1200);nv.textContent=rg.value+" px";
+rg=h("input",{type:"range",min:800,max:1200,step:100,cls:"ei"}),nv=h("span",{});rg.value=cl(PG.width||800,800,1200);nv.textContent=rg.value+" px";
 rg.oninput=()=>{const d0=DW();PG.width=+rg.value;const d1=DW(),dx=Math.round((d1-d0)/2); // items stay centred and inside the strip; their size does not change
 IT().forEach(q=>{q.w=Math.min(q.w,d1);q.x=cl(q.x+dx,0,d1-q.w)});nv.textContent=rg.value+" px";sv();draw()};
 dialog(L("Page","Страница"),lab(L("Width of the central strip","Ширина центральной ленты"),h("div",{cls:"row"},rg,nv)),
