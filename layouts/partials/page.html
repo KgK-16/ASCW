@@ -1,4 +1,4 @@
 {{ partial "top" . }}
-<article class="doc">{{ partial "blocks" . }}</article>
+<article class="doc">{{ partial "blocks" (cond (isset .Params "blocks") . (dict "Params" (dict "blocks" (slice (dict "t" "head") (dict "t" "links")) "title_ru" .Params.title_ru "description_ru" .Params.description_ru) "Title" .Title "Description" .Description "Pages" .Pages)) }}</article>
 {{- with .Pages }}{{ $k := slice }}{{ range . }}{{ $k = $k | append (dict "src" .File.Path "en" .Title "ru" (default .Title .Params.title_ru)) }}{{ end }}<script type="application/json" id="kids">{{ $k | jsonify | safeJS }}</script>{{ end }}
 </section></main>
