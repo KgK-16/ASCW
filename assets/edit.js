@@ -82,7 +82,7 @@ D.head.append(h("style",{},`
 #ae.nb .tb,#ae.nb .bd{display:none}#ae.nb{bottom:auto}#ae.tx .fl,#ae.tx .ft{display:none}
 .lea{position:relative}.lea .fr{min-height:160px;outline:1px dashed #6665c055;outline-offset:6px;position:relative;
 background-image:linear-gradient(90deg,transparent calc(50% - .5px),#6665c033 0 calc(50% + .5px),transparent 0)}
-.lea .fi{position:relative;outline:1px dashed #6665c066;cursor:move;min-height:14px;touch-action:none}.lea .fi:hover{outline-color:#8d8cf0}.lea .fi.sel{outline:1px solid #e8b04a}
+.lea .fr{-webkit-user-select:none;user-select:none}.lea .fr img{-webkit-user-drag:none;pointer-events:none}.lea .fi{position:relative;outline:1px dashed #6665c066;cursor:move;min-height:14px;touch-action:none}.lea .fi:hover{outline-color:#8d8cf0}.lea .fi.sel{outline:1px solid #e8b04a}
 .lea .f-hr{padding:6px 0;margin-top:calc(var(--y)*100cqw/var(--dw) - 6px)}.lea .ph{opacity:.35}.lea .pi{font-size:28px;text-align:center;padding:24px;border:1px dashed #6665c0}
 .lea .rl,.lea .rr{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;display:none;font-style:normal}.lea .rl{left:-5px}.lea .rr{right:-5px}.lea .sel>.rl,.lea .sel>.rr{display:block;background:#e8b04a88}
 .lea .gd{position:absolute;display:none;background:#e8b04a;pointer-events:none;z-index:99;font-style:normal}.lea .gv{top:0;bottom:0;width:1px}.lea .gh{left:0;right:0;height:1px}
@@ -213,7 +213,7 @@ const bt=(k,l)=>k.startsWith("k:")?TX[k.slice(2)]?.[l]??"":l=="ru"?PG[k+"_ru"]||
 sc=o=>(o.st?" st-"+o.st:""),col=o=>o.col?`;color:${o.col}`:"";
 function cell(q,j){const l=HT.lang,ph=`<p class="ph">${L("Text","Текст")}</p>`,
 st=`--x:${q.x};--y:${q.y};--w:${q.w};--f:${q.fs||16};text-align:${q.al||"left"};z-index:${q.z|0}${col(q)}`;
-const body=q.t=="img"?(q.src?`<img src="${img(q.src)}" alt="">`:`<div class="ph pi">🖼</div>`)+(q["cap_"+l]?`<figcaption>${esc(q["cap_"+l])}</figcaption>`:"")
+const body=q.t=="img"?(q.src?`<img src="${img(q.src)}" alt="" draggable="false">`:`<div class="ph pi">🖼</div>`)+(q["cap_"+l]?`<figcaption>${esc(q["cap_"+l])}</figcaption>`:"")
 :q.t=="hr"?"<hr>":q.t=="links"?`<ul class="bk-links">${kids().map(k=>`<li${k.nw?' class="nw"':""}><a>${esc(l=="ru"?k.ru||k.en:k.en)}</a></li>`).join("")||`<li class="ph">${L("No pages yet","Страниц пока нет")}</li>`}</ul>`
 :q.bind?`<div>${esc(bt(q.bind,l))||ph}</div>`:(md(q[l])||ph);
 return`<div class="fi f-${q.t}${sc(q)}${j===SI?" sel":""}" data-i="${j}" style="${st}">${body}<i class="rl"></i><i class="rr"></i></div>`}
@@ -268,7 +268,7 @@ btn("↶",()=>undo(1),"Ctrl+Z"),btn("↷",()=>undo(0),"Ctrl+Shift+Z"),btn("▭ "
 if(PG.width>1200)PG.width=1200;
 if(PG.width)D.querySelector("section").style.setProperty("--sw",PG.width+"px");if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
 a.replaceChildren(fr,bar2,tb);a.classList.add("lea");IT().forEach(fixSz);LY={el:a,fr,tb,last:snap()};draw();
-fr.addEventListener("pointerdown",down);fr.addEventListener("pointermove",move);fr.addEventListener("pointerup",up);fr.addEventListener("pointercancel",up);
+fr.addEventListener("pointerdown",down);fr.addEventListener("dragstart",e=>e.preventDefault());fr.addEventListener("selectstart",e=>e.preventDefault());fr.addEventListener("pointermove",move);fr.addEventListener("pointerup",up);fr.addEventListener("pointercancel",up);
 fr.addEventListener("dblclick",e=>{const t=(D.elementFromPoint(e.clientX,e.clientY)||e.target).closest(".fi");if(!t)return;const o=IT()[+t.dataset.i]; // pointer capture retargets dblclick
 if(o.t=="text")editText(o);else if(o.t=="img")pickImg(o);else if(o.t=="links")links()});
 D.addEventListener("pointerdown",e=>{if(SI!=null&&!e.target.closest(".fr,.ltb,#ae,.dl")){SI=null;mark()}});
@@ -279,7 +279,8 @@ const q=IT()[SI],d=e.shiftKey?10:1,mv={ArrowLeft:[-d,0],ArrowRight:[d,0],ArrowUp
 if(mv){e.preventDefault();q.x=cl(q.x+mv[0],0,DW()-q.w);q.y=Math.max(0,q.y+mv[1]);commit()}});
 addEventListener("resize",()=>tools())}
 // drag: move (snapped) and resize the width of items; height follows the content
-function down(e){const t=e.target.closest(".fi");if(!t||e.button)return;SI=+t.dataset.i;const q=IT()[SI],hd=e.target.closest(".rl,.rr");
+function down(e){const t=e.target.closest(".fi");if(!t||e.button)return;e.preventDefault();getSelection().removeAllRanges(); // no native image drag, no text selection
+SI=+t.dataset.i;const q=IT()[SI],hd=e.target.closest(".rl,.rr");
 DG={x:e.clientX,y:e.clientY,q,o:{...q},m:hd?hd.className:"mv",s:DW()/LY.fr.clientWidth,moved:0,h:t.offsetHeight*DW()/LY.fr.clientWidth};
 LY.fr.setPointerCapture(e.pointerId);mark()}
 function snapTo(v,cands,tol){let b=null;for(const c of cands)if(Math.abs(v-c)<=tol&&(b==null||Math.abs(v-c)<Math.abs(v-b)))b=c;return b}
