@@ -60,7 +60,8 @@ D.head.append(h("style",{},`
 #et{position:fixed;left:12px;bottom:56px;z-index:41;max-width:min(420px,calc(100% - 24px));font:400 13px "Exo 2",sans-serif;color:#e8e8e0;background:#020206f2;border:1px solid #6665c0;padding:8px 12px;text-transform:none}#et.x{border-color:#e85a4a}
 .dl{position:fixed;inset:0;z-index:50;background:#020206b3;display:flex;align-items:center;justify-content:center;padding:16px;text-transform:none}
 .dlb{background:#05050d;border:1px solid #6665c0;width:min(640px,100%);max-height:100%;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:10px;font:400 14px "Exo 2",sans-serif;color:#e8e8e0;text-align:left}
-.dlb h3{font:400 15px "Exo 2",sans-serif;letter-spacing:2px;text-transform:uppercase;margin:0}
+.dlb h3{font:400 15px "Exo 2",sans-serif;letter-spacing:2px;text-transform:uppercase;margin:0;display:flex;align-items:center;justify-content:space-between;gap:12px}.dlb:focus{outline:none}
+.dlb .x{font-size:22px;line-height:1;width:32px;height:32px;margin:-8px -8px -8px 0;color:#e8e8e0a6;cursor:pointer}.dlb .x:hover{color:#e8e8e0}
 .dlb label,.ef label{display:flex;flex-direction:column;gap:4px;font:400 11px "Exo 2",sans-serif;letter-spacing:1px;color:#e8e8e099;text-transform:uppercase}
 .ei{font:400 14px Inter,sans-serif;color:#e8e8e0;background:#0b0b18;border:1px solid #6665c066;padding:7px 9px;width:100%;text-transform:none;letter-spacing:0}
 .ei:focus{outline:none;border-color:#8d8cf0}textarea.ei{resize:vertical;min-height:70px;line-height:1.5}
@@ -69,7 +70,9 @@ D.head.append(h("style",{},`
 .ed [data-k][contenteditable]{outline:1px dashed #6665c0aa;outline-offset:3px;cursor:text}
 /* document editor */
 .ed .doc [contenteditable]{outline:none;cursor:text}.ed .doc :is([contenteditable],li[data-ph]):empty::before{content:attr(data-ph);color:#e8e8e040;font-style:italic;pointer-events:none}
-.ed .doc [data-i]{position:relative}.ed .doc :is(.b-card,.al-left,.al-right){z-index:1} /* floats stay above the text that wraps them */.ed .doc [data-i].cur{box-shadow:-14px 0 0 -12px #6665c0}
+.ed .doc [data-i]{position:relative}.ed .doc [data-tm]::after{content:attr(data-tm);position:absolute;left:0;top:-3px;transform:translateY(-100%);font:400 10px/1 "Exo 2",sans-serif;letter-spacing:1px;color:#e8b04a;border:1px solid #e8b04a80;padding:2px 3px;pointer-events:none;font-style:normal;text-transform:none} /* language the block still lacks */
+.kb{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0;font:400 13px/1.45 Inter,sans-serif}.kb dd{margin:0;color:#e8e8e0cc}.kb kbd{font:12px ui-monospace,monospace;color:#8d8cf0;white-space:nowrap}
+#eb .st{align-self:center;padding:0 6px;font:400 12px "Exo 2",sans-serif;color:#e8e8e099}@media(max-width:700px){#eb .st{display:none}}.ed .doc :is(.b-card,.al-left,.al-right){z-index:1} /* floats stay above the text that wraps them */.ed .doc [data-i].cur{box-shadow:-14px 0 0 -12px #6665c0}
 .ed .doc .b-img img,.ed .doc .b-card img{cursor:pointer}.ed .doc .pi{display:block;width:100%;padding:36px 12px;border:1px dashed #6665c0;color:#e8e8e080;font:400 13px "Exo 2",sans-serif;cursor:pointer;text-align:center}
 .ed .doc .b-links .nw a{color:#e8b04a}.ed .doc .b-links a{pointer-events:none}
 .ed .doc .add{display:block;margin:4px 0 0;font:400 12px "Exo 2",sans-serif;color:#8d8cf0;cursor:pointer;text-transform:none;letter-spacing:.5px}
@@ -80,7 +83,7 @@ D.head.append(h("style",{},`
 #eb .lb{margin-left:5px}@media(max-width:700px){#eb .lb{display:none}#eb{left:8px;bottom:8px;max-width:calc(100% - 16px);gap:3px}#eb .eb{padding:6px 8px;font-size:12px}}
 .mn{position:fixed;z-index:46;background:#05050d;border:1px solid #6665c0;min-width:220px;max-height:min(70vh,520px);overflow:auto;padding:4px;display:flex;flex-direction:column;text-transform:none;font:400 13px "Exo 2",sans-serif;box-shadow:0 8px 30px #000a}
 .mn button{display:flex;gap:10px;align-items:center;text-align:left;padding:7px 10px;color:#e8e8e0;cursor:pointer;letter-spacing:.3px}.mn button:hover,.mn button.f{background:#6665c040}
-.mn button i{width:20px;text-align:center;font-style:normal;color:#8d8cf0}.mn hr{width:auto;margin:4px 6px;opacity:.25}.mn .on i::after{content:" ✓"}
+.mn button i{width:20px;text-align:center;font-style:normal;color:#8d8cf0}.mn button small{margin-left:auto;padding-left:16px;font:400 11px ui-monospace,monospace;color:#e8e8e066}.mn [hidden]{display:none}.mn .ei{margin-bottom:4px}.mn hr{width:auto;margin:4px 6px;opacity:.25}.mn .on::after{content:"✓";margin-left:auto;padding-left:12px;color:#8d8cf0}
 #ift{position:absolute;z-index:47;display:flex;gap:2px;background:#05050d;border:1px solid #6665c0;padding:2px;text-transform:none}#ift[hidden]{display:none}
 #ift button{min-width:30px;height:28px;padding:0 6px;font:600 13px Inter,sans-serif;color:#e8e8e0;cursor:pointer}#ift button:hover{background:#6665c040}
 #dln{position:absolute;z-index:29;height:2px;background:#e8b04a;pointer-events:none}#dln[hidden]{display:none}
@@ -95,18 +98,25 @@ D.head.append(h("style",{},`
 `));
 let pb,eb,et;
 function bar(){if(!on||PV)return;pb.firstChild.textContent=(n()?"● "+n()+" · ":"")+L("Publish","Опубликовать");pb.firstChild.classList.toggle("n",!!n());pb.lastChild.disabled=!n()}
+const Lp=(e,r)=>Object.assign(new String(ru()?r:e),{e,r}); // a label that remembers both languages
 let tt;function toast(t,x){if(!et)return;et.style.bottom=eb.offsetHeight+20+"px";et.textContent=t;et.className=x?"x":"";et.hidden=false;clearTimeout(tt);tt=setTimeout(()=>et.hidden=true,x?12e3:6e3)}
-function dialog(title,...c){const b=h("div",{cls:"dlb",role:"dialog","aria-label":title},h("h3",{},title),...c),w=h("div",{cls:"dl",onclick:e=>{if(e.target==w)w.remove()}},b);D.body.append(w);
-w.addEventListener("keydown",e=>{if(e.key=="Escape"){e.stopPropagation();w.remove()}});setTimeout(()=>b.querySelector("input,textarea,select,button")?.focus());return w}
-const btn=(t,f,ti)=>h("button",{cls:"eb",type:"button",onclick:f,...(ti?{title:ti,"aria-label":ti}:{})},t),
+function dialog(title,...c){const b=h("div",{cls:"dlb",role:"dialog","aria-label":title,tabindex:"-1"},h("h3",{},title,h("button",{type:"button",cls:"x",title:L("Close","Закрыть"),"aria-label":L("Close","Закрыть"),onclick:()=>w.remove()},"×")),...c),
+w=h("div",{cls:"dl",onclick:e=>{if(e.target==w)w.remove()}},b);D.body.append(w);
+w.addEventListener("keydown",e=>{if(e.key=="Escape"){e.stopPropagation();w.remove()}});setTimeout(()=>(b.querySelector("input,textarea,select,.dlb>:not(h3) button")||b).focus());return w}
+const btn=(t,f,ti)=>{const b=h("button",{cls:"eb",type:"button",onclick:f,...(ti?{title:""+ti,"aria-label":""+ti}:{})},""+t);if(ti?.e){b.dataset.te=ti.e;b.dataset.tr=ti.r}return b},
 inp=(v,f,a={})=>{const e=h(a.area?"textarea":"input",{cls:"ei",...(a.ph?{placeholder:a.ph}:{}),...(a.type?{type:a.type}:{})});e.value=v??"";e.oninput=()=>f(e.value,e);return e},
 sel=(v,opts,f)=>{const s=h("select",{cls:"ei"},...opts.map(([k,t])=>h("option",{value:k},t)));s.value=v;s.onchange=()=>f(s.value);return s},
 lab=(t,e)=>h("label",{},t,e);
-function menu(x,y,items){D.querySelector(".mn")?.remove();const m=h("div",{cls:"mn",role:"menu"});
-for(const it of items){if(it=="-"){m.append(h("hr"));continue}m.append(h("button",{type:"button",role:"menuitem",cls:it.on?"on":"",onclick:()=>{m.remove();it.f()}},h("i",{},it.i||""),it.t))}
+// menu: items {i icon, t text, k shortcut hint, on checked, f action}; find = a search field on top (typing filters, Enter picks the first)
+function menu(x,y,items,find){D.querySelector(".mn")?.remove();const back=D.activeElement,m=h("div",{cls:"mn",role:"menu"}),
+q=find&&h("input",{cls:"ei",placeholder:L("Find a block…","Найти блок…"),"aria-label":L("Find a block","Найти блок")});if(q)m.append(q);
+for(const it of items){if(it=="-"){m.append(h("hr"));continue}m.append(h("button",{type:"button",role:"menuitem",cls:it.on?"on":"",onclick:()=>{m.remove();it.f()}},h("i",{},it.i||""),it.t,it.k?h("small",{},it.k):null))}
 D.body.append(m);const r=m.getBoundingClientRect();m.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+"px";m.style.top=Math.max(56,Math.min(y,innerHeight-r.height-8))+"px";
-let fi=0;const bs=[...m.querySelectorAll("button")];bs[0]?.focus();
-m.addEventListener("keydown",e=>{if(e.key=="Escape"){m.remove();e.stopPropagation()}else if(/Arrow(Down|Up)/.test(e.key)){e.preventDefault();fi=(fi+(e.key=="ArrowDown"?1:bs.length-1))%bs.length;bs[fi].focus()}});
+let fi=-1;const bs=()=>[...m.querySelectorAll("button:not([hidden])")];(q||bs()[0])?.focus();if(!q)fi=0;
+if(q)q.oninput=()=>{const v=q.value.trim().toLowerCase();m.querySelectorAll("button").forEach(b=>b.hidden=!!v&&!b.textContent.toLowerCase().includes(v));m.querySelectorAll("hr").forEach(e=>e.hidden=!!v);fi=-1};
+m.addEventListener("keydown",e=>{const B2=bs();if(e.key=="Escape"){m.remove();e.stopPropagation();back?.focus?.()}
+else if(/Arrow(Down|Up)/.test(e.key)&&B2.length){e.preventDefault();fi=e.key=="ArrowDown"?(fi+1)%B2.length:fi<=0?B2.length-1:fi-1;B2[fi].focus()}
+else if(e.key=="Enter"&&e.target==q){e.preventDefault();B2[0]?.click()}});
 setTimeout(()=>D.addEventListener("pointerdown",function f(e){if(!m.contains(e.target)){m.remove();D.removeEventListener("pointerdown",f)}}));return m}
 
 function token(){const i=inp(tok,()=>{},{type:"password",ph:"github_pat_…"});
@@ -136,9 +146,9 @@ function texts(){dialog(L("Interface texts","Тексты интерфейса")
 // ---------- page document: blocks edited in place (same markup as layouts/partials/blocks.html) ----------
 let PG=null,DOC=null,HI=[],HR=[],burst=0,bt0,svT,PV=/[?&]preview\b/.test(location.search),gut,ift,dln,CB=null;
 const B=()=>PG.blocks??=[],
-TYPES=()=>[["p","¶",L("Text","Текст")],["h2","H",L("Heading","Заголовок")],["h3","h",L("Subheading","Подзаголовок")],["quote","❝",L("Quote","Цитата")],
-["ul","•",L("List","Список")],["ol","1.",L("Numbered list","Нумерованный список")],"-",["img","🖼",L("Image","Изображение")],["cols","◫",L("Two columns","Две колонки")],
-["card","▤",L("Fact card","Карточка фактов")],["hr","―",L("Divider","Разделитель")],"-",["links","☰",L("Links to subpages","Ссылки на подстраницы")],["head","▀",L("Page header","Шапка страницы")]],
+TYPES=()=>[["p","¶",L("Text","Текст")],["h2","H",L("Heading","Заголовок"),"##"],["h3","h",L("Subheading","Подзаголовок"),"###"],["quote","❝",L("Quote","Цитата"),">"],
+["ul","•",L("List","Список"),"-"],["ol","1.",L("Numbered list","Нумерованный список"),"1."],"-",["img","🖼",L("Image","Изображение")],["cols","◫",L("Two columns","Две колонки")],
+["card","▤",L("Fact card","Карточка фактов")],["hr","―",L("Divider","Разделитель"),"---"],"-",["links","☰",L("Links to subpages","Ссылки на подстраницы")],["head","▀",L("Page header","Шапка страницы")]],
 mk=k=>({p:{t:"p"},h2:{t:"h",lv:2},h3:{t:"h",lv:3},quote:{t:"quote"},ul:{t:"list"},ol:{t:"list",ord:true},img:{t:"img",al:"center"},cols:{t:"cols",c:[{t:"text"},{t:"text"}]},
 card:{t:"card",rows:[{},{}]},hr:{t:"hr"},links:{t:"links"},head:{t:"head"}})[k],
 TXT=new Set(["p","h","quote","list"]);
@@ -146,12 +156,20 @@ TXT=new Set(["p","h","quote","list"]);
 function clean(html,mode){const t=D.createElement("template");t.innerHTML=html;
 const INL={B:"b",STRONG:"b",I:"i",EM:"i",S:"s",STRIKE:"s",DEL:"s",A:"a",BR:"br",CODE:"code"},BLK={P:"p",DIV:"p",H1:"h3",H2:"h3",H3:"h3",H4:"h3",UL:"ul",OL:"ol",LI:"li",BLOCKQUOTE:"p"},
 walk=n=>[...n.childNodes].map(c=>{if(c.nodeType==3)return esc(c.data.replace(/\u00a0/g," "));if(c.nodeType!=1)return"";
-const g=INL[c.tagName]||(mode=="block"&&BLK[c.tagName])||(mode=="li"&&c.tagName=="LI"&&"li"),in_=walk(c);if(!g)return in_+(mode!="inline"&&/^(P|DIV)$/.test(c.tagName)?"<br>":"");
+const st=c.style||{},fw=st.fontWeight,bo=fw=="bold"||+fw>=600;let g=INL[c.tagName]||(mode=="block"&&BLK[c.tagName])||(mode=="li"&&c.tagName=="LI"&&"li"),in_=walk(c);
+if(g=="b"&&fw&&!bo)g=null; // Google Docs wraps everything in <b style="font-weight:normal">
+if(!g){if(c.tagName=="SPAN"&&in_){if(bo)in_=`<b>${in_}</b>`;if(st.fontStyle=="italic")in_=`<i>${in_}</i>`;if(/line-through/.test(st.textDecoration))in_=`<s>${in_}</s>`}
+return in_+(mode!="inline"&&/^(P|DIV)$/.test(c.tagName)?"<br>":"")}
 if(g=="br")return"<br>";if(g=="a"){const u=c.getAttribute("href")||"";return/^(https?:|\/|#|mailto:)/i.test(u)?`<a href="${esc(u)}">${in_}</a>`:in_}return`<${g}>${in_}</${g}>`}).join("");
 let r=walk(t.content).replace(/(<br>)+(<\/(p|li|h3)>|$)/g,"$2").replace(/<(p|li|h3|b|i|s)><\/\1>/g,"").trim();
 if(mode=="li"&&r&&!/^<li>/.test(r))r="<li>"+r.replace(/<\/?li>/g,"")+"</li>";
 if(mode=="block"&&r&&!/^<(p|h3|ul|ol)>/.test(r))r="<p>"+r+"</p>";return r}
 const plain=h=>{const t=D.createElement("template");t.innerHTML=(h||"").replace(/<\/(li|p)>|<br>/g," $&");return t.content.textContent.trim()};
+// text fields of a block as [object, prefix]; a field written in one language only still needs a translation
+function fields(b){const r=[];if(TXT.has(b.t))r.push([b,""]);if(b.t=="quote")r.push([b,"cite_"]);if(b.t=="img")r.push([b,"cap_"]);
+if(b.t=="head")["k_","t_","a_","d_"].forEach(f=>r.push([b,f]));if(b.t=="card"){r.push([b,"t_"]);(b.rows||[]).forEach(o=>r.push([o,"k_"],[o,"v_"]))}
+if(b.t=="cols")(b.c||[]).forEach(o=>r.push([o,o.t=="img"?"cap_":""]));return r}
+function miss(b){const s=new Set;for(const [o,f] of fields(b)){const e=!!plain(gv(b,o,f,"en")),r=!!plain(gv(b,o,f,"ru"));if(e!=r)s.add(e?"ru":"en")}return[...s]}
 // header title / description belong to the page itself unless the header has its own text (the home page)
 const bound=(b,f)=>b.t=="head"&&(f=="t_"||f=="d_")&&!b[f+"en"]&&!b[f+"ru"],
 pf=(f,l)=>(f=="t_"?"title":"description")+(l=="ru"?"_ru":""),
@@ -172,12 +190,12 @@ d_:L("Description","Описание"),cap_:L("Caption","Подпись"),cite_:
 if(!ED)return v||w?`<${tag}${a}>${v||w}</${tag}>`:"";
 return`<${tag}${a} data-f="${f}" data-m="${m}" contenteditable="${m=="plain"?"plaintext-only":"true"}" data-ph="${esc(ph)}" spellcheck="true">${v}</${tag}>`}
 let ED=1;
-function rb(b,i){const di=ED?` data-i="${i}"`:"",l=HT.lang;
+function rb(b,i){const mi=ED?miss(b):[],di=ED?` data-i="${i}"${mi.length?` data-tm="${mi.join(" ").toUpperCase()}"`:""}`:"",l=HT.lang;
 switch(b.t){
 case"head":{const own=b.k_en||b.k_ru,kd={k_en:TX.wip?.en||"",k_ru:TX.wip?.ru||TX.wip?.en||""}; // without its own kicker the header shows the shared "work in progress" text
 return`<header class="b-head${b.tall?" tall":""}"${di}>${E("p",b,own||ED?b:kd,"k_","plain",' class="k"',own?null:kd["k_"+l])}<h1>${E("span",b,b,"t_","plain")}${b.a_en||b.a_ru||b.acc?`<b>${E("span",b,b,"a_","plain")}</b>`:""}</h1><hr>${E("p",b,b,"d_","plain",' class="ds"')}</header>`}
 case"h":return E("h"+(b.lv||2),b,b,"","plain",di);
-case"p":return E("p",b,b,"","inline",di);
+case"p":return E("p",b,b,"","inline",di,L("Write, or press / for blocks","Пишите или нажмите / — меню блоков"));
 case"quote":return`<blockquote${di}>${E("p",b,b,"","inline")}${E("cite",b,b,"cite_","plain")}</blockquote>`;
 case"list":{const t=b.ord?"ol":"ul",e=E(t,b,b,"","li",di);return ED?e.replace(/data-ph="([^"]*)"([^>]*)><\/(ul|ol)>$/,'data-ph="$1"$2><li data-ph="$1"></li></$3>'):e}
 case"img":return`<figure class="b-img al-${b.al||"center"}"${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>`:ED?`<button type="button" class="pi" data-pick="">🖼 ${L("Choose an image or drop a file here","Выберите изображение или перетащите файл")}</button>`:""}${E("figcaption",b,b,"cap_","plain")}</figure>`;
@@ -188,9 +206,23 @@ case"cols":return`<div class="b-cols"${di}>${(b.c||[]).map((c,j)=>`<div class="c
 case"hr":return`<hr class="b-hr"${di}>`;
 case"links":return`<ul class="b-links"${di}>${shown(b).map(q=>`<li${q.nw?' class="nw"':""}><a href="${U+q.src.replace(/_index\.md$/,"")}">${esc(l=="ru"?q.ru||q.en:q.en)}</a></li>`).join("")||(ED?`<li>${L("No subpages yet — add one in the block menu ⠿","Подстраниц пока нет — добавьте в меню блока ⠿")}</li>`:"")}</ul>`}
 return""}
+let trb,stb;
+function status(){if(!trb)return;const M=B().map(miss),c=M.filter(m=>m.length).length,l=HT.lang,w=B().flatMap(b=>fields(b).map(([o,f])=>plain(gv(b,o,f,l)))).join(" ").split(/\s+/).filter(Boolean).length;
+trb.firstChild.textContent="🌐"+(c?" "+c:"");trb.classList.toggle("n",!!c);
+stb.textContent=ru()?w+" "+(w%10==1&&w%100!=11?"слово":w%10>1&&w%10<5&&(w%100<12||w%100>14)?"слова":"слов"):w+(w==1?" word":" words")}
+function nextTr(){const T=B().map((b,i)=>[i,miss(b)]).filter(x=>x[1].length);if(!T.length)return toast(L("Every text is written in both languages","Все тексты написаны на обоих языках"));
+const [i,m]=T.find(x=>x[0]>(CB??-1))||T[0];if(!m.includes(HT.lang))D.getElementById("lq").click(); // switch to the missing language
+CB=i;gutAt(i);DOC.querySelector(`[data-i="${i}"]`)?.scrollIntoView({block:"center",behavior:"smooth"});focusF(i,null,0)}
+function help(){const K=[["Enter",L("new paragraph","новый абзац")],["Shift+Enter",L("line break","перенос строки")],["/",L("in an empty paragraph: block menu with search","в пустом абзаце: меню блоков с поиском")],
+["## · ### · - · 1. · > · ---",L("at the start of a paragraph: heading, subheading, list, numbered list, quote, divider","в начале абзаца: заголовок, подзаголовок, список, нумерованный список, цитата, разделитель")],
+["Ctrl+B · Ctrl+I · Ctrl+K",L("bold, italic, link","жирный, курсив, ссылка")],["Ctrl+Z · Ctrl+Shift+Z",L("undo, redo","отменить, повторить")],["Alt+↑ · Alt+↓",L("move the block","переместить блок")],
+["Ctrl+D",L("duplicate the block","дублировать блок")],["Backspace",L("in an empty block: delete it; at the start of a paragraph: join it with the one above","в пустом блоке: удалить его; в начале абзаца: соединить с предыдущим")],
+["Ctrl+S",L("save the draft now","сохранить черновик сразу")],["Ctrl+V",L("text from Word, Google Docs or a website keeps headings, lists, bold, italic and links","текст из Word, Google Docs или с сайта сохраняет заголовки, списки, жирный, курсив и ссылки")],
+["🌐",L("next text that is written in one language only","следующий текст, написанный только на одном языке")]];
+dialog(L("Keyboard shortcuts","Горячие клавиши"),h("dl",{cls:"kb"},...K.flatMap(([k,t])=>[h("dt",{},h("kbd",{},k)),h("dd",{},t)])))}
 function render(){if(!DOC)return;const a=D.activeElement?.closest?.("[data-f]"),ai=a?.closest("[data-i]")?.dataset.i,af=a?.dataset.f;
 DOC.innerHTML=B().map(rb).join("")+(ED&&!B().length?`<button type="button" class="eb" data-act="first" style="display:block;margin:0 auto">+ ${L("Add the first block","Добавить первый блок")}</button>`:"");
-if(ED){DOC.append(gut,dln);if(CB!=null&&!DOC.querySelector(`[data-i="${CB}"]`))CB=null;gutAt(CB)}
+if(ED){DOC.append(gut,dln);if(CB!=null&&!DOC.querySelector(`[data-i="${CB}"]`))CB=null;gutAt(CB);status()}
 if(ai!=null)focusF(+ai,af)}
 function focusF(i,f,end=1){const k=DOC.querySelector(`[data-i="${i}"]`);if(!k)return;const e=f!=null?(k.matches(`[data-f="${f}"]`)?k:k.querySelector(`[data-f="${f}"]`)):k.matches("[data-f]")?k:k.querySelector("[data-f]");
 if(!e)return;e.focus();const r=D.createRange();r.selectNodeContents(e);r.collapse(!end);const s=getSelection();s.removeAllRanges();s.addRange(r)}
@@ -205,7 +237,7 @@ k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClient
 rt=getComputedStyle(k).float=="right"&&r.right+70<innerWidth, // right-floated card / image: buttons on its outer side, not over the wrapping text
 nr=!rt&&r.left<70;gut.classList.toggle("nr",nr);gut.classList.toggle("rt",rt); // phones: above the right end
 gut.style.top=r.top-d.top-(nr?30:0)+"px";gut.style.left=(nr||rt?r.right:r.left)-d.left+"px";gut.dataset.i=i}
-function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],f:()=>{const b=mk(t[0]);if(replace){act(()=>B()[i]=b);b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}))}
+function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],k:t[3],f:()=>{const b=mk(t[0]);if(replace){act(()=>B()[i]=b);b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}),1)}
 function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>act(()=>{if(v==null)delete b[k];else b[k]=v}),items=[];
 if(TXT.has(b.t))items.push(...TYPES().slice(0,6).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h2"&&b.t=="h"&&b.lv!=3)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-");
 if(b.t=="img")items.push(...[["center","▣",L("Centred, text width","По центру, ширина текста")],["full","▭",L("Full strip width","Во всю ширину ленты")],["left","◧",L("Left, text wraps","Слева, текст обтекает")],["right","◨",L("Right, text wraps","Справа, текст обтекает")]]
@@ -218,8 +250,8 @@ if(b.t=="head")items.push({i:"↕",t:L("Centred on the screen","По центр�
 {i:"B",t:L("Second (accent) line","Вторая (акцентная) строка"),on:!!(b.a_en||b.a_ru||b.acc),f:()=>act(()=>{if(b.a_en||b.a_ru||b.acc){delete b.a_en;delete b.a_ru;delete b.acc}else b.acc=true})},
 ...(b.t_en||b.t_ru||b.d_en||b.d_ru?[{i:"↺",t:L("Use the page title and description","Взять название и описание страницы"),f:()=>act(()=>["t_en","t_ru","d_en","d_ru"].forEach(k=>delete b[k]))}]:[]),"-");
 if(b.t=="links")items.push({i:"✎",t:L("Edit links…","Ссылки…"),f:()=>links(b)},{i:"+",t:L("New subpage…","Новая подстраница…"),f:()=>newPage()},"-");
-items.push({i:"↑",t:L("Move up","Выше"),f:()=>move(i,i-1)},{i:"↓",t:L("Move down","Ниже"),f:()=>move(i,i+1)},
-{i:"⧉",t:L("Duplicate","Дублировать"),f:()=>insert(JSON.parse(JSON.stringify(b)),i+1,0)},{i:"🗑",t:L("Delete","Удалить"),f:()=>act(()=>{B().splice(i,1);CB=null})});
+items.push({i:"↑",t:L("Move up","Выше"),k:"Alt+↑",f:()=>move(i,i-1)},{i:"↓",t:L("Move down","Ниже"),k:"Alt+↓",f:()=>move(i,i+1)},
+{i:"⧉",t:L("Duplicate","Дублировать"),k:"Ctrl+D",f:()=>insert(JSON.parse(JSON.stringify(b)),i+1,0)},{i:"🗑",t:L("Delete","Удалить"),f:()=>act(()=>{B().splice(i,1);CB=null})});
 if(!i)items.splice(items.findIndex(x=>x.i=="↑"),1);if(i==N-1)items.splice(items.findIndex(x=>x.i=="↓"),1);menu(x,y,items)}
 function move(i,j){if(j>=0&&j<B().length)act(()=>{const [b]=B().splice(i,1);B().splice(j,0,b);CB=j})}
 const caretAtStart=e=>{const s=getSelection();if(!s.rangeCount||!s.isCollapsed)return 0;const r=D.createRange();r.selectNodeContents(e);r.setEnd(s.anchorNode,s.anchorOffset);return!r.toString().length&&!r.cloneContents().querySelector?.("img")};
@@ -239,7 +271,8 @@ if(el.innerHTML=="<br>")el.innerHTML="";
 if(b.t=="p"&&f==""){const t=el.textContent,mt=t.match(/^(#{2,3}|[-*]|1\.|>)\s/)||(t=="---"&&[t]); // Markdown-like shortcuts at the start of a paragraph
 if(mt){const k2={"##":"h2","###":"h3","-":"ul","*":"ul","1.":"ol",">":"quote","---":"hr"}[mt[1]||mt[0]];snapN();b[l]=clean(el.innerHTML,"inline").replace(/^(#{2,3}|[-*]|1\.|&gt;|---)\s?/,"");if(!b[l])delete b[l];
 if(k2=="hr"){B()[i]={t:"hr"};B().splice(i+1,0,{t:"p"});store();render();focusF(i+1)}else convert(i,k2);return}}
-snap1();sv(b,o,f,l,m=="plain"?esc(el.textContent):clean(el.innerHTML,m));store();if(bound(b,f)&&f=="t_")D.title=(PG[pf(f,l)]||"")+" · ASCW"});
+snap1();sv(b,o,f,l,m=="plain"?esc(el.textContent):clean(el.innerHTML,m));store();if(bound(b,f)&&f=="t_")D.title=(PG[pf(f,l)]||"")+" · ASCW";
+const mi=miss(b);if(mi.length)k.dataset.tm=mi.join(" ").toUpperCase();else delete k.dataset.tm;clearTimeout(stT);stT=setTimeout(status,400)});let stT;
 DOC.addEventListener("keydown",keys);
 DOC.addEventListener("paste",paste);
 DOC.addEventListener("click",e=>{const p=e.target.closest("[data-pick]");if(p){const k=p.closest("[data-i]"),b=B()[+k.dataset.i];pickImg(p.dataset.c!=null?b.c[+p.dataset.c]:b);return}
@@ -253,7 +286,8 @@ DOC.addEventListener("drop",e=>{DOC.classList.remove("dropping");const f=[...e.d
 let at=dropAt(e.clientY);f.forEach(file=>{const b={t:"img",al:"center"};B().splice(at++,0,b);pickImg(b,file)})});
 gut.querySelector(".hd").addEventListener("pointerdown",gDown);
 D.addEventListener("selectionchange",selTb);addEventListener("scroll",selTb,{passive:true});addEventListener("resize",()=>gutAt(CB));
-D.addEventListener("keydown",e=>{const k=e.key.toLowerCase();if((e.ctrlKey||e.metaKey)&&(k=="z"||k=="y")&&!e.target.closest?.("input,textarea,select,nav,.dl")){e.preventDefault();undo(k=="z"&&!e.shiftKey)}})}
+D.addEventListener("keydown",e=>{const k=e.key.toLowerCase();if(!(e.ctrlKey||e.metaKey))return;if((k=="z"||k=="y")&&!e.target.closest?.("input,textarea,select,nav,.dl")){e.preventDefault();undo(k=="z"&&!e.shiftKey)}
+if(k=="s"){e.preventDefault();flush();toast(L("The draft is saved in this browser","Черновик сохранён в браузере"))}})}
 function dropAt(y){const ks=[...DOC.querySelectorAll(":scope>[data-i]")];for(const k of ks){const r=k.getBoundingClientRect();if(y<r.top+r.height/2)return+k.dataset.i}return B().length}
 let DG=null;
 function gDown(e){e.preventDefault();const i=+gut.dataset.i;DG={i,y:e.clientY,mv:0,to:i};const t=e.currentTarget;t.setPointerCapture(e.pointerId);
@@ -263,6 +297,8 @@ t.onpointerup=m=>{t.onpointermove=t.onpointerup=null;dln.hidden=true;const g=DG;
 let to=g.to>g.i?g.to-1:g.to;if(to!=g.i)move(g.i,to)}}
 function keys(e){const el=e.target.closest?.("[data-f]");if(!el)return;const k=el.closest("[data-i]"),i=+k.dataset.i,b=B()[i],l=HT.lang,m=el.dataset.m;
 if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=="k"&&m!="plain"){e.preventDefault();fmt2("link");return}
+if(e.altKey&&/^Arrow(Up|Down)$/.test(e.key)){e.preventDefault();const j=i+(e.key=="ArrowUp"?-1:1);if(j>=0&&j<B().length){move(i,j);focusF(j,el.dataset.f)}return}
+if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=="d"){e.preventDefault();insert(JSON.parse(JSON.stringify(b)),i+1);return}
 if(e.key=="/"&&b.t=="p"&&!el.textContent){e.preventDefault();const r=el.getBoundingClientRect();addMenu(i,r.left,r.bottom+4,1);return}
 if(e.key=="Enter"&&!e.shiftKey){
 if(m=="li"){const s=getSelection(),li=s.anchorNode&&(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement).closest("li");
@@ -279,9 +315,21 @@ if(b.t=="p"&&pv?.t=="p"){e.preventDefault();snapN();const a=pv[l]||"",mk2=`<span
 const pe=DOC.querySelector(`[data-i="${i-1}"]`);pe.innerHTML=a+mk2+(pv[l].slice(a.length));const j=pe.querySelector("#cj"),r=D.createRange();r.setStartBefore(j);r.collapse(true);j.remove();pe.focus();getSelection().removeAllRanges();getSelection().addRange(r)}}}
 function paste(e){const el=e.target.closest?.("[data-f]");if(!el)return;const cd=e.clipboardData,f=[...cd.files].find(f=>f.type.startsWith("image/")),k=el.closest("[data-i]"),i=+k.dataset.i;
 e.preventDefault();if(f){insert({t:"img",al:"center"},i+1,0);pickImg(B()[i+1],f);return}
+const ht=cd.getData("text/html"),b=B()[i];
+if(ht&&el.dataset.m=="inline"){const bl=b.t=="p"&&el.dataset.f==""?htmlBlocks(ht):[],full=!!el.textContent.trim();
+if(bl.length>1||bl.length==1&&bl[0].t!="p"){act(()=>B().splice(full?i+1:i,full?0:1,...bl));focusF(i+bl.length-(full?0:1));return}
+const v=bl[0]?.[HT.lang]||clean(ht,"inline");if(v){D.execCommand("insertHTML",false,v);return}}
 const t=(cd.getData("text/plain")||"").replace(/\r/g,"");if(el.dataset.m=="plain"||el.dataset.m=="li"||el.dataset.m=="block"){D.execCommand("insertText",false,el.dataset.m=="plain"?t.replace(/\s*\n\s*/g," "):t);return}
 const parts=t.split(/\n\s*\n/).map(x=>x.replace(/\s*\n\s*/g," ").trim()).filter(Boolean);if(!parts.length)return;D.execCommand("insertText",false,parts[0]);
 if(parts.length>1){act(()=>B().splice(i+1,0,...parts.slice(1).map(x=>({t:"p",[HT.lang]:esc(x)}))));focusF(i+parts.length-1)}}
+// pasted HTML (Word, Google Docs, web pages) -> blocks
+function htmlBlocks(html){const t=D.createElement("template"),out=[],l=HT.lang;t.innerHTML=html;const add=o=>{if(o[l]||o.t=="hr")out.push(o)},
+go=n=>{for(const c of n.children){const g=c.tagName;
+if(/^H[1-6]$/.test(g))add({t:"h",lv:g<"H3"?2:3,[l]:esc(c.textContent.replace(/\s+/g," ").trim())});
+else if(g=="UL"||g=="OL")add({t:"list",...(g=="OL"&&{ord:true}),[l]:clean(c.innerHTML,"li")});
+else if(g=="BLOCKQUOTE")add({t:"quote",[l]:clean(c.innerHTML,"inline")});else if(g=="HR")add({t:"hr"});
+else if(c.querySelector("p,h1,h2,h3,h4,h5,h6,ul,ol,blockquote,hr,div,li"))go(c);
+else if(/^(P|PRE|LI|DIV)$/.test(g))add({t:"p",[l]:clean(c.innerHTML,"inline")})}};go(t.content);return out}
 function selTb(){const s=getSelection(),el=s.rangeCount&&!s.isCollapsed&&(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('.doc [contenteditable="true"]');
 if(!el||ift.contains(D.activeElement)){if(!ift.contains(D.activeElement))ift.hidden=true;return}const r=s.getRangeAt(0).getBoundingClientRect();ift.hidden=false;
 ift.style.left=Math.max(8,Math.min(r.left+scrollX+r.width/2-ift.offsetWidth/2,innerWidth-ift.offsetWidth-8))+"px";ift.style.top=r.top+scrollY-ift.offsetHeight-8+"px"}
@@ -397,19 +445,20 @@ let LBon=0;
 // ---------- on / off ----------
 async function start(){on=1;TX=await J(F.text,{});
 if(PV){ED=0;HT.classList.add("pv");BT.hidden=true}else{LS.ascwEditOn=1;HT.classList.add("ed");BT.classList.add("on");
-const ib=(i,t,f,ti)=>{const b=btn(i,f,ti||t);if(t)b.append(h("span",{cls:"lb"},t));return b};
-pb=h("span",{style:"display:contents"},btn("",publish,L("Send all changes to GitHub","Отправить все изменения на GitHub")),btn("↺",discard,L("Discard all unpublished changes","Отменить все неопубликованные изменения")));
+const ib=(i,t,f,ti)=>{const b=btn(i,f,ti||t);if(t){const s=h("span",{cls:"lb"},""+t);if(t.e){s.dataset.te=t.e;s.dataset.tr=t.r}b.append(s)}return b};
+pb=h("span",{style:"display:contents"},btn("",publish,Lp("Send all changes to GitHub","Отправить все изменения на GitHub")),btn("↺",discard,Lp("Discard all unpublished changes","Отменить все неопубликованные изменения")));
 eb=h("div",{id:"eb"},pb);et=h("div",{id:"et",hidden:""});D.body.append(eb,et);if(draft[F.text])showText();
 if(PAGE&&!/^map\//.test(SRC)&&(PG=await pageObj(PAGE))){
 if(NEWP)D.title=(PG.title||"")+" · ASCW";
-eb.append(ib("↶","",()=>undo(1),L("Undo","Отменить")+" (Ctrl+Z)"),ib("↷","",()=>undo(0),L("Redo","Повторить")+" (Ctrl+Shift+Z)"),
-ib("📄",L("Page","Страница"),settings,L("Title, description, background, subpages","Название, описание, фон, подстраницы")),ib("📱",L("Phone","Телефон"),preview,L("Preview on a phone screen","Как на экране телефона")))}
-if(MP)eb.append(ib("📍",L("Add markers","Новые метки"),e=>{MKon^=1;e.currentTarget.classList.toggle("on",!!MKon);HT.classList.toggle("mke",!!MKon);if(MKon&&LBon)D.getElementById("lbb").click();
-if(MKon)toast(L("Click the map to place a marker. Drag markers to move them; click one to edit it.","Клик по карте ставит метку. Метки можно перетаскивать, клик по метке — редактировать."))},L("Place markers by clicking the map","Ставить метки кликом по карте")),
-ib("☰",L("Markers","Метки"),mkList,L("All markers","Все метки")),
-(b=>(b.id="lbb",b))(ib("🏷",L("Country names","Названия стран"),e=>{LBon^=1;e.currentTarget.classList.toggle("on",!!LBon);HT.classList.toggle("lbe",!!LBon);if(LBon&&MKon)eb.querySelector(".eb.on:not(#lbb)")?.click();
-if(LBon)toast(L("Drag country names to move them; click a name to change its size, letter spacing and opacity.","Названия стран можно перетаскивать; клик по названию — размер, расстояние между буквами и прозрачность."))},L("Move and adjust country names","Двигать и настраивать названия стран"))),ib("⏱",L("Events","События"),events,L("Timeline events","События хронологии")));
-eb.append(ib("⚙","",token,L("GitHub access","Доступ к GitHub")),ib("Aa","",texts,L("Interface texts","Тексты интерфейса")));
+eb.append(ib("↶","",()=>undo(1),Lp("Undo","Отменить")+" (Ctrl+Z)"),ib("↷","",()=>undo(0),Lp("Redo","Повторить")+" (Ctrl+Shift+Z)"),
+ib("📄",Lp("Page","Страница"),settings,Lp("Title, description, background, subpages","Название, описание, фон, подстраницы")),ib("📱",Lp("Phone","Телефон"),preview,Lp("Preview on a phone screen","Как на экране телефона")),
+trb=ib("🌐","",nextTr,Lp("Next text written in one language only","Следующий текст без перевода")),ib("?","",help,Lp("Keyboard shortcuts","Горячие клавиши")),stb=h("span",{cls:"st"}))}
+if(MP)eb.append(ib("📍",Lp("Add markers","Новые метки"),e=>{MKon^=1;e.currentTarget.classList.toggle("on",!!MKon);HT.classList.toggle("mke",!!MKon);if(MKon&&LBon)D.getElementById("lbb").click();
+if(MKon)toast(L("Click the map to place a marker. Drag markers to move them; click one to edit it.","Клик по карте ставит метку. Метки можно перетаскивать, клик по метке — редактировать."))},Lp("Place markers by clicking the map","Ставить метки кликом по карте")),
+ib("☰",Lp("Markers","Метки"),mkList,Lp("All markers","Все метки")),
+(b=>(b.id="lbb",b))(ib("🏷",Lp("Country names","Названия стран"),e=>{LBon^=1;e.currentTarget.classList.toggle("on",!!LBon);HT.classList.toggle("lbe",!!LBon);if(LBon&&MKon)eb.querySelector(".eb.on:not(#lbb)")?.click();
+if(LBon)toast(L("Drag country names to move them; click a name to change its size, letter spacing and opacity.","Названия стран можно перетаскивать; клик по названию — размер, расстояние между буквами и прозрачность."))},Lp("Move and adjust country names","Двигать и настраивать названия стран"))),ib("⏱",Lp("Events","События"),events,Lp("Timeline events","События хронологии")));
+eb.append(ib("⚙","",token,Lp("GitHub access","Доступ к GitHub")),ib("Aa","",texts,Lp("Interface texts","Тексты интерфейса")));
 editable();bar();if(!tok)toast(L("Edit mode. Changes stay in this browser until you publish them (⚙ — GitHub access).","Режим редактирования. Изменения хранятся в браузере, пока вы их не опубликуете (⚙ — доступ к GitHub)."))}
 if(PV&&PAGE&&!/^map\//.test(SRC))PG=draft[PAGE]&&await pageObj(PAGE);
 if(PG){if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
@@ -418,5 +467,5 @@ DOC=D.querySelector("article.doc")||(NEWP?(D.querySelector("main>section").repla
 if(DOC){await initKids();if(ED)docInit();render()}}
 if(MP&&!PV)await mapInit()}
 window.EDIT={toggle(){if(on){LS.ascwEditOn="";location.reload()}else start()}};
-D.addEventListener("lang",()=>{if(!on)return;bar();showText();render()});
+D.addEventListener("lang",()=>{if(!on)return;eb?.querySelectorAll("[data-te]").forEach(e=>{const v=e.dataset[ru()?"tr":"te"];if(e.classList.contains("lb"))e.textContent=v;else{e.title=v;e.setAttribute("aria-label",v)}});bar();showText();render()});
 start();
