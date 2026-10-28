@@ -1,7 +1,6 @@
 {{- /* one text field of a block in both languages: b = block, f = field prefix ("" → en / ru, "cap_" → cap_en / cap_ru), tag = element, cls = optional class,
-   d = default {en, ru} used when the block has no own text. A missing language falls back to the other one. Stored HTML is cleaned by the editor. */ -}}
-{{- $oe := index .b (print .f "en") | default "" }}{{ $or := index .b (print .f "ru") | default "" -}}
-{{- $en := "" }}{{ $ru := "" -}}
-{{- if or $oe $or }}{{ $en = $oe | default $or }}{{ $ru = $or | default $oe -}}
-{{- else }}{{ with .d }}{{ $en = .en | default "" }}{{ $ru = .ru | default $en }}{{ end }}{{ end -}}
-{{- if or $en $ru }}{{ range $l, $v := dict "en" $en "ru" $ru }}{{ printf "<%s lang=\"%s\"%s>" $.tag $l (cond (isset $ "cls") (printf " class=\"%s\"" $.cls) "") | safeHTML }}{{ $v | safeHTML }}{{ printf "</%s>" $.tag | safeHTML }}{{ end }}{{ end -}}
+   d = default {en, ru} when the block has no text of its own. A missing language falls back to the other one. The editor cleans stored HTML. */ -}}
+{{- $e := index .b (print .f "en") }}{{ $r := index .b (print .f "ru") -}}
+{{- if and (not $e) (not $r) .d }}{{ $e = .d.en }}{{ $r = .d.ru }}{{ end -}}
+{{- if or $e $r }}{{ $c := cond (isset . "cls") (printf ` class="%s"` .cls) "" -}}
+{{- range $l, $v := dict "en" ($e | default $r) "ru" ($r | default $e) }}{{ printf `<%s lang="%s"%s>%s</%s>` $.tag $l $c $v $.tag | safeHTML }}{{ end }}{{ end -}}

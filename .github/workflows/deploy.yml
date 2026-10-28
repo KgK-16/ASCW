@@ -5,6 +5,13 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write  # the deploy step pushes the built site to the gh-pages branch
+
+concurrency:  # one deploy at a time, in commit order: an older build never overwrites a newer one
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,7 +21,8 @@ jobs:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: 'latest'
+          hugo-version: '0.160.0'  # fixed version: the site is tested with it (a new release can change templates or minification)
+          extended: true
 
       - name: Build
         run: hugo --minify

@@ -1,0 +1,3 @@
+{{- /* image uploaded on the site (src = site path, e.g. /ASCW/img/x.webp) with its size, so the page does not jump while it loads */ -}}
+{{- $f := path.Join "static" (strings.TrimPrefix (relURL "") .) -}}
+<img src="{{ . }}" alt="" loading="lazy" decoding="async"{{ if and (findRE `(?i)\.(jpe?g|png|gif|webp)$` $f) (fileExists $f) }}{{ with imageConfig $f }} width="{{ .Width }}" height="{{ .Height }}"{{ end }}{{ end }}>

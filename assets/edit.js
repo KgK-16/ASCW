@@ -2,7 +2,7 @@
 // Every change goes into a local draft (localStorage) and is published to GitHub as one commit with the editor's own access token;
 // GitHub Actions then rebuilds the site. Source files: content/**/_index.md (JSON front matter), data/text.json (interface texts),
 // assets/markers.json, assets/events.json, assets/countries.json (map), static/img/* (uploaded images).
-(()=>{
+// Built by layouts/partials/js.html (esbuild: minified, wrapped in its own scope).
 const D=document,HT=D.documentElement,BT=D.getElementById("ed"),U=BT.dataset.u,REPO=BT.dataset.repo,BR="main",
 LS=(()=>{try{return localStorage}catch{return{}}})(),
 NEWP=!D.querySelector("meta[name=src]")?.content, // a page that exists only in the draft opens on the 404 page at its future address
@@ -23,14 +23,16 @@ return pend[p]??=(async()=>{if(p in base)return base[p];
 try{base[p]=await gh(`contents/${p}?ref=${BR}`,{raw:1}).catch(e=>/^404/.test(e.message)?Promise.reject(e):fetch(`https://raw.githubusercontent.com/${REPO}/${BR}/${p}?${Date.now()}`,{cache:"no-store"}).then(r=>r.ok?r.text():Promise.reject(r.status)))}
 catch(e){if(!/404/.test(e))console.warn(p,e);base[p]=null}return base[p]})()}
 async function read(p){const d=draft[p];return d?d.del?null:d.t:src(p)}
-async function write(p,t){await src(p);if(t===base[p])delete draft[p];else draft[p]={t};save()}
+async function write(p,t){await src(p);
+if(base[p]==null&&Object.values(F).includes(p))return toast(L("Could not read the file from GitHub, the change is not saved: ","Не удалось прочитать файл с GitHub, изменение не сохранено: ")+p,1); // never replace a data file by a partial one
+if(t===base[p])delete draft[p];else draft[p]={t};save()}
 const J=async(p,def)=>{try{return JSON.parse(await read(p))??def}catch{return def}},
 fmt={[F.mk]:a=>"[\n"+a.map(v=>JSON.stringify(v)).join(",\n")+"\n]\n",[F.ev]:a=>"[\n"+a.map(v=>JSON.stringify(v)).join(",\n")+"\n]\n"},
 WJ=(p,o)=>write(p,(fmt[p]||(v=>JSON.stringify(v,null,1)+"\n"))(o));
 const n=()=>Object.keys(draft).length;
 
 async function publish(){
-if(!tok)return token();if(!n())return;
+if(!tok)return token();await flush();if(!n())return;
 const b=pb.firstChild;b.disabled=1;toast(L("Publishing…","Публикация…"));
 try{const ref=await gh(`git/ref/heads/${BR}`),head=ref.object.sha,c=await gh(`git/commits/${head}`),tree=[];
 for(const [p,v] of Object.entries(draft)){
@@ -159,9 +161,11 @@ other=l=>l=="ru"?"en":"ru";
 function state(){return JSON.stringify({b:B(),t:[PG.title,PG.title_ru,PG.description,PG.description_ru]})}
 function snap1(){if(!burst){HI.push(state());HR=[];if(HI.length>200)HI.shift()}burst=1;clearTimeout(bt0);bt0=setTimeout(()=>burst=0,1200)}
 function snapN(){HI.push(state());HR=[];burst=0}
-function store(){clearTimeout(svT);svT=setTimeout(()=>WJ(PAGE,PG),250)}
+function store(){clearTimeout(svT);svT=setTimeout(flush,250)}
+function flush(){clearTimeout(svT);if(svT){svT=0;return WJ(PAGE,PG)}} // the page is saved 250 ms after the last change, at once before publishing or leaving
+addEventListener("pagehide",flush);
 function undo(back){const a=back?HI:HR,o=back?HR:HI;if(!a.length)return;o.push(state());const s=JSON.parse(a.pop());PG.blocks=s.b;[PG.title,PG.title_ru,PG.description,PG.description_ru]=s.t;store();render()}
-function commit(){snapN();store();render()}
+const act=f=>{snapN();f?.();store();render()},commit=act; // one undo step: change, save, redraw
 // one editable text field: data-f = field prefix, data-m = cleaning mode (plain | inline | li | block); empty fields show the other language as a hint
 function E(tag,b,o,f,m,a="",def){const l=HT.lang,v=gv(b,o,f,l),w=gv(b,o,f,other(l)),ph=w?other(l).toUpperCase()+" · "+plain(w).slice(0,90):def||({k_:L("Kicker","Надзаголовок"),t_:L("Title","Название"),a_:L("Second line","Вторая строка"),
 d_:L("Description","Описание"),cap_:L("Caption","Подпись"),cite_:L("Source","Источник")}[f]||L("Write…","Пишите…"));
@@ -201,23 +205,23 @@ k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClient
 rt=getComputedStyle(k).float=="right"&&r.right+70<innerWidth, // right-floated card / image: buttons on its outer side, not over the wrapping text
 nr=!rt&&r.left<70;gut.classList.toggle("nr",nr);gut.classList.toggle("rt",rt); // phones: above the right end
 gut.style.top=r.top-d.top-(nr?30:0)+"px";gut.style.left=(nr||rt?r.right:r.left)-d.left+"px";gut.dataset.i=i}
-function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],f:()=>{const b=mk(t[0]);if(replace){snapN();B()[i]=b;store();render();b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}))}
-function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>{snapN();if(v==null)delete b[k];else b[k]=v;store();render()},items=[];
+function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],f:()=>{const b=mk(t[0]);if(replace){act(()=>B()[i]=b);b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}))}
+function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>act(()=>{if(v==null)delete b[k];else b[k]=v}),items=[];
 if(TXT.has(b.t))items.push(...TYPES().slice(0,6).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h2"&&b.t=="h"&&b.lv!=3)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-");
 if(b.t=="img")items.push(...[["center","▣",L("Centred, text width","По центру, ширина текста")],["full","▭",L("Full strip width","Во всю ширину ленты")],["left","◧",L("Left, text wraps","Слева, текст обтекает")],["right","◨",L("Right, text wraps","Справа, текст обтекает")]]
 .map(([a,ic,t])=>({i:ic,t,on:(b.al||"center")==a,f:()=>set("al",a)})),{i:"🖼",t:L("Replace image…","Заменить изображение…"),f:()=>pickImg(b)},"-");
 if(b.t=="card")items.push({i:"🖼",t:b.src?L("Replace image…","Заменить изображение…"):L("Add image…","Добавить изображение…"),f:()=>pickImg(b)},...(b.src?[{i:"✕",t:L("Remove image","Убрать изображение"),f:()=>set("src")}]:[]),
-{i:"+",t:L("Add row","Добавить строку"),f:()=>{snapN();(b.rows??=[]).push({});store();render()}},...((b.rows||[]).length?[{i:"−",t:L("Remove last row","Убрать последнюю строку"),f:()=>{snapN();b.rows.pop();store();render()}}]:[]),"-");
+{i:"+",t:L("Add row","Добавить строку"),f:()=>act(()=>(b.rows??=[]).push({}))},...((b.rows||[]).length?[{i:"−",t:L("Remove last row","Убрать последнюю строку"),f:()=>act(()=>b.rows.pop())}]:[]),"-");
 if(b.t=="cols")b.c.forEach((c,j)=>items.push({i:c.t=="img"?"¶":"🖼",t:(j?L("Right column: ","Правая колонка: "):L("Left column: ","Левая колонка: "))+(c.t=="img"?L("text","текст"):L("image","изображение")),
-f:()=>{snapN();b.c[j]=c.t=="img"?{t:"text"}:{t:"img"};store();render()}})),b.t=="cols"&&items.push("-");
+f:()=>act(()=>b.c[j]=c.t=="img"?{t:"text"}:{t:"img"})}));if(b.t=="cols")items.push("-");
 if(b.t=="head")items.push({i:"↕",t:L("Centred on the screen","По центру экрана"),on:!!b.tall,f:()=>set("tall",b.tall?null:true)},
-{i:"B",t:L("Second (accent) line","Вторая (акцентная) строка"),on:!!(b.a_en||b.a_ru||b.acc),f:()=>{snapN();if(b.a_en||b.a_ru||b.acc){delete b.a_en;delete b.a_ru;delete b.acc}else b.acc=true;store();render()}},
-...(b.t_en||b.t_ru||b.d_en||b.d_ru?[{i:"↺",t:L("Use the page title and description","Взять название и описание страницы"),f:()=>{snapN();["t_en","t_ru","d_en","d_ru"].forEach(k=>delete b[k]);store();render()}}]:[]),"-");
+{i:"B",t:L("Second (accent) line","Вторая (акцентная) строка"),on:!!(b.a_en||b.a_ru||b.acc),f:()=>act(()=>{if(b.a_en||b.a_ru||b.acc){delete b.a_en;delete b.a_ru;delete b.acc}else b.acc=true})},
+...(b.t_en||b.t_ru||b.d_en||b.d_ru?[{i:"↺",t:L("Use the page title and description","Взять название и описание страницы"),f:()=>act(()=>["t_en","t_ru","d_en","d_ru"].forEach(k=>delete b[k]))}]:[]),"-");
 if(b.t=="links")items.push({i:"✎",t:L("Edit links…","Ссылки…"),f:()=>links(b)},{i:"+",t:L("New subpage…","Новая подстраница…"),f:()=>newPage()},"-");
 items.push({i:"↑",t:L("Move up","Выше"),f:()=>move(i,i-1)},{i:"↓",t:L("Move down","Ниже"),f:()=>move(i,i+1)},
-{i:"⧉",t:L("Duplicate","Дублировать"),f:()=>insert(JSON.parse(JSON.stringify(b)),i+1,0)},{i:"🗑",t:L("Delete","Удалить"),f:()=>{snapN();B().splice(i,1);CB=null;store();render()}});
+{i:"⧉",t:L("Duplicate","Дублировать"),f:()=>insert(JSON.parse(JSON.stringify(b)),i+1,0)},{i:"🗑",t:L("Delete","Удалить"),f:()=>act(()=>{B().splice(i,1);CB=null})});
 if(!i)items.splice(items.findIndex(x=>x.i=="↑"),1);if(i==N-1)items.splice(items.findIndex(x=>x.i=="↓"),1);menu(x,y,items)}
-function move(i,j){if(j<0||j>=B().length)return;snapN();const [b]=B().splice(i,1);B().splice(j,0,b);CB=j;store();render()}
+function move(i,j){if(j>=0&&j<B().length)act(()=>{const [b]=B().splice(i,1);B().splice(j,0,b);CB=j})}
 const caretAtStart=e=>{const s=getSelection();if(!s.rangeCount||!s.isCollapsed)return 0;const r=D.createRange();r.selectNodeContents(e);r.setEnd(s.anchorNode,s.anchorOffset);return!r.toString().length&&!r.cloneContents().querySelector?.("img")};
 function docInit(){DOC.classList.add("edoc");
 gut=h("div",{id:"gut",hidden:""},h("button",{type:"button",title:L("Add a block","Добавить блок"),"aria-label":L("Add a block","Добавить блок"),
@@ -240,7 +244,7 @@ DOC.addEventListener("keydown",keys);
 DOC.addEventListener("paste",paste);
 DOC.addEventListener("click",e=>{const p=e.target.closest("[data-pick]");if(p){const k=p.closest("[data-i]"),b=B()[+k.dataset.i];pickImg(p.dataset.c!=null?b.c[+p.dataset.c]:b);return}
 const fb=e.target.closest("[data-act=first]");if(fb){const r=fb.getBoundingClientRect();addMenu(-1,r.left,r.bottom+4);return}
-const a=e.target.closest("[data-act=row]");if(a){const b=B()[+a.closest("[data-i]").dataset.i];snapN();(b.rows??=[]).push({});store();render()}
+const a=e.target.closest("[data-act=row]");if(a){const b=B()[+a.closest("[data-i]").dataset.i];act(()=>(b.rows??=[]).push({}))}
 if(e.target.closest("a")&&e.target.closest("[contenteditable]"))e.preventDefault()});
 // drag & drop of image files: a new image block where the file is dropped
 DOC.addEventListener("dragover",e=>{if([...e.dataTransfer.items].some(x=>x.kind=="file")){e.preventDefault();DOC.classList.add("dropping")}});
@@ -270,14 +274,14 @@ const t=h("div");t.append(tail.extractContents());snapN();const rest=b.t=="h"?es
 sv(b,b,"",l,b.t=="h"?esc(el.textContent):clean(el.innerHTML,"inline"));
 B().splice(i+1,0,rest?{t:"p",[l]:rest}:{t:"p"});CB=i+1;store();render();focusF(i+1,null,0);return}
 if(e.key=="Backspace"&&TXT.has(b.t)&&el.dataset.f==""&&caretAtStart(el)){const pv=B()[i-1];
-if(!el.textContent&&!el.querySelector("img")&&(m!="li"||el.children.length<=1)){e.preventDefault();snapN();B().splice(i,1);store();render();if(pv)focusF(i-1);return}
+if(!el.textContent&&!el.querySelector("img")&&(m!="li"||el.children.length<=1)){e.preventDefault();act(()=>B().splice(i,1));if(pv)focusF(i-1);return}
 if(b.t=="p"&&pv?.t=="p"){e.preventDefault();snapN();const a=pv[l]||"",mk2=`<span id="cj"></span>`;pv[l]=a+(b[l]||"");B().splice(i,1);store();render();
 const pe=DOC.querySelector(`[data-i="${i-1}"]`);pe.innerHTML=a+mk2+(pv[l].slice(a.length));const j=pe.querySelector("#cj"),r=D.createRange();r.setStartBefore(j);r.collapse(true);j.remove();pe.focus();getSelection().removeAllRanges();getSelection().addRange(r)}}}
 function paste(e){const el=e.target.closest?.("[data-f]");if(!el)return;const cd=e.clipboardData,f=[...cd.files].find(f=>f.type.startsWith("image/")),k=el.closest("[data-i]"),i=+k.dataset.i;
 e.preventDefault();if(f){insert({t:"img",al:"center"},i+1,0);pickImg(B()[i+1],f);return}
 const t=(cd.getData("text/plain")||"").replace(/\r/g,"");if(el.dataset.m=="plain"||el.dataset.m=="li"||el.dataset.m=="block"){D.execCommand("insertText",false,el.dataset.m=="plain"?t.replace(/\s*\n\s*/g," "):t);return}
 const parts=t.split(/\n\s*\n/).map(x=>x.replace(/\s*\n\s*/g," ").trim()).filter(Boolean);if(!parts.length)return;D.execCommand("insertText",false,parts[0]);
-if(parts.length>1){snapN();B().splice(i+1,0,...parts.slice(1).map(x=>({t:"p",[HT.lang]:esc(x)})));store();render();focusF(i+parts.length-1)}}
+if(parts.length>1){act(()=>B().splice(i+1,0,...parts.slice(1).map(x=>({t:"p",[HT.lang]:esc(x)}))));focusF(i+parts.length-1)}}
 function selTb(){const s=getSelection(),el=s.rangeCount&&!s.isCollapsed&&(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('.doc [contenteditable="true"]');
 if(!el||ift.contains(D.activeElement)){if(!ift.contains(D.activeElement))ift.hidden=true;return}const r=s.getRangeAt(0).getBoundingClientRect();ift.hidden=false;
 ift.style.left=Math.max(8,Math.min(r.left+scrollX+r.width/2-ift.offsetWidth/2,innerWidth-ift.offsetWidth-8))+"px";ift.style.top=r.top+scrollY-ift.offsetHeight-8+"px"}
@@ -299,7 +303,7 @@ if(q){q.en=o.title||q.en;q.ru=o.title_ru||o.title||q.ru}else KIDS.push({src:p.sl
 KIDS.sort((a,b)=>(a.nw?1:0)-(b.nw?1:0))}
 const pageObj=async p=>{const t=await read(p);if(t==null)return null;try{return JSON.parse(t)}catch{return null}};
 function newPage(){let en,ruI,sl;const slug=v=>v.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-const w=dialog(L("New subpage","Новая подстраница"),lab(L("Title","Название")+" · EN",en=inp("",v=>{if(!sl.dataset.t)sl.value=slug(v)})),
+dialog(L("New subpage","Новая подстраница"),lab(L("Title","Название")+" · EN",en=inp("",v=>{if(!sl.dataset.t)sl.value=slug(v)})),
 lab(L("Title","Название")+" · RU",ruI=inp("",()=>{})),lab(L("Address","Адрес")+" ("+U+dir+"…)",sl=inp("",(v,e)=>{e.dataset.t=1})),
 h("div",{cls:"row"},btn(L("Create and open","Создать и открыть"),async()=>{const s=slug(sl.value);if(!s||!en.value.trim())return toast(L("Title (EN) and address are required","Нужны название (EN) и адрес"),1);
 const p=`content/${dir}${s}/_index.md`;if(await read(p)!=null)return toast(L("This address is taken","Такой адрес уже занят"),1);
@@ -320,7 +324,7 @@ async function reorder(){const K=kids(),os=await Promise.all(K.map(q=>pageObj("c
 // the links block lists the subpages; "hide" (list of page sources) takes pages out of this list without deleting them
 const shown=b=>kids().filter(q=>!(b.hide||[]).includes(q.src));
 function links(b){const box=h("div",{style:"display:flex;flex-direction:column;gap:8px"}),hid=h("div",{style:"display:flex;flex-direction:column;gap:6px"}),
-vis=(q,on)=>{snapN();b.hide=(b.hide||[]).filter(x=>x!=q.src);if(!on)b.hide.push(q.src);if(!b.hide.length)delete b.hide;store();render();rows()},
+vis=(q,on)=>{act(()=>{b.hide=(b.hide||[]).filter(x=>x!=q.src);if(!on)b.hide.push(q.src);if(!b.hide.length)delete b.hide});rows()},
 rows=()=>{box.replaceChildren(...shown(b).map((q,i,K)=>{const set=async(l,v)=>{q[l]=v;const p="content/"+q.src,o=await pageObj(p);if(o){o[l=="en"?"title":"title_ru"]=v;await WJ(p,o)}render()},
 sw=async d=>{const j=KIDS.indexOf(K[i+d]),k=KIDS.indexOf(q);if(!K[i+d])return;[KIDS[j],KIDS[k]]=[KIDS[k],KIDS[j]];await reorder();rows();render()};
 return h("div",{cls:"row",style:"align-items:flex-end"},lab("EN",inp(q.en,v=>set("en",v))),lab("RU",inp(q.ru,v=>set("ru",v))),btn("↑",()=>sw(-1),L("Up","Выше")),btn("↓",()=>sw(1),L("Down","Ниже")),
@@ -362,7 +366,7 @@ h("div",{cls:"row"},lab(L("Latitude","Широта"),num("a")),lab(L("Longitude"
 h("div",{cls:"row"},btn(L("Done","Готово"),()=>D.getElementById("pc").click()),btn("🗑 "+L("Delete","Удалить"),()=>{MK.splice(i,1);saveMK();PF?.remove();PF=null;D.getElementById("pc").click()})));
 if(pform(f,"m"+i)&&!q.n&&!q.r)setTimeout(()=>f.querySelector("input").focus())}
 function mkList(){const box=h("div",{cls:"ml"}),q0=inp("",v=>rows(v),{ph:L("Search","Поиск")}),
-rows=(s="")=>box.replaceChildren(...MK.map((q,i)=>[q,i]).filter(([q])=>(q.n+" "+q.r).toLowerCase().includes(s.toLowerCase())).map(([q,i])=>
+rows=(s="")=>box.replaceChildren(...MK.map((q,i)=>[q,i]).filter(([q])=>((q.n||"")+" "+(q.r||"")).toLowerCase().includes(s.toLowerCase())).map(([q,i])=>
 h("button",{type:"button",onclick:()=>{w.remove();MP.focus(q.o,q.a);MP.pickM(i)}},(ru()?q.r||q.n:q.n||q.r)||"—",h("small",{},q.y0!=null||q.y1!=null?`${q.y0??"…"}–${q.y1??"…"}`:""))));
 rows();const w=dialog(L("Markers","Метки")+" · "+MK.length,q0,box)}
 function events(){const box=h("div",{style:"display:flex;flex-direction:column;gap:10px"}),
@@ -379,7 +383,7 @@ rng=(k,a,b,st,f,d=1,u=v=>Math.round(v*100)+"%")=>{const i=h("input",{type:"range
 i.oninput=()=>{sh();ch(k,+i.value,60)};return lab(h("span",{},f,n),i)};
 pform(h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(o.en,v=>ch("en",v),{ph:r.n0})),lab(L("Name","Название")+" · RU",inp(o.ru,v=>ch("ru",v),{ph:r.r0}))),
 lab(L("Text","Текст")+" · EN",inp(o.ten,v=>ch("ten",v),{area:1})),lab(L("Text","Текст")+" · RU",inp(o.tru,v=>ch("tru",v),{area:1})),
-h("div",{cls:"row"},rng("lz",4,150,1,L("Name size","Размер названия"),Math.round((ru()?r.sr:r.s)*.75),v=>v+" pt"),rng("lo",0,1,.05,L("Name opacity","Прозрачность названия"))),
+h("div",{cls:"row"},rng("lz",4,150,1,L("Name size","Размер названия"),Math.round(((ru()?r.sr:r.s)||16)*.75),v=>v+" pt"),rng("lo",0,1,.05,L("Name opacity","Прозрачность названия"))),
 h("div",{cls:"row"},rng("lk",-.2,1.5,.02,L("Letter spacing","Расстояние между буквами"),0),h("div",{})),
 h("div",{cls:"row"},btn(L("Name back to its place","Вернуть название на место"),()=>{delete o.lx;delete o.ly;ch("lx",0,0)}))),"c"+r.c)}
 // country names: drag in the "names" mode (the shift is stored in countries.json as lx / ly, map pixels)
@@ -416,4 +420,3 @@ if(MP&&!PV)await mapInit()}
 window.EDIT={toggle(){if(on){LS.ascwEditOn="";location.reload()}else start()}};
 D.addEventListener("lang",()=>{if(!on)return;bar();showText();render()});
 start();
-})();

@@ -26,8 +26,7 @@ section{width:100%;padding:0;border:0;position:relative;overflow:hidden}
 #mw path{fill:#e8e8e0;stroke:#000;stroke-width:1.5px;stroke-linejoin:round}
 #mw text{font-family:Play,sans-serif;font-weight:400;font-size:15px;letter-spacing:1px;text-transform:uppercase;paint-order:stroke;stroke:#000b;stroke-width:3px;stroke-linejoin:round;fill:#e8e8e0;dominant-baseline:central}
 .z{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;border:1px solid #6665c04d;z-index:9}
-.z button{position:relative;display:block;cursor:pointer;color:#e8e8e0a6}.z button:hover{color:#e8e8e0}
-.z button{width:30px;height:30px;line-height:30px;font-size:18px;text-align:center;background:#020206}
+.z button{position:relative;display:block;width:30px;height:30px;line-height:30px;font-size:18px;text-align:center;background:#020206;cursor:pointer;color:#e8e8e0a6}.z button:hover{color:#e8e8e0}
 @media(pointer:coarse){.z button{width:44px;height:44px;line-height:44px}}
 .z button:nth-child(-n+2){font-size:12px;letter-spacing:1px}
 /* labels next to the buttons: on hover / focus, and for a few seconds on touch screens */
@@ -58,14 +57,14 @@ aside>button{position:absolute;right:6px;top:2px;font-size:20px;width:40px;heigh
 #ld{position:absolute;inset:0;z-index:11;display:flex;align-items:center;justify-content:center;background:#04040a99;pointer-events:none}#ld[hidden]{display:none}
 #ld i{width:44px;height:44px;border-radius:50%;border:2px solid #6665c04d;border-top-color:#e8e8e0;animation:sp 0.9s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
 </style>
-<div id="tl" role="dialog" aria-modal="true"><button type="button" id="xt"{{ with index hugo.Data.text "tip_close" }} data-ten="{{ .en }}" data-tru="{{ .ru }}" title="{{ .en }}" aria-label="{{ .en }}"{{ end }}>×</button><div id="ty"></div><div id="tw"><div id="tz"><input id="tr" type="range"></div></div></div>
-<div class="z"><button type="button" id="zg"{{ with index hugo.Data.text "tip_3d" }} data-ten="{{ .en }}" data-tru="{{ .ru }}" title="{{ .en }}" aria-label="{{ .en }}"{{ end }}>3D</button><button type="button" id="zt"{{ with index hugo.Data.text "tip_tl" }} data-ten="{{ .en }}" data-tru="{{ .ru }}" title="{{ .en }}" aria-label="{{ .en }}"{{ end }}></button><button type="button" id="zc"{{ with index hugo.Data.text "tip_col" }} data-ten="{{ .en }}" data-tru="{{ .ru }}" title="{{ .en }}" aria-label="{{ .en }}"{{ end }}><i></i></button><button type="button" id="zi"{{ with index hugo.Data.text "tip_in" }} data-ten="{{ .en }}" data-tru="{{ .ru }}" title="{{ .en }}" aria-label="{{ .en }}"{{ end }}>+</button><button type="button" id="zo"{{ with index hugo.Data.text "tip_out" }} data-ten="{{ .en }}" data-tru="{{ .ru }}" title="{{ .en }}" aria-label="{{ .en }}"{{ end }}>−</button></div>
-<aside id="p"><button type="button" id="pc"{{ with index hugo.Data.text "tip_close" }} data-ten="{{ .en }}" data-tru="{{ .ru }}" title="{{ .en }}" aria-label="{{ .en }}"{{ end }}>×</button><h1 id="pt"></h1><hr><i id="px"></i></aside>
-<button type="button" id="cd"{{ with index hugo.Data.text "tip_copy" }} data-ten="{{ .en }}" data-tru="{{ .ru }}" title="{{ .en }}" aria-label="{{ .en }}"{{ end }}>—</button>
-<div id="ld" class="ld" hidden role="status"><i></i></div>
+<div id="tl" role="dialog" aria-modal="true"><button type="button" id="xt" {{ partial "tip" "tip_close" }}>×</button><div id="ty"></div><div id="tw"><div id="tz"><input id="tr" type="range"></div></div></div>
+<div class="z"><button type="button" id="zg" {{ partial "tip" "tip_3d" }}>3D</button><button type="button" id="zt" {{ partial "tip" "tip_tl" }}></button><button type="button" id="zc" {{ partial "tip" "tip_col" }}><i></i></button><button type="button" id="zi" {{ partial "tip" "tip_in" }}>+</button><button type="button" id="zo" {{ partial "tip" "tip_out" }}>−</button></div>
+<aside id="p"><button type="button" id="pc" {{ partial "tip" "tip_close" }}>×</button><h1 id="pt"></h1><hr><i id="px"></i></aside>
+<button type="button" id="cd" {{ partial "tip" "tip_copy" }}>—</button>
+<div id="ld" hidden role="status"><i></i></div>
 <div id="g"></div>
 <div id="m"><div id="c"><img id="im" alt="" decoding="async"><canvas id="ov" width="4096" height="2048"></canvas><svg id="sv" viewBox="0 0 4096 2048"></svg><img id="bi" alt="" decoding="async"><svg id="hl" viewBox="0 0 4096 2048"></svg><svg id="sl" viewBox="0 0 4096 2048"></svg></div><svg id="mw"></svg><div id="gx"></div></div>
 </section></main>
-{{ with resources.Get "map.js" | js.Build (dict "minify" true "target" "es2020") -}}
+{{ with partial "js" (resources.Get "map.js") -}}
 <script>var U="{{ "" | relURL }}",V={{ (resources.Get "map.json").Content | safeJS }},MK={{ (resources.Get "markers.json").Content | safeJS }},EV={{ (resources.Get "events.json").Content | safeJS }},COU={{ (resources.Get "countries.json").Content | safeJS }};{{ .Content | safeJS }}</script>
 {{- end }}

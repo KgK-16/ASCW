@@ -1,0 +1,8 @@
+{{- /* JS resource → minified (esbuild) with UTF-8 text: esbuild writes non-ASCII characters as \uXXXX or \u{X}; letters and signs are put back
+   (U+00A1 and above, except surrogates and line / paragraph separators), so Cyrillic texts take 2 bytes instead of 6 */ -}}
+{{- $c := (. | js.Build (dict "minify" true "target" "es2020")).Content -}}
+{{- range findRE `\\u(\{[0-9A-F]+\}|[0-9A-F]{4})` $c | uniq -}}
+{{- $n := int (printf "0x%s" (strings.Trim (substr . 2) "{}")) -}}
+{{- if and (ge $n 161) (or (lt $n 55296) (gt $n 57343)) (ne $n 8232) (ne $n 8233) (ne $n 65279) }}{{ $c = replace $c . (printf "%c" $n) }}{{ end -}}
+{{- end -}}
+{{- return resources.FromString (print "js/" .Name) $c -}}

@@ -1,9 +1,9 @@
-baseURL = "https://KgK-16.github.io/ASCW/"
+baseURL = "https://kgk-16.github.io/ASCW/"
 title = "ASCW"
 disableKinds = ["taxonomy", "term", "RSS", "sitemap"]
 
 [minify]
-disableJS = true  # inline map script is already minified by esbuild (js.Build); re-minifying breaks it
+disableJS = true  # scripts are minified by esbuild (layouts/partials/js.html); the HTML minifier re-minifying them breaks them
 
 [params]
 repo = "KgK-16/ASCW"  # the site editor commits here

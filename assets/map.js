@@ -18,7 +18,7 @@ try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
 nm=r=>ru()?r.ru:r.name,
-mn=q=>ru()&&q.r||q.n,
+mn=q=>(ru()?q.r||q.n:q.n||q.r)||"", // marker name; a missing language falls back to the other one
 hemi=(v,lat)=>v?HM[ru()?"ru":"en"][(lat?0:2)+(v<0)]:"",
 deg=(v,lat)=>Math.abs(v)+"°"+hemi(v,lat),
 path=r=>r.p||(r.p=new Path2D(r.d)),
@@ -31,7 +31,7 @@ function glyphs(r){ // label letters keep their proportions; letter spacing stre
 const c=COU[r.c]||{},q0=ru()?r.sr:r.s;if(!q0)return null;const f=c.lz?c.lz/.75/q0:1,q=q0*f;
 const t=nm(r).toUpperCase(),n=t.length,w=(ru()?r.wr:r.w)*f;hc.font=q+"px A";
 let ws=[...t].map(ch=>hc.measureText(ch).width),nat=ws.reduce((a,v)=>a+v,0),z=q;
-if(nat>w&&w){const f=w/nat;ws=ws.map(v=>v*f);nat=w;z=q*f} // a renamed country longer than its box: smaller letters, same proportions
+if(nat>w&&w){const s=w/nat;ws=ws.map(v=>v*s);nat=w;z=q*s} // a renamed country longer than its box: smaller letters, same proportions
 const ls=n>1?Math.max(-.2*z,Math.max(0,(w-nat)/(n-1))+(c.lk||0)*z):0;let X=(ru()?r.xr:r.x)+(c.lx||0)-(nat+ls*(n-1))/2;
 return{t,s:+z.toFixed(1),y:(ru()?r.yr:r.y)+(c.ly||0),o:c.lo,xs:ws.map(v=>{const o=X;X+=v+ls;return o})}}
 function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>{if(el._s==src)el.src=src},()=>{})} // decode off the main thread, then swap
@@ -48,7 +48,7 @@ const n=W*k*devicePixelRatio,l=n>4500?3:n>2200?2:n>1100?1:0; // image levels 102
 if(l>lv){if(lv<0&&l)im.src=U+"map/g0.webp"; // light preview while the sharp level loads
 lv=l;load(im,U+`map/g${l}.webp`);lvB()}}
 function lvB(){if(lv<0)return;bi.hidden=!cv.b;if(cv.b)load(bi,bsrc(lv))}
-function apply(){raf=0;c.classList.toggle("t",!!an);mw.classList.toggle("t",!!an);posM();c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
+function apply(){raf=0;posM();c.classList.toggle("t",!!an);mw.classList.toggle("t",!!an);c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
 c.classList.add("mv");clearTimeout(mvT);mvT=setTimeout(rest,250)} // while moving: GPU layer only, no restyle/repaint
 function rest(){c.classList.remove("mv");if(k!=kk)c.style.setProperty("--k",kk=k)} // after: zoom-dependent widths, crisp re-raster
 function zoom(f,px,py,anim){const k2=Math.min(Math.max(k*f,fit()),kmax());x=px-(px-x)*k2/k;y=py-(py-y)*k2/k;k=k2;set(anim)}
@@ -57,11 +57,9 @@ function rs(){ // (re)build the SVG overlays: country shapes, graticule, labels
 let s="",q="",l="",t="";
 for(let i=-180;i<=180;i+=15){const X=(i+180)/360*W;q+=`<path${i?"":' class="e"'} d="M${X} 0V${H}"/>`;if(i%30==0&&i<180)l+=`<span data-o="${i}">${deg(i)}</span>`}
 for(let i=-75;i<=75;i+=15){const Y=(90-i)/180*H;q+=`<path${i?"":' class="e"'} d="M0 ${Y}H${W}"/>`;if(i%30==0)l+=`<span data-a="${i}">${deg(i,1)}</span>`}
-RG.forEach(r=>{s+=`<path id="r${r.id}" data-i="${r.id}" style="--c:${r.c}" fill-rule="evenodd" d="${r.d}"/>`;const a=glyphs(r);
+RG.forEach(r=>{s+=`<path style="--c:${r.c}" fill-rule="evenodd" d="${r.d}"/>`;const a=glyphs(r);
 if(a)t+=`<text data-i="${r.id}"${a.o!=null?` opacity="${a.o}"`:""} x="${a.xs.map(v=>v.toFixed(1)).join(" ")}" y="${a.y}" font-size="${a.s}">${a.t}</text>`});
-sv.innerHTML=s;sl.innerHTML=`<g class="gr">${q}</g><g class="lb">${t}</g>`;gx.innerHTML=l;posM();
-RG.forEach(r=>r.el=$("r"+r.id));
-hi()}
+sv.innerHTML=s;sl.innerHTML=`<g class="gr">${q}</g><g class="lb">${t}</g>`;gx.innerHTML=l;posM();hi()}
 function hi(){ // selection layer above the borders: the rest of the map is dimmed, the country keeps its own relief colours
 const r=sel&&R[sel];
 hl.innerHTML=r?`<path class="dm" fill-rule="evenodd" d="M0 0H${W}V${H}H0z${r.d}"/><path class="gw" d="${r.d}"/><path class="ol" d="${r.d}"/>`:"";
@@ -78,10 +76,9 @@ drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"} cl
 posM=()=>{const zl=k/fit();mw.querySelectorAll("g").forEach((e,i)=>{const q=MK[i];if(!q)return;e.style.transform=`translate(${x+(q.o+180)/360*W*k}px,${y+(90-q.a)/180*H*k}px)`;
 e.classList.toggle("z",far(q,zl))});
 // graticule labels: light, pinned to the top / left edge of the view, hidden under the button column
-const t0=Math.max(y,0)+6,l0=Math.max(x,0)+6;
-gx.querySelectorAll("span").forEach(e=>{if(e.dataset.o!=null){const X=x+(+e.dataset.o+180)/360*W*k+4;e.style.transform=`translate(${X}px,${t0}px)`;e.hidden=X<l0+40||X>m.clientWidth-zw()-70}
-else{const Y=y+(90-e.dataset.a)/180*H*k-18;e.style.transform=`translate(${l0}px,${Y}px)`;e.hidden=Y<t0+18||Y>m.clientHeight-30}})},
-zw=()=>D.querySelector(".z").offsetWidth+12,
+const t0=Math.max(y,0)+6,l0=Math.max(x,0)+6,xr=m.clientWidth-zc.parentNode.offsetWidth-82,yb=m.clientHeight-30; // sizes read once: no layout per label
+gx.querySelectorAll("span").forEach(e=>{if(e.dataset.o!=null){const X=x+(+e.dataset.o+180)/360*W*k+4;e.style.transform=`translate(${X}px,${t0}px)`;e.hidden=X<l0+40||X>xr}
+else{const Y=y+(90-e.dataset.a)/180*H*k-18;e.style.transform=`translate(${l0}px,${Y}px)`;e.hidden=Y<t0+18||Y>yb}})},
 esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;");
 
 function names(){RG.forEach(r=>{r.n0??=r.name;r.r0??=r.ru;const o=COU[r.c]||{};r.name=o.en||r.n0;r.ru=o.ru||r.r0})} // names edited on the site win over the generated ones
@@ -130,7 +127,7 @@ const fb=()=>{const t=D.createElement("textarea");t.value=CP;D.body.append(t);t.
 navigator.clipboard?navigator.clipboard.writeText(CP).catch(fb):fb();
 cd.textContent=L("COPIED: ","СКОПИРОВАНО: ")+CP;clearTimeout(fl);fl=setTimeout(()=>{fl=0;cd.innerHTML=CT},1200)}
 cd.onclick=copy;
-D.addEventListener("keydown",e=>{if(e.target.closest?.("input,textarea,select,[contenteditable]"))return;if(e.key=="Escape")tlOpen()?tlClose():pick();else if(e.code=="KeyC"&&!G&&!tlOpen()&&!getSelection().toString())copy()});
+D.addEventListener("keydown",e=>{if(e.target.closest?.("input:not([type=range]),textarea,select,[contenteditable]"))return; /* typing in a field is not a shortcut */if(e.key=="Escape")tlOpen()?tlClose():pick();else if(e.code=="KeyC"&&!G&&!tlOpen()&&!getSelection().toString())copy()});
 
 // ---- timeline ----
 function tlB(){
@@ -142,11 +139,11 @@ Object.keys(E).forEach(n=>{const X=(n-T0)*PY;let s=0,b=99; // flags alternate up
 [pf,1-pf].forEach(d=>{let l=0;while(en[d][l]>X)l++;if(l<b){b=l;s=d}});en[s][b]=X+210;pf=1-s;
 h+=`<div class="f ${s?"d":"u"}" data-y="${n}" style="left:${60+X}px;height:${96+b*92}px"><b>${n}</b><span>${E[n].join("; ")}</span></div>`});
 tz.querySelectorAll("i,em,.f").forEach(e=>e.remove());tr.insertAdjacentHTML("beforebegin",h);upd()}
-const tlClose=()=>tl.classList.remove("o");
+const tlClose=()=>{tl.classList.remove("o");zt.focus()}; // keyboard focus goes into the timeline and back
 tr.min=T0;tr.max=T1;tr.value=yr;
 tr.oninput=()=>{yr=+tr.value;upd()};
 tz.onclick=e=>{const f=e.target.closest(".f");if(f){yr=tr.value=+f.dataset.y;upd()}};
-zt.onclick=()=>{tl.classList.add("o");tlB();tw.scrollLeft=60+(yr-T0)*PY-tw.clientWidth/2};
+zt.onclick=()=>{tl.classList.add("o");tlB();tw.scrollLeft=60+(yr-T0)*PY-tw.clientWidth/2;tr.focus({preventScroll:true})};
 xt.onclick=tlClose;
 
 if(matchMedia("(hover:none)").matches){const z=D.querySelector(".z");z.classList.add("hint");setTimeout(()=>z.classList.remove("hint"),3500);z.addEventListener("pointerdown",()=>z.classList.remove("hint"),{once:true})}
@@ -183,7 +180,7 @@ PF=PR+NZ+CL+`uniform sampler2D T;uniform sampler2D Hs;uniform float d;uniform ve
 void main(){vec3 n=normalize(q),V=normalize(vec3(0.,0.,d)-q),ob=normalize(o),H=normalize(L+V);float ndl=dot(n,L),h=1./d,al=smoothstep(h,h+.03,q.z),nv=max(dot(n,V),0.);
 float day=smoothstep(-.08,.3,ndl),tw=exp(-pow(ndl*6.,2.)),wr=clamp((ndl+.15)/1.15,0.,1.);
 vec3 m=texture2D(T,v).rgb;float cd=cl(v),sh=cl(v+tl(ob,Lo)*.014);
-float sea=smoothstep(.02,.07,m.b-m.r)*(1.-smoothstep(.18,.28,m.r)),snow=smoothstep(.72,.9,min(m.r,min(m.g,m.b)));
+float sea=smoothstep(.02,.07,m.b-m.r)*(1.-smoothstep(.18,.28,m.r));
 vec3 g=m*(1.-.55*sh*day)*mix(1.,.82,sea);
 vec3 c=mix(m*vec3(.045,.06,.1),g*(.08+1.02*wr),day);
 c+=sea*day*(1.-cd)*(vec3(1.,.95,.85)*(pow(max(dot(n,H),0.),160.)*.8+pow(max(dot(n,H),0.),18.)*.05)+vec3(.3,.45,.85)*pow(1.-nv,5.)*.35);
