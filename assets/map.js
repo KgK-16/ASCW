@@ -298,19 +298,21 @@ RG.forEach(r=>{const a=glyphs(r);if(!a)return;const c=COU[r.c]||{};it.push({c:1,
 MK.forEach((q,i)=>{if(mOn(q))it.push({m:i,q,t:mn(q),lo:q.o,la:q.a})});
 const sg=JSON.stringify(it);
 if(sg!=gsig){gsig=sg;GI=it;
-gw.innerHTML=it.map(e=>e.c?`<div class="z"><span class="cn" style="letter-spacing:${(.08+e.k).toFixed(3)}em">${esc(e.t)}</span></div>`
-:`<div class="z" data-m="${e.m}"><i><svg viewBox="-11 -11 22 22"><path fill-rule="evenodd" d="${SH[e.q.k|0]||SH[0]}"/></svg><b${e.q.k==1?' class="d"':""}${e.q.f=="cap"?' data-c':""}>${esc(e.t)}</b></i></div>`).join("");
+gw.innerHTML=it.map(e=>e.c?`<div class="gh"><span class="cn" style="letter-spacing:${(.08+e.k).toFixed(3)}em">${esc(e.t)}</span></div>`
+:`<div class="gh" data-m="${e.m}"><i><svg viewBox="-11 -11 22 22"><path fill-rule="evenodd" d="${SH[e.q.k|0]||SH[0]}"/></svg><b${e.q.k==1?' class="d"':""}${e.q.f=="cap"?' data-c':""}>${esc(e.t)}</b></i></div>`).join("");
 [...gw.children].forEach((d,j)=>{const e=it[j],la=e.la*Math.PI/180,lo=e.lo*Math.PI/180;e.d=d;e.w=d.firstChild.offsetWidth;e.h=d.firstChild.offsetHeight;e.p=[Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo)]});
 GO=[...it].sort((a,b)=>(b.c?1e3+b.s:-(b.q.z|0))-(a.c?1e3+a.s:-(a.q.z|0)))} // big country names first, then markers by importance
 GI.forEach(e=>e.m!=null&&e.d.classList.toggle("s",e.m===ms))}
 function gF(w,h){ // per frame: project names, fade at the horizon, hide by zoom and where they would overlap a more important one
 const Y=ya+sa,c=Math.cos(Y),s=Math.sin(Y),e=Math.cos(pa),f=Math.sin(pa),zl=Math.PI/(2*SC*(gD-1)),hz=1/gD,pr=Math.PI/H*h/2/SC,mx=Math.min(20,Math.max(13,Math.min(w,h)/28)),B=[],sel=GO.find(q=>q.m===ms);
 for(const q of sel?[sel,...GO.filter(v=>v!=sel)]:GO){const[px,py,pz]=q.p,x1=c*px+s*pz,z1=-s*px+c*pz,y2=e*py-f*z1,z2=f*py+e*z1,dp=gD-z2,
-X=(x1/(SC*AS)/dp+1)*w/2,V=(1-y2/SC/dp)*h/2,al=Math.min(1,Math.max(0,(z2-hz)/.12)),sc=q.c?Math.min(mx,Math.max(10,q.s*pr/dp))/20:1,
+X=(x1/(SC*AS)/dp+1)*w/2,V=(1-y2/SC/dp)*h/2,al=Math.min(1,Math.max(0,(z2-hz)/.12)),fs=q.c?Math.round(Math.min(mx,Math.max(10,q.s*pr/dp))*2)/2:0,sc=fs/20,
 bx=q.c?[X-q.w*sc/2-4,V-q.h*sc/2,X+q.w*sc/2+4,V+q.h*sc/2]:[X-11,V-10,X-11+q.w+4,V+10];
-let on=al>.05&&(q.c||!far(q.q,zl))&&!B.some(b=>b[0]<bx[2]&&bx[0]<b[2]&&b[1]<bx[3]&&bx[1]<b[3]);if(on)B.push(bx);
-q.d.style.transform=`translate(${X.toFixed(1)}px,${V.toFixed(1)}px)`+(q.c?` scale(${sc.toFixed(3)})`:"");
-const o=(al*(q.o??1)).toFixed(2);if(q.ov!==o)q.d.style.opacity=q.ov=o;if(q.on!==on)q.d.classList.toggle("z",!(q.on=on))}}
+const g=q.on?3:0; // a shown name yields only to a clear overlap: no flicker at the edge
+let on=al>.05&&(q.c||!far(q.q,zl))&&!B.some(b=>b[0]<bx[2]-g&&bx[0]+g<b[2]&&b[1]<bx[3]-g&&bx[1]+g<b[3]);if(on)B.push(bx);
+q.d.style.transform=`translate(${Math.round(X)}px,${Math.round(V)}px)`; // whole pixels and real font sizes: text does not shimmer
+if(q.c&&q.fs!==fs)q.d.firstChild.style.fontSize=(q.fs=fs)+"px";
+const o=(al*(q.o??1)).toFixed(2);if(q.ov!==o)q.d.style.opacity=q.ov=o;if(q.on!==on)q.d.classList.toggle("gh",!(q.on=on))}}
 function sw(){G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";if(G)gB()}
 function gB(){ // borders of the current version for the globe texture
 const v=cv;if(!v.b)return tq();const i=new Image;i.onload=()=>{if(v!=cv)return;const o=bb.getContext("2d");o.clearRect(0,0,bb.width,bb.height);o.drawImage(i,0,0,bb.width,bb.height);tq()};i.src=bsrc(2)} // 4096 px level = globe texture size
