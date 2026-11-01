@@ -4,11 +4,15 @@
  "blocks": [
   {
    "t": "head",
-   "tall": true,
    "k_en": "work-in-progress",
    "t_en": "Archive of the",
-   "a_en": "Second Continental War",
-   "d_en": "Handmade world, based on Coldwar"
+   "d_en": "Fictional world, based on Cold War",
+   "acc": true,
+   "a_en": "SECOND CONTINENTAL WAR",
+   "t_ru": "архив",
+   "a_ru": "второй континентальной войны",
+   "d_ru": "Вымышленный мир, основанный на Холодной войне ",
+   "k_ru": "work-in-progress"
   }
  ]
 }
