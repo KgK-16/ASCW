@@ -6,11 +6,7 @@
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
 [m,c,im,ov,sv,bi,hl,sl,mw,gx,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc,ld]="m c im ov sv bi hl sl mw gx g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc ld".split(" ").map($),
 W=4096,H=2048,T0=320,T1=420, // visible timeline range
-SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-9L2.6-3 9-3 4-1 5.6 7 0 3.5-5.6 7-4-1-9-3-2.6-3z", // marker shapes by kind (k): circle, star,
-"M-5-5h10v10h-10z","M0-7L7 5H-7z","M0-7L6 0 0 7-6 0z","M-6-4L-4-6 0-2 4-6 6-4 2 0 6 4 4 6 0 2-4 6-6 4-2 0z", // square, triangle, diamond, cross,
-"M-1-7h2v2.2a2.2 2.2 0 1 1-2 0zM-1-1.5h2v6.3a5 5 0 0 0 3.8-3.3l-1.6-.5L7-1l1 4.5-1.5-.4A7 7 0 0 1-6.5 3.1L-8 3.5-7-1l2.8 2-1.6.5a5 5 0 0 0 3.8 3.3z", // anchor,
-"M-5-8h1.6v16h-1.6zM-3.4-8H6l-2.5 3.5L6-1h-9.4z","M-6-6h2.4v2h2.4v-2h2.4v2h2.4v-2H6v12h-12z","M-6 0a6 6 0 1 0 12 0a6 6 0 1 0-12 0zM-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0z"], // flag, fort, ring
-FN={play:"Play",exo:'"Exo 2"',inter:"Inter",a:"A"}, // marker name fonts (f)
+SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-10L10 0 0 10-10 0zM0-7L7 0 0 7-7 0zM-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0z"], // marker shapes by kind (k): circle, circle in a diamond (capital)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
 P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d");
 let k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
@@ -72,7 +68,7 @@ if(G)tq()}
 // marker: {o lon, a lat, n / r name EN / RU, k kind, f font, ten / tru text, y0 / y1 years shown, z importance: 0 always, 1 from medium zoom, 2 close-up only}
 const mOn=q=>!(q.y0!=null&&yr<q.y0)&&!(q.y1!=null&&yr>q.y1),
 far=(q,zl=k/fit())=>(q.z==1&&zl<2.2)||(q.z==2&&zl<4.5),
-drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"} class="${far(q)?"z":""}${i===ms?" s":""}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="12" y="1"${q.f&&FN[q.f]?` style='font-family:${FN[q.f]},sans-serif'`:""}>${esc(mn(q))}</text></g>`).join("");posM()},
+drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"} class="${far(q)?"z":""}${i===ms?" s":""}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="${q.k==1?15:12}" y="1"${q.f=="cap"?' class="c"':""}>${esc(mn(q))}</text></g>`).join("");posM()},
 posM=()=>{const zl=k/fit();mw.querySelectorAll("g").forEach((e,i)=>{const q=MK[i];if(!q)return;e.style.transform=`translate(${x+(q.o+180)/360*W*k}px,${y+(90-q.a)/180*H*k}px)`;
 e.classList.toggle("z",far(q,zl))});
 // graticule labels: light, pinned to the top / left edge of the view, hidden under the button column
@@ -151,7 +147,7 @@ D.addEventListener("lang",()=>{rs();drawM();panel();showC();if(tlOpen())tlB();if
 addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
 const MAP=window.MAP={ // editor hooks
 redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
-markers(){drawM();if(G)tq()},SH,FN,pickM,yr:()=>yr,focus(o,a){if(G)sw();k=Math.max(k,fit()*5);x=m.clientWidth/2-(o+180)/360*W*k;y=m.clientHeight/2-(90-a)/180*H*k;set(1)},timeline(){if(tlOpen())tlB()},
+markers(){drawM();if(G)tq()},pickM,yr:()=>yr,focus(o,a){if(G)sw();k=Math.max(k,fit()*5);x=m.clientWidth/2-(o+180)/360*W*k;y=m.clientHeight/2-(90-a)/180*H*k;set(1)},timeline(){if(tlOpen())tlB()},
 toMap(e){const r=m.getBoundingClientRect();return{mx:(e.clientX-r.left-x)/k,my:(e.clientY-r.top-y)/k}},
 sel:()=>sel&&R[sel],pick,W,H};
 upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();lx=(m.clientWidth/2-x)/k;ly=(m.clientHeight/2-y)/k;showC(); /* start with the view centre */D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
@@ -280,9 +276,10 @@ if(sel){const q=path(R[sel]),d=new Path2D;d.rect(0,0,W,H);d.addPath(q);o.save();
 o.fillStyle="#04040a";o.globalAlpha=.5;o.fill(d,"evenodd");o.restore()}
 o.fillStyle="#e8e8e0";o.textAlign="left";o.textBaseline="middle";o.lineJoin="round";o.strokeStyle="#000000b3";
 RG.forEach(r=>{const a=glyphs(r);if(!a)return;const f=a.s*s;o.font=f+"px A";o.lineWidth=f*.14;o.globalAlpha=a.o??1;[...a.t].forEach((ch,i)=>{o.strokeText(ch,a.xs[i]*s,a.y*s);o.fillText(ch,a.xs[i]*s,a.y*s)})});o.globalAlpha=1;
-MK.forEach(q=>{if(!mOn(q)||q.z==2)return;o.font=24*s+"px "+(FN[q.f]||"Play")+",sans-serif";const X=(q.o+180)/360*S,Y=(90-q.a)/180*Sh,n=mn(q).toUpperCase(),sp=new Path2D(SH[q.k|0]||SH[0]);
+MK.forEach(q=>{if(!mOn(q)||q.z==2)return;const c=q.f=="cap",fz=(c?30:24)*s,tx=(q.k==1?23:19)*s;o.font=fz+"px Play,sans-serif";const X=(q.o+180)/360*S,Y=(90-q.a)/180*Sh,n=mn(q).toUpperCase(),sp=new Path2D(SH[q.k|0]||SH[0]);
 o.save();o.translate(X,Y);o.scale(1.6*s,1.6*s);o.lineWidth=1.9;o.strokeStyle="#000";o.fill(sp,"evenodd");o.stroke(sp);o.restore();
-o.lineWidth=5*s;o.strokeStyle="#000000b3";o.strokeText(n,X+19*s,Y);o.fillText(n,X+19*s,Y)});
+o.lineWidth=5*s;o.strokeStyle="#000000b3";o.strokeText(n,X+tx,Y);o.fillText(n,X+tx,Y);
+if(c){const w=o.measureText(n).width,t=fz*.09;o.strokeRect(X+tx,Y+fz*.55,w,t);o.fillRect(X+tx,Y+fz*.55,w,t)}});
 gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,tc);gl.generateMipmap(gl.TEXTURE_2D);
 const h=hs.getContext("2d");h.clearRect(0,0,S,Sh); // selection outline: own texture, drawn after lighting so it is always bright
 if(sel){const q=path(R[sel]);h.save();h.scale(s,s);h.lineJoin="round";h.strokeStyle="#e8e8e0";h.globalAlpha=.3;h.lineWidth=10;h.stroke(q);h.globalAlpha=1;h.lineWidth=3.5;h.stroke(q);h.restore()}

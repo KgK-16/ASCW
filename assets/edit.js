@@ -385,8 +385,7 @@ btn(L("Close preview","Закрыть предпросмотр"),()=>w.remove())
 
 // ---------- map: markers (form in the side panel), timeline events, countries ----------
 const MP=window.MAP;let MKon=0,PF=null;
-const KINDS=()=>[["●",L("Circle","Круг")],["★",L("Star","Звезда")],["■",L("Square","Квадрат")],["▲",L("Triangle","Треугольник")],["◆",L("Diamond","Ромб")],
-["✕",L("Cross","Крест")],["⚓",L("Anchor","Якорь")],["⚑",L("Flag","Флаг")],["♜",L("Fort","Крепость")],["◎",L("Ring","Кольцо")]],
+const KINDS=()=>[["●",L("Circle","Круг")],["◈",L("Circle in a diamond","Круг в ромбе")]],
 ll=(my,mx)=>({a:+(90-my/MP.H*180).toFixed(3),o:+(mx/MP.W*360-180).toFixed(3)}),
 saveMK=()=>{WJ(F.mk,MK);MP.markers()};
 function pform(el,key){const a=D.getElementById("p");if(PF?.key==key&&a.contains(PF))return 0;PF?.remove();PF=el;el.key=key;a.append(el);return 1}
@@ -406,8 +405,8 @@ ch=(k,v)=>{if(v===""||v==null)delete q[k];else q[k]=v;saveMK();pt.textContent=(r
 num=(k,ph)=>inp(q[k],v=>ch(k,v===""?"":+v),{type:"number",ph}),
 f=h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(q.n,v=>ch("n",v))),lab(L("Name","Название")+" · RU",inp(q.r,v=>ch("r",v)))),
 lab(L("Text","Текст")+" · EN",inp(q.ten,v=>ch("ten",v),{area:1})),lab(L("Text","Текст")+" · RU",inp(q.tru,v=>ch("tru",v),{area:1})),
-h("div",{cls:"row"},lab(L("Icon","Значок"),sel(q.k|0,KINDS().map(([s,t],j)=>[j,s+" "+t]),v=>ch("k",+v||""))),
-lab(L("Font","Шрифт"),sel(q.f||"",[["","Play"],["exo","Exo 2"],["inter","Inter"],["a","Airborne"]],v=>ch("f",v)))),
+h("div",{cls:"row"},lab(L("Icon","Значок"),sel(q.k==1?1:0,KINDS().map(([s,t],j)=>[j,s+" "+t]),v=>ch("k",+v||""))),
+lab(L("Font","Шрифт"),sel(q.f=="cap"?"cap":"",[["","Play"],["cap",L("Play, large, underlined (capital)","Play, крупный с подчёркиванием (столица)")]],v=>ch("f",v)))),
 h("div",{cls:"row"},lab(L("Shown from year","Видна с года"),num("y0","—")),lab(L("to year","по год"),num("y1","—"))),
 lab(L("Visible","Видимость"),sel(q.z|0,[[0,L("Always","Всегда")],[1,L("From medium zoom","С среднего приближения")],[2,L("Close-up only","Только вблизи")]],v=>ch("z",+v||""))),
 h("div",{cls:"row"},lab(L("Latitude","Широта"),num("a")),lab(L("Longitude","Долгота"),num("o"))),
