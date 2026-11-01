@@ -108,8 +108,8 @@ tap=t;const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k,g=D.elementFromPo
 if(g&&!MAP.onTap)return pickM(+g.dataset.m);if(!MAP.onTap?.(mx,my,g&&+g.dataset.m))pick(hit(mx,my))};
 m.onlostpointercapture=e=>{delete P[e.pointerId]};
 m.onwheel=e=>{e.preventDefault();const r=m.getBoundingClientRect();zoom(Math.exp(-e.deltaY*.002),e.clientX-r.left,e.clientY-r.top)};
-zi.onclick=()=>G?(gD=cl(gD/1.3),rq()):zoom(1.6,m.clientWidth/2,m.clientHeight/2,1);
-zo.onclick=()=>G?(gD=cl(gD*1.3),rq()):zoom(1/1.6,m.clientWidth/2,m.clientHeight/2,1);
+zi.onclick=()=>G?(gT=cl(gT/1.5),rq()):zoom(1.6,m.clientWidth/2,m.clientHeight/2,1);
+zo.onclick=()=>G?(gT=cl(gT*1.5),rq()):zoom(1/1.6,m.clientWidth/2,m.clientHeight/2,1);
 pc.onclick=()=>{ms=null;pick()};
 
 // ---- cursor coordinates (2D) ----
@@ -154,7 +154,7 @@ upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();lx=(m.clientW
 
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
-let gl,gc,tc,tx2,hs,ht,bc,bb,tex,bp,pp,sp,fp,tb,pb,eb,gD=3,ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0,FD;
+let gl,gc,gw,tc,tx2,hs,ht,bc,bb,tex,bp,pp,sp,fp,tb,pb,eb,gD=3,gT=3,gv=[0,0],gt0=0,fly=null,gtap=0,GI=[],GO=[],gsig="",ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0,FD;
 const GP={},cl=v=>Math.min(4.5,Math.max(1.6,v)),
 SW=(v=>{const l=Math.hypot(...v);return v.map(a=>a/l)})([.62,.32,.72]),
 SPIN=6.2832/430,CLOUD=[1/600,1/950], // one turn in ~7 min; cloud layers drift (uv/s)
@@ -162,8 +162,12 @@ ry=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[c*v[0]+s*v[2],v[1],-s*v[0]+c
 rx=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[v[0],c*v[1]-s*v[2],s*v[1]+c*v[2]]},
 rq=()=>{if(!loop&&G){last=0;loop=requestAnimationFrame(tick)}}, // render loop runs while the globe is shown
 tq=()=>{tdirty=1;rq()}; // texture rebuilds are coalesced to one per frame
-function tick(t){loop=0;if(!G||D.hidden)return;const dt=last?Math.min((t-last)/1e3,.1):0;last=t;tm+=dt;sa+=dt*SPIN;dr();if(FD){gl.finish();const f=FD;FD=0;requestAnimationFrame(f)}loop=requestAnimationFrame(tick)}
+function tick(t){loop=0;if(!G||D.hidden)return;const dt=last?Math.min((t-last)/1e3,.1):0;last=t;tm+=dt;sa+=dt*SPIN;mo(dt);dr();if(FD){gl.finish();const f=FD;FD=0;requestAnimationFrame(f)}loop=requestAnimationFrame(tick)}
 D.addEventListener("visibilitychange",rq);
+function mo(dt){ // camera motion as in Google Earth: eased zoom, drag inertia, fly to a double-clicked point
+gD+=(gT-gD)*Math.min(1,dt*8);
+if(fly){const f=Math.min(1,dt*5),d=((fly.y-sa-ya)%6.2832+9.4248)%6.2832-3.1416;ya+=d*f;pa+=(fly.p-pa)*f;if(Math.abs(d)+Math.abs(fly.p-pa)<1e-3)fly=null}
+else if(!Object.keys(GP).length&&(gv[0]||gv[1])){ya+=gv[0]*dt;pa=Math.min(1.4,Math.max(-1.4,pa+gv[1]*dt));const k=Math.exp(-dt*3.5);gv=gv.map(v=>Math.abs(v*k)<.003?0:v*k)}}
 const PR="#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n",
 NZ=`float h3(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}float n3(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z);}float fb(vec3 x){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*n3(x);x=x*2.03+vec3(1.7,9.2,3.1);a*=.5;}return s;}`,
 FV="attribute vec2 g;varying vec2 n;void main(){n=g;gl_Position=vec4(g,0.,1.);}",
@@ -220,7 +224,7 @@ function prog(v,f,a,u){const q=gl.createProgram();gl.attachShader(q,sh(gl.VERTEX
 a.forEach((n,i)=>gl.bindAttribLocation(q,i,n));gl.linkProgram(q);q.u={};u.forEach(n=>q.u[n]=gl.getUniformLocation(q,n));return q}
 function tp(){gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE)}
 function gi(img){
-gc=D.createElement("canvas");gl=gc.getContext("webgl",{antialias:true});if(!gl){zg.style.display="none";return}g.append(gc);
+gc=D.createElement("canvas");gl=gc.getContext("webgl",{antialias:true});if(!gl){zg.style.display="none";return}gw=D.createElement("div");gw.id="gw";g.append(gc,gw);
 bp=prog(FV,BF,["g"],["u","a","S"]);pp=prog(PV,PF,["p","t"],["u","a","R","d","L","Lo","cw","T","C","Hs"]);sp=prog(PV,CS,["p","t"],["u","a","R","d","L","Lo","cw","C","Hs"]);fp=prog(FV,FF,["g"],["u","S2"]);const cp=prog(FV,CF,["g"],["rs"]);
 tb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
 const b=[],ix=[];for(let j=0;j<=48;j++)for(let i=0;i<=96;i++){const th=(i/96-.5)*6.2832,ph=(.5-j/48)*3.1416;b.push(Math.cos(ph)*Math.sin(th),Math.sin(ph),Math.cos(ph)*Math.cos(th),i/96,j/48)}
@@ -242,12 +246,15 @@ gl.activeTexture(gl.TEXTURE2);ht=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D
 tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bc);
 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);tp();
 const e=gl.getExtension("EXT_texture_filter_anisotropic");if(e)gl.texParameterf(gl.TEXTURE_2D,e.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(e.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
-g.onpointerdown=e=>{if(e.pointerType=="mouse")for(const i in GP)delete GP[i];g.setPointerCapture(e.pointerId);GP[e.pointerId]={x:e.clientX,y:e.clientY};gm=0};
+g.onpointerdown=e=>{if(e.pointerType=="mouse")for(const i in GP)delete GP[i];g.setPointerCapture(e.pointerId);GP[e.pointerId]={x:e.clientX,y:e.clientY};gm=0;gv=[0,0];fly=null};
 g.onpointermove=e=>{const q=GP[e.pointerId];if(!q)return;const o=two(GP),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;gm+=Math.abs(dx)+Math.abs(dy);
-if(o){gD=cl(gD*o.d/two(GP).d);gm=99}else{const s=2*(gD-1)*SC/g.clientHeight;ya+=dx*s;pa=Math.min(1.4,Math.max(-1.4,pa+dy*s))}};
-g.onpointerup=g.onpointercancel=e=>{const one=GP[e.pointerId]&&Object.keys(GP).length==1;delete GP[e.pointerId];if(one&&gm<6&&e.type=="pointerup")pk(e)};
+if(o){gD=gT=cl(gD*o.d/two(GP).d);gm=99}else{const s=2*(gD-1)*SC/g.clientHeight,t=performance.now(),dt=Math.max(t-gt0,8)/1e3;gt0=t;ya+=dx*s;pa=Math.min(1.4,Math.max(-1.4,pa+dy*s));gv=[gv[0]*.4+dx*s/dt*.6,gv[1]*.4+dy*s/dt*.6]}};
+g.onpointerup=g.onpointercancel=e=>{const one=GP[e.pointerId]&&Object.keys(GP).length==1;delete GP[e.pointerId];if(performance.now()-gt0>80||gm>=99)gv=[0,0];
+if(!one||gm>=6||e.type!="pointerup")return;gv=[0,0];const t=Date.now(),q=gll(e);
+if(t-gtap<300){gtap=0;if(q)fly={y:Math.atan2(-q.x,q.z),p:Math.min(1.4,Math.max(-1.4,Math.atan2(q.y,Math.hypot(q.x,q.z))))};gT=cl(gT/1.8);return} // double click: fly there and zoom in
+gtap=t;const m=D.elementFromPoint(e.clientX,e.clientY)?.closest("#gw [data-m]");if(m)return pickM(+m.dataset.m);pick(q&&hit(q.mx,q.my))};
 g.onlostpointercapture=e=>{delete GP[e.pointerId]};
-g.onwheel=e=>{e.preventDefault();gD=cl(gD*Math.exp(e.deltaY*.0015))};
+g.onwheel=e=>{e.preventDefault();gT=cl(gT*Math.exp(e.deltaY*.0015));rq()};
 return 1}
 function dr(){if(tdirty){tdirty=0;tx()}
 const w=g.clientWidth,h=g.clientHeight,r=Math.min(devicePixelRatio||1,2),cw=Math.round(w*r),ch=Math.round(h*r);
@@ -264,8 +271,9 @@ if(Lv[2]<-.02){ // sun in front of the camera: lens flare, hidden when the plane
 const t=-gD*Lv[2],px=t*Lv[0],py=t*Lv[1],pz=gD+t*Lv[2],vis=Math.min(1,Math.max(0,(Math.hypot(px,py,pz)-1)/.05)),
 sx=Lv[0]/-Lv[2]/(SC*AS),sy=Lv[1]/-Lv[2]/SC,on=vis*Math.max(0,1-Math.hypot(sx,sy)/2.5);
 if(on>0){gl.blendFunc(gl.ONE,gl.ONE);gl.useProgram(fp);gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0);gl.disableVertexAttribArray(1);
-gl.uniform3f(fp.u.u,gD,AS,SC);gl.uniform3f(fp.u.S2,sx,sy,on);gl.drawArrays(gl.TRIANGLES,0,3)}}}
-function tx(){ // rebuild the globe texture: base map, country colours, borders, graticule, selection, labels, markers
+gl.uniform3f(fp.u.u,gD,AS,SC);gl.uniform3f(fp.u.S2,sx,sy,on);gl.drawArrays(gl.TRIANGLES,0,3)}}
+gF(w,h)}
+function tx(){ // rebuild the globe texture: base map, country colours, borders, graticule, selection (names float above it: gL)
 const S=tc.width,Sh=S/2,s=S/W,o=tx2;
 o.drawImage(bc,0,0);
 if(CO)o.drawImage(ov,0,0,S,Sh);
@@ -274,22 +282,35 @@ o.strokeStyle="#00000059";o.lineWidth=2;o.beginPath();for(let i=1;i<24;i++){o.mo
 o.strokeStyle="#000000b3";o.lineWidth=3;o.beginPath();o.moveTo(S/2,0);o.lineTo(S/2,Sh);o.moveTo(0,Sh/2);o.lineTo(S,Sh/2);o.stroke();
 if(sel){const q=path(R[sel]),d=new Path2D;d.rect(0,0,W,H);d.addPath(q);o.save();o.scale(s,s);o.lineJoin="round";
 o.fillStyle="#04040a";o.globalAlpha=.5;o.fill(d,"evenodd");o.restore()}
-o.fillStyle="#e8e8e0";o.textAlign="left";o.textBaseline="middle";o.lineJoin="round";o.strokeStyle="#000000b3";
-RG.forEach(r=>{const a=glyphs(r);if(!a)return;const f=a.s*s;o.font=f+"px A";o.lineWidth=f*.14;o.globalAlpha=a.o??1;[...a.t].forEach((ch,i)=>{o.strokeText(ch,a.xs[i]*s,a.y*s);o.fillText(ch,a.xs[i]*s,a.y*s)})});o.globalAlpha=1;
-MK.forEach(q=>{if(!mOn(q)||q.z==2)return;const c=q.f=="cap",fz=(c?30:24)*s,tx=(q.k==1?23:19)*s;o.font=fz+"px Play,sans-serif";const X=(q.o+180)/360*S,Y=(90-q.a)/180*Sh,n=mn(q).toUpperCase(),sp=new Path2D(SH[q.k|0]||SH[0]);
-o.save();o.translate(X,Y);o.scale(1.6*s,1.6*s);o.lineWidth=1.9;o.strokeStyle="#000";o.fill(sp,"evenodd");o.stroke(sp);o.restore();
-o.lineWidth=5*s;o.strokeStyle="#000000b3";o.strokeText(n,X+tx,Y);o.fillText(n,X+tx,Y);
-if(c){const w=o.measureText(n).width,t=fz*.09;o.strokeRect(X+tx,Y+fz*.55,w,t);o.fillRect(X+tx,Y+fz*.55,w,t)}});
+gL();
 gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,tc);gl.generateMipmap(gl.TEXTURE_2D);
 const h=hs.getContext("2d");h.clearRect(0,0,S,Sh); // selection outline: own texture, drawn after lighting so it is always bright
 if(sel){const q=path(R[sel]);h.save();h.scale(s,s);h.lineJoin="round";h.strokeStyle="#e8e8e0";h.globalAlpha=.3;h.lineWidth=10;h.stroke(q);h.globalAlpha=1;h.lineWidth=3.5;h.stroke(q);h.restore()}
 gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,ht);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,hs);gl.generateMipmap(gl.TEXTURE_2D);gl.activeTexture(gl.TEXTURE0)}
-function pk(e){ // globe click -> region under the cursor
+function gll(e){ // screen point -> planet point {x,y,z} and map point {mx,my}; null off the globe
 const r=g.getBoundingClientRect(),nx=(e.clientX-r.left)/r.width*2-1,ny=1-(e.clientY-r.top)/r.height*2,dx=nx*SC*AS,dy=ny*SC,a=dx*dx+dy*dy+1,b=-2*gD,cc=gD*gD-1,f=b*b-4*a*cc;
-if(f<0)return pick();
+if(f<0)return null;
 const t=(-b-Math.sqrt(f))/(2*a),X=dx*t,Y=dy*t,Z=gD-t,cp=Math.cos(pa),sp=Math.sin(pa),cy=Math.cos(ya+sa),sy=Math.sin(ya+sa),
-y1=cp*Y+sp*Z,z1=-sp*Y+cp*Z,qx=cy*X-sy*z1,qz=sy*X+cy*z1,mx=(Math.atan2(qx,qz)/6.2832+.5)*W,my=(.5-Math.asin(y1)/3.1416)*H;
-pick(hit(mx,my))}
+y1=cp*Y+sp*Z,z1=-sp*Y+cp*Z,qx=cy*X-sy*z1,qz=sy*X+cy*z1;return{x:qx,y:y1,z:qz,mx:(Math.atan2(qx,qz)/6.2832+.5)*W,my:(.5-Math.asin(y1)/3.1416)*H}}
+function gL(){ // floating names (as in Google Earth): screen-aligned, constant size, above the clouds; rebuilt only when names or markers change
+const it=[];
+RG.forEach(r=>{const a=glyphs(r);if(!a)return;const c=COU[r.c]||{};it.push({c:1,t:a.t,s:a.s,o:a.o??1,k:c.lk||0,lo:((ru()?r.xr:r.x)+(c.lx||0))/W*360-180,la:90-a.y/H*180})});
+MK.forEach((q,i)=>{if(mOn(q))it.push({m:i,q,t:mn(q),lo:q.o,la:q.a})});
+const sg=JSON.stringify(it);
+if(sg!=gsig){gsig=sg;GI=it;
+gw.innerHTML=it.map(e=>e.c?`<div class="z"><span class="cn" style="letter-spacing:${(.08+e.k).toFixed(3)}em">${esc(e.t)}</span></div>`
+:`<div class="z" data-m="${e.m}"><i><svg viewBox="-11 -11 22 22"><path fill-rule="evenodd" d="${SH[e.q.k|0]||SH[0]}"/></svg><b${e.q.k==1?' class="d"':""}${e.q.f=="cap"?' data-c':""}>${esc(e.t)}</b></i></div>`).join("");
+[...gw.children].forEach((d,j)=>{const e=it[j],la=e.la*Math.PI/180,lo=e.lo*Math.PI/180;e.d=d;e.w=d.firstChild.offsetWidth;e.h=d.firstChild.offsetHeight;e.p=[Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo)]});
+GO=[...it].sort((a,b)=>(b.c?1e3+b.s:-(b.q.z|0))-(a.c?1e3+a.s:-(a.q.z|0)))} // big country names first, then markers by importance
+GI.forEach(e=>e.m!=null&&e.d.classList.toggle("s",e.m===ms))}
+function gF(w,h){ // per frame: project names, fade at the horizon, hide by zoom and where they would overlap a more important one
+const Y=ya+sa,c=Math.cos(Y),s=Math.sin(Y),e=Math.cos(pa),f=Math.sin(pa),zl=Math.PI/(2*SC*(gD-1)),hz=1/gD,pr=Math.PI/H*h/2/SC,mx=Math.min(20,Math.max(13,Math.min(w,h)/28)),B=[],sel=GO.find(q=>q.m===ms);
+for(const q of sel?[sel,...GO.filter(v=>v!=sel)]:GO){const[px,py,pz]=q.p,x1=c*px+s*pz,z1=-s*px+c*pz,y2=e*py-f*z1,z2=f*py+e*z1,dp=gD-z2,
+X=(x1/(SC*AS)/dp+1)*w/2,V=(1-y2/SC/dp)*h/2,al=Math.min(1,Math.max(0,(z2-hz)/.12)),sc=q.c?Math.min(mx,Math.max(10,q.s*pr/dp))/20:1,
+bx=q.c?[X-q.w*sc/2-4,V-q.h*sc/2,X+q.w*sc/2+4,V+q.h*sc/2]:[X-11,V-10,X-11+q.w+4,V+10];
+let on=al>.05&&(q.c||!far(q.q,zl))&&!B.some(b=>b[0]<bx[2]&&bx[0]<b[2]&&b[1]<bx[3]&&bx[1]<b[3]);if(on)B.push(bx);
+q.d.style.transform=`translate(${X.toFixed(1)}px,${V.toFixed(1)}px)`+(q.c?` scale(${sc.toFixed(3)})`:"");
+const o=(al*(q.o??1)).toFixed(2);if(q.ov!==o)q.d.style.opacity=q.ov=o;if(q.on!==on)q.d.classList.toggle("z",!(q.on=on))}}
 function sw(){G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";if(G)gB()}
 function gB(){ // borders of the current version for the globe texture
 const v=cv;if(!v.b)return tq();const i=new Image;i.onload=()=>{if(v!=cv)return;const o=bb.getContext("2d");o.clearRect(0,0,bb.width,bb.height);o.drawImage(i,0,0,bb.width,bb.height);tq()};i.src=bsrc(2)} // 4096 px level = globe texture size
