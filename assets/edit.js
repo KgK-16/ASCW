@@ -172,10 +172,10 @@ if(b.t=="head")["k_","t_","a_","d_"].forEach(f=>r.push([b,f]));if(b.t=="card"){r
 if(b.t=="cols")(b.c||[]).forEach(o=>r.push([o,o.t=="img"?"cap_":""]));return r}
 function miss(b){const s=new Set;for(const [o,f] of fields(b)){const e=!!plain(gv(b,o,f,"en")),r=!!plain(gv(b,o,f,"ru"));if(e!=r)s.add(e?"ru":"en")}return[...s]}
 // header title / description belong to the page itself unless the header has its own text (the home page)
-const bound=(b,f)=>b.t=="head"&&(f=="t_"||f=="d_")&&!b[f+"en"]&&!b[f+"ru"],
+const bound=(b,f)=>b.t=="head"&&(f=="t_"||f=="d_")&&!(f+"en" in b)&&!(f+"ru" in b), // header title / description without own text show (and edit) the page's
 pf=(f,l)=>(f=="t_"?"title":"description")+(l=="ru"?"_ru":""),
 gv=(b,o,f,l)=>bound(b,f)?PG[pf(f,l)]||"":o[f+l]||"",
-sv=(b,o,f,l,v)=>{if(bound(b,f))PG[pf(f,l)]=v;else if(v)o[f+l]=v;else delete o[f+l]},
+sv=(b,o,f,l,v)=>{if(bound(b,f))PG[pf(f,l)]=v;else if(v)o[f+l]=v;else if(b.t=="head"&&o==b&&/^[ktd]_$/.test(f))o[f+l]="";else delete o[f+l]}, // a header field the author empties stays empty (no default fills it)
 other=l=>l=="ru"?"en":"ru";
 function state(){return JSON.stringify({b:B(),t:[PG.title,PG.title_ru,PG.description,PG.description_ru]})}
 function snap1(){if(!burst){HI.push(state());HR=[];if(HI.length>200)HI.shift()}burst=1;clearTimeout(bt0);bt0=setTimeout(()=>burst=0,1200)}
@@ -193,8 +193,8 @@ return`<${tag}${a} data-f="${f}" data-m="${m}" contenteditable="${m=="plain"?"pl
 let ED=1;
 function rb(b,i){const ta=b.ta?` class="ta-${b.ta}"`:"",di=ED?` data-i="${i}"`:"",l=HT.lang;
 switch(b.t){
-case"head":{const own=b.k_en||b.k_ru,kd={k_en:TX.wip?.en||"",k_ru:TX.wip?.ru||TX.wip?.en||""}; // without its own kicker the header shows the shared "work in progress" text
-return`<header class="b-head${b.tall?" tall":""}"${di}>${E("p",b,own||ED?b:kd,"k_","plain",' class="k"',own?null:kd["k_"+l])}<h1>${E("span",b,b,"t_","plain")}${b.a_en||b.a_ru||b.acc?`<b>${E("span",b,b,"a_","plain")}</b>`:""}</h1><hr>${E("p",b,b,"d_","plain",' class="ds"')}</header>`}
+case"head":{const own="k_en" in b||"k_ru" in b,kd={k_en:TX.wip?.en||"",k_ru:TX.wip?.ru||TX.wip?.en||""}; // without its own kicker the header shows the shared "work in progress" text
+return`<header class="b-head${b.tall?" tall":""}"${di}>${E("p",b,own?b:kd,"k_","plain",' class="k"',own?null:kd["k_"+l])}<h1>${E("span",b,b,"t_","plain")}${b.a_en||b.a_ru||b.acc?`<b>${E("span",b,b,"a_","plain")}</b>`:""}</h1><hr>${E("p",b,b,"d_","plain",' class="ds"')}</header>`}
 case"h":return E("h"+(b.lv||2),b,b,"","plain",ta+di);
 case"p":return E("p",b,b,"","inline",ta+di,L("Write, or press / for blocks","Пишите или нажмите / — меню блоков"));
 case"quote":return`<blockquote${ta}${di}>${E("p",b,b,"","inline")}${E("cite",b,b,"cite_","plain")}</blockquote>`;
