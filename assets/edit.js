@@ -83,7 +83,7 @@ D.head.append(h("style",{},`
 .mn{position:fixed;z-index:46;background:#05050d;border:1px solid #6665c0;min-width:220px;max-height:min(70vh,520px);overflow:auto;padding:4px;display:flex;flex-direction:column;text-transform:none;font:400 13px "Exo 2",sans-serif;box-shadow:0 8px 30px #000a}
 .mn button{display:flex;gap:10px;align-items:center;text-align:left;padding:7px 10px;color:#e8e8e0;cursor:pointer;letter-spacing:.3px}.mn button:hover,.mn button.f{background:#6665c040}
 .mn button i{width:20px;text-align:center;font-style:normal;color:#8d8cf0}.mn button small{margin-left:auto;padding-left:16px;font:400 11px ui-monospace,monospace;color:#e8e8e066}.mn [hidden]{display:none}.mn .ei{margin-bottom:4px}.mn hr{width:auto;margin:4px 6px;opacity:.25}.mn .on::after{content:"✓";margin-left:auto;padding-left:12px;color:#8d8cf0}
-#ift{position:absolute;z-index:47;display:flex;flex-wrap:wrap;max-width:min(560px,calc(100vw - 16px));gap:2px;background:#05050d;border:1px solid #6665c0;padding:2px;text-transform:none}#ift[hidden]{display:none}
+#ift{position:absolute;z-index:47;display:flex;flex-wrap:wrap;max-width:min(560px,calc(100vw - 16px));gap:2px;background:#05050d;border:1px solid #6665c0;padding:2px;text-transform:none}#ift[hidden],#ift [hidden]{display:none}
 #ift button{min-width:30px;height:28px;padding:0 6px;font:600 13px Inter,sans-serif;color:#e8e8e0;cursor:pointer}#ift button:hover{background:#6665c040}#ift button.on{background:#6665c0;color:#fff}#ift .sep{width:1px;margin:3px 3px;background:#6665c066}
 #dln{position:absolute;z-index:29;height:2px;background:#e8b04a;pointer-events:none}#dln[hidden]{display:none}
 .ed .doc.dropping{outline:1px dashed #e8b04a;outline-offset:-4px}
@@ -276,7 +276,7 @@ DOC.addEventListener("dragleave",()=>DOC.classList.remove("dropping"));
 DOC.addEventListener("drop",e=>{DOC.classList.remove("dropping");const f=[...e.dataTransfer.files].filter(f=>f.type.startsWith("image/"));if(!f.length)return;e.preventDefault();
 let at=dropAt(e.clientY);f.forEach(file=>{const b={t:"img",al:"center"};B().splice(at++,0,b);pickImg(b,file)})});
 gut.querySelector(".hd").addEventListener("pointerdown",gDown);
-D.addEventListener("selectionchange",selTb);addEventListener("scroll",selTb,{passive:true});addEventListener("resize",()=>gutAt(CB));
+D.addEventListener("selectionchange",selTb);D.addEventListener("mouseup",()=>setTimeout(selTb));D.addEventListener("keyup",e=>{if(e.shiftKey)selTb()});addEventListener("scroll",selTb,{passive:true});addEventListener("resize",()=>gutAt(CB));
 D.addEventListener("keydown",e=>{const k=e.key.toLowerCase();if(!(e.ctrlKey||e.metaKey))return;if((k=="z"||k=="y")&&!e.target.closest?.("input,textarea,select,nav,.dl")){e.preventDefault();undo(k=="z"&&!e.shiftKey)}
 if(k=="s"){e.preventDefault();flush();toast(L("The draft is saved in this browser","Черновик сохранён в браузере"))}})}
 function dropAt(y){const ks=[...DOC.querySelectorAll(":scope>[data-i]")];for(const k of ks){const r=k.getBoundingClientRect();if(y<r.top+r.height/2)return+k.dataset.i}return B().length}
@@ -323,12 +323,13 @@ else if(g=="UL"||g=="OL")add({t:"list",...(g=="OL"&&{ord:true}),[l]:clean(c.inne
 else if(g=="BLOCKQUOTE")add({t:"quote",[l]:clean(c.innerHTML,"inline")});else if(g=="HR")add({t:"hr"});
 else if(c.querySelector("p,h1,h2,h3,h4,h5,h6,ul,ol,blockquote,hr,div,li"))go(c);
 else if(/^(P|PRE|LI|DIV)$/.test(g))add({t:"p",[l]:clean(c.innerHTML,"inline")})}};go(t.content);return out}
-function selTb(){const s=getSelection(),el=s.rangeCount&&!s.isCollapsed&&(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('.doc [contenteditable="true"]');
+function selTb(){const s=getSelection(),el=s.rangeCount&&!s.isCollapsed&&(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('.doc [contenteditable]:not([contenteditable=false])');
 if(!el||ift.contains(D.activeElement)){if(!ift.contains(D.activeElement))ift.hidden=true;return}const r=s.getRangeAt(0).getBoundingClientRect();ift.hidden=false;
-const tg=(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement),bk=B()[+el.closest("[data-i]")?.dataset.i]; // which buttons are already applied here
+const tg=(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement),bk=B()[+el.closest("[data-i]")?.dataset.i],pl=el.dataset.m=="plain"; // headings, captions: plain text, only the alignment applies
+if(pl&&!(bk&&TXT.has(bk.t))){ift.hidden=true;return}for(const b of ift.children)b.hidden=pl&&!(b.dataset.c||"").startsWith("ta:"); // which buttons are already applied here
 for(const b of ift.querySelectorAll("button")){const c=b.dataset.c;let on=false;try{on=c.startsWith("ta:")?(bk?.ta||"left")==c.slice(3):c=="mark"||c=="code"?!!tg.closest(c):/^(bold|italic|underline|strikeThrough|superscript|subscript)$/.test(c)&&D.queryCommandState(c)}catch{}b.classList.toggle("on",on)}
 ift.style.left=Math.max(8,Math.min(r.left+scrollX+r.width/2-ift.offsetWidth/2,innerWidth-ift.offsetWidth-8))+"px";ift.style.top=Math.max(scrollY+56,r.top+scrollY-ift.offsetHeight-8)+"px"}
-function fmt2(c){const s=getSelection(),el=(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('[contenteditable="true"]');if(!el)return;
+function fmt2(c){const s=getSelection(),el=(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('[contenteditable]:not([contenteditable=false])');if(!el)return;
 if(c.startsWith("ta:")){const k=el.closest("[data-i]"),b=k&&B()[+k.dataset.i];if(b&&TXT.has(b.t)){const a=c.slice(3);act(()=>{if(a=="left")delete b.ta;else b.ta=a})}return} // alignment of the whole block
 if(c=="mark"||c=="code"){const r=s.rangeCount&&s.getRangeAt(0),on=(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement).closest(c);if(!r)return; // toggle a wrapping tag
 if(on&&el.contains(on)){on.replaceWith(...on.childNodes)}else if(!r.collapsed){const w=D.createElement(c);w.append(r.extractContents());r.insertNode(w);s.selectAllChildren(w)}
