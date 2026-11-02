@@ -12,6 +12,7 @@ Run `node tools/measure.js` after changing names in labels.json.
 import sys,os,re,json,zipfile,ctypes,subprocess,tempfile
 import xml.etree.ElementTree as ET
 import numpy as np,cv2
+from snap import snap               # neighbouring countries share one border line
 from PIL import Image
 T=os.path.dirname(os.path.abspath(__file__));R=os.path.dirname(T)
 LB=json.load(open(T+'/labels.json'));EM=json.load(open(T+'/emw.json'))
@@ -153,7 +154,7 @@ def main(src):
         ch=vers[y];print('version',y)
         if 'borders' in ch:
             os.makedirs(f'{R}/static/map/{y}',exist_ok=True);levels(Image.fromarray(rd(ch['borders'])),f'{R}/static/map/{y}/b',True)
-        data.append(dict(y=y,b=int('borders' in ch),r=countries(rd(ch['countries']),y) if 'countries' in ch else []))
+        data.append(dict(y=y,b=int('borders' in ch),r=snap(countries(rd(ch['countries']),y)) if 'countries' in ch else []))
     json.dump(data,open(R+'/assets/map.json','w'),separators=(',',':'),ensure_ascii=False)
     print('assets/map.json',os.path.getsize(R+'/assets/map.json'),'bytes')
 
