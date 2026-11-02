@@ -8,8 +8,11 @@ const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
 W=4096,H=2048,T0=320,T1=420, // visible timeline range
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-10L10 0 0 10-10 0zM0-7L7 0 0 7-7 0zM-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0z"], // marker shapes by kind (k): circle, circle in a diamond (capital)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
-P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d");
-let MR,GR,VW=0,VH=0,ZW=0,GW=0,GH=0,GX=[],ovK,cdr=0,MG=null,MON=0,MS=[],MP=[],MD=[0],sbK,fv=null,fdc=8,fa=0,fl0=0,HS=[],vD=0,vT=0,fan=null,ffl=null,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d"),
+cq=Object.assign(c.cloneNode(false),{id:"",hidden:true}), // the world repeats east and west: a second copy of the map layers, shown only where the seam is in view
+wx=v=>(v%W+W)%W; // map x wrapped into the world
+c.after(cq);cq.setAttribute("aria-hidden","true");
+let cqd=1,MR,GR,VW=0,VH=0,ZW=0,GW=0,GH=0,GX=[],ovK,cdr=0,MG=null,MON=0,MS=[],MP=[],MD=[0],sbK,fv=null,fdc=8,fa=0,fl0=0,HS=[],vD=0,vT=0,fan=null,ffl=null,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
 try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
@@ -30,24 +33,27 @@ let ws=[...t].map(ch=>hc.measureText(ch).width),nat=ws.reduce((a,v)=>a+v,0),z=q;
 if(nat>w&&w){const s=w/nat;ws=ws.map(v=>v*s);nat=w;z=q*s} // a renamed country longer than its box: smaller letters, same proportions
 const ls=n>1?Math.max(-.2*z,Math.max(0,(w-nat)/(n-1))+(c.lk||0)*z):0;let X=(ru()?r.xr:r.x)+(c.lx||0)-(nat+ls*(n-1))/2;
 return{t,s:+z.toFixed(1),y:(ru()?r.yr:r.y)+(c.ly||0),o:c.lo,xs:ws.map(v=>{const o=X;X+=v+ls;return o})}}
-function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>{if(el._s==src)el.src=src},()=>{})} // decode off the main thread, then swap
+function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>{if(el._s==src){el.src=src;cqd=1;set()}},()=>{})} // decode off the main thread, then swap
 
 // ---- flat map ----
-const fit=()=>VH/H,kmax=()=>Math.max(2,fit());
+const fit=()=>Math.max(VH/H,VW/W), // the world fills the height and at least the width, so each place is on screen at most once
+kmax=()=>Math.max(2,fit());
 function set(anim){
 if(!isFinite(k+x+y)){k=fit();x=y=0} // never keep a broken view
 k=Math.min(Math.max(k,fit()),kmax());
-const w=W*k,h=H*k,cw=VW,ch=VH;
-x=w<cw?(cw-w)/2:Math.min(0,Math.max(cw-w,x));
+const w=W*k,h=H*k,ch=VH;
+x-=w*Math.ceil(x/w); // no east / west edge: x stays in (-w, 0], the copy covers the rest
 y=h<ch?(ch-h)/2:Math.min(0,Math.max(ch-h,y));
 an=anim;if(!raf)raf=requestAnimationFrame(apply); // at most one DOM update per frame
 const n=W*k*devicePixelRatio,l=n>4500?3:n>2200?2:n>1100?1:0; // image levels 1024/2048/4096/8192 px
 if(l>lv){if(lv<0&&l)im.src=U+"map/g0.webp"; // light preview while the sharp level loads
 lv=l;load(im,U+`map/g${l}.webp`);lvB()}}
-function lvB(){if(lv<0)return;bi.hidden=!cv.b;if(cv.b)load(bi,bsrc(lv))}
+function lvB(){if(lv<0)return;bi.hidden=!cv.b;cqd=1;if(cv.b)load(bi,bsrc(lv))}
 function apply(){raf=0;posM();c.classList.toggle("t",!!an);mw.classList.toggle("t",!!an);c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
+const sq=x+W*k<VW;if(sq){if(cqd)cqS();cq.className=c.className;cq.style.transform=`translate(${x+W*k}px,${y}px) scale(${k})`}if(cq.hidden==sq)cq.hidden=!sq;
 c.classList.add("mv");clearTimeout(mvT);mvT=setTimeout(rest,250)} // while moving: GPU layer only, no restyle/repaint
-function rest(){c.classList.remove("mv");if(k!=kk)c.style.setProperty("--k",kk=k)} // after: zoom-dependent widths, crisp re-raster
+function rest(){c.classList.remove("mv");cq.classList.remove("mv");if(k!=kk){c.style.setProperty("--k",kk=k);cq.style.setProperty("--k",k)}}
+function cqS(){cqd=0;cq.innerHTML=c.innerHTML;cq.querySelectorAll("[id]").forEach(e=>e.removeAttribute("id"));cq.querySelector("canvas").getContext("2d").drawImage(ov,0,0)} // refresh the copy (only after the map layers changed, and only when it is in view) // after: zoom-dependent widths, crisp re-raster
 // Flat map controls, built on the globe's: zoom is kept as a camera distance (vD) with the globe's mapping to scale, sensitivity and easing,
 // so a wheel notch, a button press or a double click zooms the same way and as smoothly in 2D as in 3D.
 const fsc=()=>.364*Math.max(1,VH/VW), // the globe's view constant for this window
@@ -60,7 +66,7 @@ function fmo(t){ // one frame of flat-map motion (as the globe's mo): eased zoom
 const dt=Math.min(fl0&&t>fl0?(t-fl0)/1e3:1/60,.05);fl0=t;fa=0;let on=0;
 if(Math.abs(vT-vD)>1e-3){vD+=(vT-vD)*Math.min(1,dt*8);const k2=kOf(vD),a=ffl?{mx:ffl.mx,my:ffl.my,sx:x+ffl.mx*k,sy:y+ffl.my*k}:fan||{mx:(VW/2-x)/k,my:(VH/2-y)/k,sx:VW/2,sy:VH/2};
 k=k2;x=a.sx-a.mx*k;y=a.sy-a.my*k;set();on=1}else{vD=vT;fan=null} // the anchor point stays under the cursor
-if(ffl){const f=Math.min(1,dt*5),ex=VW/2-x-ffl.mx*k,ey=VH/2-y-ffl.my*k,x0=x,y0=y;x+=ex*f;y+=ey*f;set();if(Math.hypot(ex,ey)<.5||(!on&&Math.abs(x-x0)+Math.abs(y-y0)<.01))ffl=null;else on=1} // at the map's edge it stops where it can
+if(ffl){const f=Math.min(1,dt*5),w=W*k,e0=VW/2-x-ffl.mx*k,ex=e0-w*Math.round(e0/w),ey=VH/2-y-ffl.my*k,x0=x,y0=y;x+=ex*f;y+=ey*f;set();if(Math.hypot(ex,ey)<.5||(!on&&Math.abs(x-x0)+Math.abs(y-y0)<.01))ffl=null;else on=1} // at the map's edge it stops where it can
 if(fv){x+=fv[0]*dt;y+=fv[1]*dt;set();const d=Math.exp(-dt*fdc);fv=[fv[0]*d,fv[1]*d];if(Math.hypot(...fv)<12)fv=null;else on=1}
 if(on)fa=requestAnimationFrame(fmo);else fl0=0}
 function fz(f,cx,cy){zst();vT=vcl(vT*f);fv=null;ffl=null;fan=cx==null?null:{mx:(cx-x)/k,my:(cy-y)/k,sx:cx,sy:cy};fgo()} // zoom by a distance factor, towards a screen point or the centre
@@ -72,13 +78,13 @@ for(let i=-180;i<=180;i+=15){const X=(i+180)/360*W;q+=`<path${i?"":' class="e"'}
 for(let i=-75;i<=75;i+=15){const Y=(90-i)/180*H;q+=`<path${i?"":' class="e"'} d="M0 ${Y}H${W}"/>`;if(i%30==0)l+=`<span data-a="${i}">${deg(i,1)}</span>`}
 RG.forEach(r=>{s+=`<path style="--c:${r.c}" fill-rule="evenodd" d="${r.d}"/>`;const a=glyphs(r);
 if(a)t+=`<text data-i="${r.id}"${a.o!=null?` opacity="${a.o}"`:""} x="${a.xs.map(v=>v.toFixed(1)).join(" ")}" y="${a.y}" font-size="${a.s}">${a.t}</text>`});
-sv.innerHTML=s;sl.innerHTML=`<g class="gr">${q}</g><g class="lb">${t}</g>`;gx.innerHTML=l;GX=[...gx.children].map(e=>({e,o:e.dataset.o!=null?+e.dataset.o:null,a:+e.dataset.a}));posM();hi()}
+sv.innerHTML=s;sl.innerHTML=`<g class="gr">${q}</g><g class="lb">${t}</g>`;cqd=1;gx.innerHTML=l;GX=[...gx.children].map(e=>({e,o:e.dataset.o!=null?+e.dataset.o:null,a:+e.dataset.a}));posM();hi()}
 function hi(){ // selection layer above the borders: the rest of the map is dimmed, the country keeps its own relief colours
 const r=sel&&R[sel],key=CO+"|"+sel+"|"+cv?.y;if(key==ovK)return;ovK=key; // nothing changed: skip the costly redraws (also of the globe texture)
-hl.innerHTML=r?`<path class="dm" fill-rule="evenodd" d="M0 0H${W}V${H}H0z${r.d}"/><path class="gw" d="${r.d}"/><path class="ol" d="${r.d}"/>`:"";
+cqd=1;hl.innerHTML=r?`<path class="dm" fill-rule="evenodd" d="M0 0H${W}V${H}H0z${r.d}"/><path class="gw" d="${r.d}"/><path class="ol" d="${r.d}"/>`:"";
 drawOv()}
 function drawOv(){ // country colours as one raster layer (cheap to pan/zoom): light tint + inner colour band; the selected country keeps pure relief
-if(CO){const o=ox;o.clearRect(0,0,W,H);o.lineJoin="round";
+cqd=1;if(CO){const o=ox;o.clearRect(0,0,W,H);o.lineJoin="round";
 RG.forEach(r=>{const q=path(r);o.globalAlpha=r==R[sel]?0:.28;o.fillStyle=r.c;o.fill(q,"evenodd");o.save();o.clip(q,"evenodd");o.globalAlpha=.85;o.strokeStyle=r.c;o.lineWidth=14;o.stroke(q);o.restore()});o.globalAlpha=1}
 if(G)tq()}
 // markers live outside the zoomed layer and are re-positioned each frame, so icons and names stay crisp vectors at any zoom
@@ -86,11 +92,11 @@ if(G)tq()}
 const mOn=q=>!(q.y0!=null&&yr<q.y0)&&!(q.y1!=null&&yr>q.y1),
 far=(q,zl=k/fit())=>(q.z==1&&zl<2.2)||(q.z==2&&zl<4.5),
 drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"} class="${far(q)?"z":""}${i===ms?" s":""}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="${q.k==1?15:12}" y="1"${q.f=="cap"?' class="c"':""}>${esc(mn(q))}</text></g>`).join("");posM();if(G)GI.forEach(e=>e.m!=null&&e.d.classList.toggle("s",e.m===ms))},
-posM=()=>{const zl=k/fit();[...mw.children].forEach((e,i)=>{const q=MK[i];if(!q)return;e.style.transform=`translate(${x+(q.o+180)/360*W*k}px,${y+(90-q.a)/180*H*k}px)`;
+posM=()=>{const zl=k/fit();[...mw.children].forEach((e,i)=>{const q=MK[i];if(!q)return;{const w=W*k,X=x+(q.o+180)/360*w;e.style.transform=`translate(${X-w*Math.floor((X+40)/w)}px,${y+(90-q.a)/180*H*k}px)`}
 e.classList.toggle("z",far(q,zl))});drawMz();if(!G)sbU(2*Math.PI*RE*Math.max(.02,Math.cos(Math.min(1.5,Math.abs(Math.PI/2-(VH/2-y)/k/H*Math.PI))))/(W*k));
 // graticule labels: light, pinned to the top / left edge of the view, hidden under the button column
 const t0=Math.max(y,0)+6,l0=Math.max(x,0)+6,xr=VW-ZW-82,yb=VH-30; // sizes are cached (sz): no layout reads while the map moves
-for(const q of GX){let X,Y,hd;if(q.o!=null){X=x+(q.o+180)/360*W*k+4;Y=t0;hd=X<l0+40||X>xr}else{X=l0;Y=y+(90-q.a)/180*H*k-18;hd=Y<t0+18||Y>yb}
+for(const q of GX){let X,Y,hd;if(q.o!=null){const w=W*k;X=x+(q.o+180)/360*w+4;X-=w*Math.floor(X/w);Y=t0;hd=X<l0+40||X>xr}else{X=l0;Y=y+(90-q.a)/180*H*k-18;hd=Y<t0+18||Y>yb}
 q.e.style.transform=`translate(${X}px,${Y}px)`;if(q.h!==hd)q.e.hidden=q.h=hd}},
 esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;"),
 RE=6371, // the planet is Earth-sized: radius in km
@@ -108,13 +114,15 @@ cr=(p,q)=>[p[1]*q[2]-p[2]*q[1],p[2]*q[0]-p[0]*q[2],p[0]*q[1]-p[1]*q[0]],nz=v=>{c
 for(let j=0;j<=180;j++){const f=j/180*6.2832,c=Math.cos(f)*Math.sin(t),s2=Math.sin(f)*Math.sin(t);q.push([0,1,2].map(i=>C[i]*Math.cos(t)+u[i]*c+w[i]*s2))}MP.push(q)}
 drawMz();if(G)rq()}
 function mHit(cx,cy){if(!MON)return-1;const r=(G?g:m).getBoundingClientRect(); // measuring point under the pointer (screen px), -1 if none
-return MS.findIndex(v=>{let p;if(G)p=gp(v);else{const[lo,la]=v2ll(v);p=[x+(lo+180)/360*W*k,y+(90-la)/180*H*k]}return p&&Math.hypot(r.left+p[0]-cx,r.top+p[1]-cy)<12})}
+return MS.findIndex(v=>{let p;if(G)p=gp(v);else{const[lo,la]=v2ll(v),w=W*k,X=x+(lo+180)/360*w;p=[X+w*Math.round((cx-r.left-X)/w),y+(90-la)/180*H*k]}return p&&Math.hypot(r.left+p[0]-cx,r.top+p[1]-cy)<12})}
 function msTap(v,pts,cx,cy){ // measuring: a tap on a point removes it, anywhere else adds one
 const i=pts.findIndex(p=>p&&Math.hypot(p[0]-cx,p[1]-cy)<12);if(i>=0)MS.splice(i,1);else if(v){if(MON==2&&MS.length>1)MS=[];MS.push(v)}msU()} // circle: centre, then a point on the edge; the next tap starts a new one
-function drawMz(){if(G||!MS.length){if(mz.firstChild)mz.innerHTML="";return} // flat map: the arcs bend as the real shortest way does
-let d="";const cw=VW-140,sp=v=>{const[lo,la]=v2ll(v);return[x+(lo+180)/360*W*k,y+(90-la)/180*H*k,lo]};
-for(const q of MP){let pl=null;for(const v of q){const[X,Y,lo]=sp(v);d+=(pl==null||Math.abs(lo-pl)>180?"M":"L")+X.toFixed(1)+" "+Y.toFixed(1);pl=lo}}
-mz.innerHTML=`<path class="u" d="${d}"/><path d="${d}"/>`+MS.map((v,i)=>{const[X,Y]=sp(v);return`<circle cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" r="4.5"/>`+(i?`<text x="${(X+(X>cw?-9:9)).toFixed(1)}" y="${(Y-10).toFixed(1)}"${X>cw?' text-anchor="end"':""}>${km(MD[i])}</text>`:"")}).join("")}
+function drawMz(){if(G||!MS.length){if(mz.firstChild)mz.innerHTML="";return} // flat map: the arcs bend as the real shortest way does and run on across the seam
+const w=W*k,cw=VW-140,sp=(v,p)=>{let[lo,la]=v2ll(v);if(p!=null)lo+=360*Math.round((p-lo)/360);return[x+(lo+180)/360*w,y+(90-la)/180*H*k,lo]};let d="",t="";
+for(const q of MP){let pl=null,s2="";for(const v of q){const[X,Y,lo]=sp(v,pl);s2+=(pl==null?"M":"L")+X.toFixed(1)+" "+Y.toFixed(1);pl=lo}
+for(let j=-2;j<=2;j++)d+=j?`<path transform="translate(${j*w} 0)" d="${s2}"/>`:`<path d="${s2}"/>`}
+MS.forEach((v,i)=>{const[X0,Y]=sp(v);for(let j=-1;j<=1;j++){const X=X0+j*w;if(X<-60||X>VW+60)continue;t+=`<circle cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" r="4.5"/>`+(i?`<text x="${(X+(X>cw?-9:9)).toFixed(1)}" y="${(Y-10).toFixed(1)}"${X>cw?' text-anchor="end"':""}>${km(MD[i])}</text>`:"")}});
+mz.innerHTML=`<g class="u">${d}</g><g>${d}</g>`+t}
 
 function names(){RG.forEach(r=>{r.n0??=r.name;r.r0??=r.ru;const o=COU[r.c]||{};r.name=o.en||r.n0;r.ru=o.ru||r.r0})} // names edited on the site win over the generated ones
 function setVer(){ // switch to the map version of the selected year
@@ -140,16 +148,16 @@ zm.onclick=()=>mode(MON==1?0:1);zk.onclick=()=>mode(MON==2?0:2);
 
 m.onpointerdown=e=>{if(e.pointerType=="mouse"&&e.button)return;if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0;fst();HS=[];m.classList.add("dr");MG=mHit(e.clientX,e.clientY);if(MG<0)MG=null}; // pressing a measuring point drags it
 m.onpointermove=e=>{coords(e);const q=P[e.pointerId];if(!q)return m.classList.toggle("mh",mHit(e.clientX,e.clientY)>=0);
-if(MG!=null){mv+=Math.abs(e.clientX-q.x)+Math.abs(e.clientY-q.y);q.x=e.clientX;q.y=e.clientY;const r=m.getBoundingClientRect(),mx=Math.min(W,Math.max(0,(e.clientX-r.left-x)/k)),my=Math.min(H,Math.max(0,(e.clientY-r.top-y)/k));MS[MG]=ll2v(mx/W*360-180,90-my/H*180);return msU()}
+if(MG!=null){mv+=Math.abs(e.clientX-q.x)+Math.abs(e.clientY-q.y);q.x=e.clientX;q.y=e.clientY;const r=m.getBoundingClientRect(),mx=wx((e.clientX-r.left-x)/k),my=Math.min(H,Math.max(0,(e.clientY-r.top-y)/k));MS[MG]=ll2v(mx/W*360-180,90-my/H*180);return msU()}
 const o=two(P),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;mv+=Math.abs(dx)+Math.abs(dy);
 if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/o.d,n.x-r.left,n.y-r.top);vD=vT=vOf(k)}else{const t=performance.now();HS.push([t,e.clientX,e.clientY]);while(t-HS[0][0]>150)HS.shift();x+=dx;y+=dy;set()}};
 m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];if(!Object.keys(P).length)m.classList.remove("dr");if(MG!=null){MG=null;if(mv>4)return} // a dragged point stays; a tapped one is removed below
 if(one&&mv>6&&HS.length>1){const t=performance.now(),l=HS.at(-1),f=HS.find(h=>t-h[0]<=110)||HS[0],d=(l[0]-f[0])/1e3; // flick speed: averaged over the last ~0.1 s, so one uneven event does not throw the map
 if(t-l[0]<60&&d>.012){fv=[(l[1]-f[1])/d,(l[2]-f[2])/d];fdc=8;fgo()}} // it goes on at the speed it was let go, then slows down (twice the old friction: half the glide)
 if(!one||mv>6||e.type!="pointerup")return;const r=m.getBoundingClientRect(),t=Date.now();
-if(MON){const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k;return msTap(mx>=0&&mx<=W&&my>=0&&my<=H&&ll2v(mx/W*360-180,90-my/H*180),MS.map(v=>{const[lo,la]=v2ll(v);return[r.left+x+(lo+180)/360*W*k,r.top+y+(90-la)/180*H*k]}),e.clientX,e.clientY)}
+if(MON){const mx=wx((e.clientX-r.left-x)/k),my=(e.clientY-r.top-y)/k;return msTap(my>=0&&my<=H&&ll2v(mx/W*360-180,90-my/H*180),MS.map(v=>{const[lo,la]=v2ll(v),w=W*k,X=x+(lo+180)/360*w;return[r.left+X+w*Math.round((e.clientX-r.left-X)/w),r.top+y+(90-la)/180*H*k]}),e.clientX,e.clientY)}
 if(t-tap<300){tap=0;zst();vT=vcl(vT/1.8);ffl={mx:(e.clientX-r.left-x)/k,my:(e.clientY-r.top-y)/k};fan=fv=null;fgo();return} // double click: fly there and zoom in, as on the globe
-tap=t;const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k,g=D.elementFromPoint(e.clientX,e.clientY)?.closest("#mw [data-m]");
+tap=t;const mx=wx((e.clientX-r.left-x)/k),my=(e.clientY-r.top-y)/k,g=D.elementFromPoint(e.clientX,e.clientY)?.closest("#mw [data-m]");
 if(g&&!MAP.onTap)return pickM(+g.dataset.m);if(!MAP.onTap?.(mx,my,g&&+g.dataset.m))pick(hit(mx,my))};
 m.onlostpointercapture=e=>{delete P[e.pointerId];if(!Object.keys(P).length)m.classList.remove("dr")};
 m.onwheel=e=>{e.preventDefault();fz(Math.exp(wd(e)*.0015),e.clientX-MR.left,e.clientY-MR.top)}; // the globe's wheel sensitivity and easing
@@ -158,7 +166,7 @@ zo.onclick=()=>G?(gT=cl(gT*1.5),anc=null,rq()):fz(1.5);
 pc.onclick=()=>{ms=null;pick()};
 
 // ---- cursor coordinates (2D) ----
-function coords(e){const r=MR;lx=(e.clientX-r.left-x)/k;ly=(e.clientY-r.top-y)/k;showC()}
+function coords(e){const r=MR;lx=wx((e.clientX-r.left-x)/k);ly=(e.clientY-r.top-y)/k;showC()}
 function showC(){if(lx==null||lx<0||ly<0||lx>W||ly>H)return;const lo=lx/W*360-180,la=90-ly/H*180;
 CP=la.toFixed(3)+", "+lo.toFixed(3);
 CT=Math.abs(la).toFixed(3)+"°"+hemi(la,1)+" "+Math.abs(lo).toFixed(3)+"°"+hemi(lo)+"<br>x "+lx.toFixed(1)+" y "+ly.toFixed(1);
@@ -196,7 +204,7 @@ addEventListener("resize",()=>{if(tlOpen())tlB()});
 const MAP=window.MAP={ // editor hooks
 redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
 markers(){drawM();if(G)tq()},pickM,yr:()=>yr,focus(o,a){if(G){fly={y:-o*Math.PI/180,p:Math.min(1.4,Math.max(-1.4,a*Math.PI/180))};gT=cl(Math.min(gT,2.2));return rq()}zst();vT=vcl(Math.min(vT,vOf(fit()*5)));ffl={mx:(o+180)/360*W,my:(90-a)/180*H};fan=fv=null;fgo()},timeline(){if(tlOpen())tlB()},
-toMap(e){const r=m.getBoundingClientRect();return{mx:(e.clientX-r.left-x)/k,my:(e.clientY-r.top-y)/k}},
+toMap(e){const r=m.getBoundingClientRect();return{mx:wx((e.clientX-r.left-x)/k),my:(e.clientY-r.top-y)/k}},
 sel:()=>sel&&R[sel],pick,W,H};
 function sz(){VW=m.clientWidth;VH=m.clientHeight;ZW=zc.parentNode.offsetWidth;GW=g.clientWidth||VW;GH=g.clientHeight||VH;MR=m.getBoundingClientRect();GR=G?g.getBoundingClientRect():MR}
 addEventListener("scroll",sz,{passive:true}); // positions on screen are cached too (cursor coordinates on every pointer move) // view sizes, read only when they change
