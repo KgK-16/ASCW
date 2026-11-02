@@ -70,22 +70,21 @@ D.head.append(h("style",{},`
 .ed [data-k][contenteditable]{outline:1px dashed #6665c0aa;outline-offset:3px;cursor:text}
 /* document editor */
 .ed .doc [contenteditable]{outline:none;cursor:text}.ed .doc :is([contenteditable],li[data-ph]):empty::before{content:attr(data-ph);color:#e8e8e040;font-style:italic;pointer-events:none}
-.ed .doc [data-i]{position:relative}.ed .doc [data-tm]::after{content:attr(data-tm);position:absolute;left:0;top:-3px;transform:translateY(-100%);font:400 10px/1 "Exo 2",sans-serif;letter-spacing:1px;color:#e8b04a;border:1px solid #e8b04a80;padding:2px 3px;pointer-events:none;font-style:normal;text-transform:none} /* language the block still lacks */
-.kb{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin:0;font:400 13px/1.45 Inter,sans-serif}.kb dd{margin:0;color:#e8e8e0cc}.kb kbd{font:12px ui-monospace,monospace;color:#8d8cf0;white-space:nowrap}
-#eb .st{align-self:center;padding:0 6px;font:400 12px "Exo 2",sans-serif;color:#e8e8e099}@media(max-width:700px){#eb .st{display:none}}.ed .doc :is(.b-card,.al-left,.al-right){z-index:1} /* floats stay above the text that wraps them */.ed .doc [data-i].cur{box-shadow:-14px 0 0 -12px #6665c0}
+.ed .doc [data-i]{position:relative;outline:1px dashed transparent;outline-offset:6px;transition:outline-color .12s}.ed .doc [data-i]:hover{outline-color:#6665c04d}.ed .doc [data-i].cur{outline:1px solid #6665c080;background:#6665c00d} /* each block is a visible box: hovered dashed, current solid */
+#eb .st{align-self:center;padding:0 6px;font:400 12px "Exo 2",sans-serif;color:#e8e8e099}@media(max-width:700px){#eb .st{display:none}}.ed .doc :is(.b-card,.al-left,.al-right){z-index:1} /* floats stay above the text that wraps them */
 .ed .doc .b-img img,.ed .doc .b-card img{cursor:pointer}.ed .doc .pi{display:block;width:100%;padding:36px 12px;border:1px dashed #6665c0;color:#e8e8e080;font:400 13px "Exo 2",sans-serif;cursor:pointer;text-align:center}
 .ed .doc .b-links .nw a{color:#e8b04a}.ed .doc .b-links a{pointer-events:none}
 .ed .doc .add{display:block;margin:4px 0 0;font:400 12px "Exo 2",sans-serif;color:#8d8cf0;cursor:pointer;text-transform:none;letter-spacing:.5px}
 .ed .doc .b-cols .cell{outline:1px dashed #6665c033;outline-offset:6px;min-height:40px}
-#gut{position:absolute;z-index:30;display:flex;gap:2px;transform:translateX(calc(-100% - 10px))}#gut[hidden]{display:none}
+#gut{position:absolute;z-index:30;display:flex;flex-direction:column;gap:2px;transition:top .12s}#gut[hidden]{display:none}.ed.ng .doc{padding-left:40px}
 #gut button{width:26px;height:26px;font:400 15px/24px "Exo 2",sans-serif;color:#8d8cf0;background:#05050df2;border:1px solid #6665c066;cursor:pointer;touch-action:none}#gut button:hover{color:#fff;border-color:#8d8cf0}
-#gut .hd{cursor:grab}#gut.nr{transform:translateX(-100%)}#gut.rt{transform:translateX(10px)}.ed .doc{position:relative;padding-bottom:140px}
+#gut .hd{cursor:grab}.ed .doc{position:relative;padding-bottom:140px}
 #eb .lb{margin-left:5px}@media(max-width:700px){#eb .lb{display:none}#eb{left:8px;bottom:8px;max-width:calc(100% - 16px);gap:3px}#eb .eb{padding:6px 8px;font-size:12px}}
 .mn{position:fixed;z-index:46;background:#05050d;border:1px solid #6665c0;min-width:220px;max-height:min(70vh,520px);overflow:auto;padding:4px;display:flex;flex-direction:column;text-transform:none;font:400 13px "Exo 2",sans-serif;box-shadow:0 8px 30px #000a}
 .mn button{display:flex;gap:10px;align-items:center;text-align:left;padding:7px 10px;color:#e8e8e0;cursor:pointer;letter-spacing:.3px}.mn button:hover,.mn button.f{background:#6665c040}
 .mn button i{width:20px;text-align:center;font-style:normal;color:#8d8cf0}.mn button small{margin-left:auto;padding-left:16px;font:400 11px ui-monospace,monospace;color:#e8e8e066}.mn [hidden]{display:none}.mn .ei{margin-bottom:4px}.mn hr{width:auto;margin:4px 6px;opacity:.25}.mn .on::after{content:"✓";margin-left:auto;padding-left:12px;color:#8d8cf0}
-#ift{position:absolute;z-index:47;display:flex;flex-wrap:wrap;max-width:min(440px,calc(100vw - 16px));gap:2px;background:#05050d;border:1px solid #6665c0;padding:2px;text-transform:none}#ift[hidden]{display:none}
-#ift button{min-width:30px;height:28px;padding:0 6px;font:600 13px Inter,sans-serif;color:#e8e8e0;cursor:pointer}#ift button:hover{background:#6665c040}
+#ift{position:absolute;z-index:47;display:flex;flex-wrap:wrap;max-width:min(560px,calc(100vw - 16px));gap:2px;background:#05050d;border:1px solid #6665c0;padding:2px;text-transform:none}#ift[hidden]{display:none}
+#ift button{min-width:30px;height:28px;padding:0 6px;font:600 13px Inter,sans-serif;color:#e8e8e0;cursor:pointer}#ift button:hover{background:#6665c040}#ift button.on{background:#6665c0;color:#fff}#ift .sep{width:1px;margin:3px 3px;background:#6665c066}
 #dln{position:absolute;z-index:29;height:2px;background:#e8b04a;pointer-events:none}#dln[hidden]{display:none}
 .ed .doc.dropping{outline:1px dashed #e8b04a;outline-offset:-4px}
 #pvw{position:fixed;inset:0;z-index:55;background:#020206e6;display:flex;align-items:center;justify-content:center;gap:16px;flex-direction:column}
@@ -96,10 +95,11 @@ D.head.append(h("style",{},`
 .ed #mw g{cursor:grab}.mke #m{cursor:crosshair}
 .ml{display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow:auto}.ml button{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:6px 8px;color:#e8e8e0;cursor:pointer;font:400 14px Inter,sans-serif}.ml button:hover{background:#6665c040}.ml small{color:#e8e8e080}
 `));
-let pb,eb,et;
-function bar(){if(!on||PV)return;pb.firstChild.textContent=(n()?"● "+n()+" · ":"")+L("Publish","Опубликовать");pb.firstChild.classList.toggle("n",!!n());pb.lastChild.disabled=!n()}
+let pb,eb,et,ubn,rbn;
+function bar(){if(!on||PV)return;if(ubn){ubn.disabled=!HI.length;rbn.disabled=!HR.length}pb.firstChild.textContent=(n()?"● "+n()+" · ":"")+L("Publish","Опубликовать");pb.firstChild.classList.toggle("n",!!n());pb.lastChild.disabled=!n()}
 const Lp=(e,r)=>Object.assign(new String(ru()?r:e),{e,r}); // a label that remembers both languages
-let tt;function toast(t,x){if(!et)return;et.style.bottom=eb.offsetHeight+20+"px";et.textContent=t;et.className=x?"x":"";et.hidden=false;clearTimeout(tt);tt=setTimeout(()=>et.hidden=true,x?12e3:6e3)}
+let tt;function toast(t,x){if(!et)return;const up=()=>et.style.bottom=eb.offsetHeight+20+"px";up();requestAnimationFrame(up);D.fonts?.ready.then(up); // always above the bar, also when it wraps to two rows
+et.textContent=t;et.className=x?"x":"";et.hidden=false;clearTimeout(tt);tt=setTimeout(()=>et.hidden=true,x?12e3:6e3)}
 function dialog(title,...c){const b=h("div",{cls:"dlb",role:"dialog","aria-label":title,tabindex:"-1"},h("h3",{},title,h("button",{type:"button",cls:"x",title:L("Close","Закрыть"),"aria-label":L("Close","Закрыть"),onclick:()=>w.remove()},"×")),...c),
 w=h("div",{cls:"dl",onclick:e=>{if(e.target==w)w.remove()}},b);D.body.append(w);
 w.addEventListener("keydown",e=>{if(e.key=="Escape"){e.stopPropagation();w.remove()}});setTimeout(()=>(b.querySelector("input,textarea,select,.dlb>:not(h3) button")||b).focus());return w}
@@ -191,7 +191,7 @@ d_:L("Description","Описание"),cap_:L("Caption","Подпись"),cite_:
 if(!ED)return v||w?`<${tag}${a}>${v||w}</${tag}>`:"";
 return`<${tag}${a} data-f="${f}" data-m="${m}" contenteditable="${m=="plain"?"plaintext-only":"true"}" data-ph="${esc(ph)}" spellcheck="true">${v}</${tag}>`}
 let ED=1;
-function rb(b,i){const mi=ED?miss(b):[],ta=b.ta?` class="ta-${b.ta}"`:"",di=(ED?` data-i="${i}"${mi.length?` data-tm="${mi.join(" ").toUpperCase()}"`:""}`:""),l=HT.lang;
+function rb(b,i){const ta=b.ta?` class="ta-${b.ta}"`:"",di=ED?` data-i="${i}"`:"",l=HT.lang;
 switch(b.t){
 case"head":{const own=b.k_en||b.k_ru,kd={k_en:TX.wip?.en||"",k_ru:TX.wip?.ru||TX.wip?.en||""}; // without its own kicker the header shows the shared "work in progress" text
 return`<header class="b-head${b.tall?" tall":""}"${di}>${E("p",b,own||ED?b:kd,"k_","plain",' class="k"',own?null:kd["k_"+l])}<h1>${E("span",b,b,"t_","plain")}${b.a_en||b.a_ru||b.acc?`<b>${E("span",b,b,"a_","plain")}</b>`:""}</h1><hr>${E("p",b,b,"d_","plain",' class="ds"')}</header>`}
@@ -207,20 +207,9 @@ case"cols":return`<div class="b-cols"${di}>${(b.c||[]).map((c,j)=>`<div class="c
 case"hr":return`<hr class="b-hr"${di}>`;
 case"links":return`<ul class="b-links"${di}>${shown(b).map(q=>`<li${q.nw?' class="nw"':""}><a href="${U+q.src.replace(/_index\.md$/,"")}">${esc(l=="ru"?q.ru||q.en:q.en)}</a></li>`).join("")||(ED?`<li>${L("No subpages yet — add one in the block menu ⠿","Подстраниц пока нет — добавьте в меню блока ⠿")}</li>`:"")}</ul>`}
 return""}
-let trb,stb;
-function status(){if(!trb)return;const M=B().map(miss),c=M.filter(m=>m.length).length,l=HT.lang,w=B().flatMap(b=>fields(b).map(([o,f])=>plain(gv(b,o,f,l)))).join(" ").split(/\s+/).filter(Boolean).length;
-trb.firstChild.textContent="🌐"+(c?" "+c:"");trb.classList.toggle("n",!!c);
+let stb;
+function status(){if(!stb)return;const l=HT.lang,w=B().flatMap(b=>fields(b).map(([o,f])=>plain(gv(b,o,f,l)))).join(" ").split(/\s+/).filter(Boolean).length; // words on the page in the shown language
 stb.textContent=ru()?w+" "+(w%10==1&&w%100!=11?"слово":w%10>1&&w%10<5&&(w%100<12||w%100>14)?"слова":"слов"):w+(w==1?" word":" words")}
-function nextTr(){const T=B().map((b,i)=>[i,miss(b)]).filter(x=>x[1].length);if(!T.length)return toast(L("Every text is written in both languages","Все тексты написаны на обоих языках"));
-const [i,m]=T.find(x=>x[0]>(CB??-1))||T[0];if(!m.includes(HT.lang))D.getElementById("lq").click(); // switch to the missing language
-CB=i;gutAt(i);DOC.querySelector(`[data-i="${i}"]`)?.scrollIntoView({block:"center",behavior:"smooth"});focusF(i,null,0)}
-function help(){const K=[["Enter",L("new paragraph inside the block","новый абзац внутри блока")],["Ctrl+Enter",L("new block","новый блок")],["Shift+Enter",L("line break","перенос строки")],["/",L("in an empty paragraph: block menu with search","в пустом абзаце: меню блоков с поиском")],
-["## · ### · - · 1. · > · ---",L("at the start of a paragraph: heading, subheading, list, numbered list, quote, divider","в начале абзаца: заголовок, подзаголовок, список, нумерованный список, цитата, разделитель")],
-["Ctrl+B · Ctrl+I · Ctrl+K",L("bold, italic, link","жирный, курсив, ссылка")],["Ctrl+Z · Ctrl+Shift+Z",L("undo, redo","отменить, повторить")],["Alt+↑ · Alt+↓",L("move the block","переместить блок")],
-["Ctrl+D",L("duplicate the block","дублировать блок")],["Backspace",L("in an empty block: delete it; at the start of a paragraph: join it with the one above","в пустом блоке: удалить его; в начале абзаца: соединить с предыдущим")],
-["Ctrl+S",L("save the draft now","сохранить черновик сразу")],["Ctrl+V",L("text from Word, Google Docs or a website keeps headings, lists, bold, italic and links","текст из Word, Google Docs или с сайта сохраняет заголовки, списки, жирный, курсив и ссылки")],
-["🌐",L("next text that is written in one language only","следующий текст, написанный только на одном языке")]];
-dialog(L("Keyboard shortcuts","Горячие клавиши"),h("dl",{cls:"kb"},...K.flatMap(([k,t])=>[h("dt",{},h("kbd",{},k)),h("dd",{},t)])))}
 function render(){if(!DOC)return;const a=D.activeElement?.closest?.("[data-f]"),ai=a?.closest("[data-i]")?.dataset.i,af=a?.dataset.f;
 DOC.innerHTML=B().map(rb).join("")+(ED&&!B().length?`<button type="button" class="eb" data-act="first" style="display:block;margin:0 auto">+ ${L("Add the first block","Добавить первый блок")}</button>`:"");
 if(ED){DOC.append(gut,dln);if(CB!=null&&!DOC.querySelector(`[data-i="${CB}"]`))CB=null;gutAt(CB);status()}
@@ -234,10 +223,9 @@ for(const x of l){let v=b[x]||"";if(b.t=="list")v=v.replace(/<\/li><li>/g,"<br>"
 if(b.cite_en)n.cite_en=b.cite_en;if(b.cite_ru)n.cite_ru=b.cite_ru;B()[i]=n;store();render();focusF(i)}
 // block gutter: + inserts after the block, ⠿ opens the block menu (click) or moves the block (drag)
 function gutAt(i){if(!gut)return;const k=i!=null&&DOC.querySelector(`[data-i="${i}"]`);gut.hidden=!k;DOC.querySelectorAll(".cur").forEach(e=>e.classList.remove("cur"));if(!k)return;
-k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClientRect(),
-rt=getComputedStyle(k).float=="right"&&r.right+70<innerWidth, // right-floated card / image: buttons on its outer side, not over the wrapping text
-nr=!rt&&r.left<70;gut.classList.toggle("nr",nr);gut.classList.toggle("rt",rt); // phones: above the right end
-gut.style.top=r.top-d.top-(nr?30:0)+"px";gut.style.left=(nr||rt?r.right:r.left)-d.left+"px";gut.dataset.i=i}
+k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClientRect(),ng=d.left<44; // narrow screens: the text moves right to make room for the buttons
+if(HT.classList.contains("ng")!=ng){HT.classList.toggle("ng",ng);return gutAt(i)}
+gut.style.top=Math.max(0,r.top-d.top-6)+"px";gut.style.left=(ng?2:-36)+"px";gut.dataset.i=i} // always the same column at the left of the text, level with the block's top
 function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],k:t[3],f:()=>{const b=mk(t[0]);if(replace){act(()=>B()[i]=b);b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}),1)}
 function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>act(()=>{if(v==null)delete b[k];else b[k]=v}),items=[];
 if(TXT.has(b.t))items.push(...TYPES().slice(0,6).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h2"&&b.t=="h"&&b.lv!=3)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-",...ALG().map(([a,ic,t])=>({i:ic,t,on:(b.ta||"left")==a,f:()=>set("ta",a=="left"?null:a)})),"-");
@@ -262,10 +250,10 @@ onclick:e=>{const r=e.currentTarget.getBoundingClientRect();addMenu(+gut.dataset
 h("button",{type:"button",cls:"hd",title:L("Drag to move · click for block options","Перетащите, чтобы переместить · клик — настройки блока"),"aria-label":L("Block options","Настройки блока")},"⠿"));
 dln=h("div",{id:"dln",hidden:""});
 ift=h("div",{id:"ift",hidden:""},...[["B","bold",L("Bold","Жирный")+" (Ctrl+B)"],["I","italic",L("Italic","Курсив")+" (Ctrl+I)"],["U","underline",L("Underline","Подчёркнутый")+" (Ctrl+U)"],["S","strikeThrough",L("Strikethrough","Зачёркнутый")],
-["▮","mark",L("Highlight","Выделить маркером")],["</>","code",L("Code","Код")],["x²","superscript",L("Superscript","Надстрочный")],["x₂","subscript",L("Subscript","Подстрочный")],["🔗","link",L("Link","Ссылка")+" (Ctrl+K)"],["⌫","removeFormat",L("Clear formatting","Убрать оформление")],
+["▮","mark",L("Highlight","Выделить маркером")],["</>","code",L("Code","Код")],["x²","superscript",L("Superscript","Надстрочный")],["x₂","subscript",L("Subscript","Подстрочный")],["🔗","link",L("Link","Ссылка")+" (Ctrl+K)"],["⌫","removeFormat",L("Clear formatting","Убрать оформление")],"|",
 ...ALG().map(([a,ic,t])=>[ic,"ta:"+a,t])]
-.map(([t,c,ti])=>h("button",{type:"button",title:ti,"aria-label":ti,"data-c":c,onmousedown:e=>{e.preventDefault();fmt2(c)}},t)));D.body.append(ift);
-let hT;DOC.addEventListener("mouseover",e=>{if(gut.contains(e.target))return clearTimeout(hT);const k=e.target.closest("[data-i]");clearTimeout(hT);if(k&&!DG&&+k.dataset.i!==CB)hT=setTimeout(()=>gutAt(CB=+k.dataset.i),250)});
+.map(x=>x=="|"?h("i",{cls:"sep"}):h("button",{type:"button",title:x[2],"aria-label":x[2],"data-c":x[1],onmousedown:e=>{e.preventDefault();fmt2(x[1])}},x[0])));D.body.append(ift);
+let hT;DOC.addEventListener("mouseover",e=>{if(gut.contains(e.target))return clearTimeout(hT);const k=e.target.closest("[data-i]");clearTimeout(hT);if(k&&!DG&&+k.dataset.i!==CB)hT=setTimeout(()=>gutAt(CB=+k.dataset.i),90)});
 DOC.addEventListener("pointerdown",e=>{const k=e.target.closest("[data-i]");if(k)gutAt(CB=+k.dataset.i)});
 DOC.addEventListener("focusin",e=>{const k=e.target.closest("[data-i]");if(k)gutAt(CB=+k.dataset.i)});
 DOC.addEventListener("input",e=>{const el=e.target.closest("[data-f]");if(!el)return;const k=el.closest("[data-i]"),i=+k.dataset.i,b=B()[i],l=HT.lang,f=el.dataset.f,m=el.dataset.m;
@@ -275,7 +263,7 @@ if(b.t=="p"&&f==""){const t=el.textContent,mt=t.match(/^(#{2,3}|[-*]|1\.|>)\s/)|
 if(mt){const k2={"##":"h2","###":"h3","-":"ul","*":"ul","1.":"ol",">":"quote","---":"hr"}[mt[1]||mt[0]];snapN();b[l]=clean(el.innerHTML,"inline").replace(/^(#{2,3}|[-*]|1\.|&gt;|---)\s?/,"");if(!b[l])delete b[l];
 if(k2=="hr"){B()[i]={t:"hr"};B().splice(i+1,0,{t:"p"});store();render();focusF(i+1)}else convert(i,k2);return}}
 snap1();sv(b,o,f,l,m=="plain"?esc(el.textContent):clean(el.innerHTML,m));store();if(bound(b,f)&&f=="t_")D.title=(PG[pf(f,l)]||"")+" · ASCW";
-const mi=miss(b);if(mi.length)k.dataset.tm=mi.join(" ").toUpperCase();else delete k.dataset.tm;clearTimeout(stT);stT=setTimeout(status,400)});let stT;
+clearTimeout(stT);stT=setTimeout(status,400)});let stT;
 DOC.addEventListener("keydown",keys);
 DOC.addEventListener("paste",paste);
 DOC.addEventListener("click",e=>{const p=e.target.closest("[data-pick]");if(p){const k=p.closest("[data-i]"),b=B()[+k.dataset.i];pickImg(p.dataset.c!=null?b.c[+p.dataset.c]:b);return}
@@ -307,7 +295,7 @@ if(e.key=="Enter"&&!e.shiftKey){
 if(m=="li"){const s=getSelection(),li=s.anchorNode&&(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement).closest("li");
 if(li&&!li.textContent&&li==el.lastElementChild){e.preventDefault();li.remove();el.dispatchEvent(new Event("input",{bubbles:true}));insert({t:"p"},i+1)}return}
 if(m=="block")return;e.preventDefault();
-if(m=="inline"&&b.t!="h"&&!(e.ctrlKey||e.metaKey)){const s=getSelection(),r=s.rangeCount&&s.getRangeAt(0);if(!r)return;r.deleteContents();const a=h("br"),z=h("br");r.insertNode(z);r.insertNode(a);let nx=z.nextSibling;while(nx&&nx.nodeType==3&&!nx.data)nx=nx.nextSibling;if(!nx)z.after(h("br")); /* at the end the browser needs one more break to show the new line */r.setStartAfter(z);r.collapse(true);s.removeAllRanges();s.addRange(r);el.dispatchEvent(new Event("input",{bubbles:true}));return} // Enter: a new paragraph inside the same block; Ctrl+Enter starts a new block
+if(m=="inline"&&b.t!="h"&&!(e.ctrlKey||e.metaKey)){snapN();const s=getSelection(),r=s.rangeCount&&s.getRangeAt(0);if(!r)return;r.deleteContents();const a=h("br"),z=h("br");r.insertNode(z);r.insertNode(a);let nx=z.nextSibling;while(nx&&nx.nodeType==3&&!nx.data)nx=nx.nextSibling;if(!nx)z.after(h("br")); /* at the end the browser needs one more break to show the new line */r.setStartAfter(z);r.collapse(true);s.removeAllRanges();s.addRange(r);el.dispatchEvent(new Event("input",{bubbles:true}));return} // Enter: a new paragraph inside the same block; Ctrl+Enter starts a new block
 if(!/^(p|h|quote)$/.test(b.t)||el.dataset.f!="")return;
 // split the paragraph / heading at the caret: the rest goes to a new paragraph
 const s=getSelection();if(!s.rangeCount)return;const r=s.getRangeAt(0);r.deleteContents();const tail=D.createRange();tail.selectNodeContents(el);tail.setStart(r.endContainer,r.endOffset);
@@ -337,7 +325,9 @@ else if(c.querySelector("p,h1,h2,h3,h4,h5,h6,ul,ol,blockquote,hr,div,li"))go(c);
 else if(/^(P|PRE|LI|DIV)$/.test(g))add({t:"p",[l]:clean(c.innerHTML,"inline")})}};go(t.content);return out}
 function selTb(){const s=getSelection(),el=s.rangeCount&&!s.isCollapsed&&(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('.doc [contenteditable="true"]');
 if(!el||ift.contains(D.activeElement)){if(!ift.contains(D.activeElement))ift.hidden=true;return}const r=s.getRangeAt(0).getBoundingClientRect();ift.hidden=false;
-ift.style.left=Math.max(8,Math.min(r.left+scrollX+r.width/2-ift.offsetWidth/2,innerWidth-ift.offsetWidth-8))+"px";ift.style.top=r.top+scrollY-ift.offsetHeight-8+"px"}
+const tg=(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement),bk=B()[+el.closest("[data-i]")?.dataset.i]; // which buttons are already applied here
+for(const b of ift.querySelectorAll("button")){const c=b.dataset.c;let on=false;try{on=c.startsWith("ta:")?(bk?.ta||"left")==c.slice(3):c=="mark"||c=="code"?!!tg.closest(c):/^(bold|italic|underline|strikeThrough|superscript|subscript)$/.test(c)&&D.queryCommandState(c)}catch{}b.classList.toggle("on",on)}
+ift.style.left=Math.max(8,Math.min(r.left+scrollX+r.width/2-ift.offsetWidth/2,innerWidth-ift.offsetWidth-8))+"px";ift.style.top=Math.max(scrollY+56,r.top+scrollY-ift.offsetHeight-8)+"px"}
 function fmt2(c){const s=getSelection(),el=(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('[contenteditable="true"]');if(!el)return;
 if(c.startsWith("ta:")){const k=el.closest("[data-i]"),b=k&&B()[+k.dataset.i];if(b&&TXT.has(b.t)){const a=c.slice(3);act(()=>{if(a=="left")delete b.ta;else b.ta=a})}return} // alignment of the whole block
 if(c=="mark"||c=="code"){const r=s.rangeCount&&s.getRangeAt(0),on=(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement).closest(c);if(!r)return; // toggle a wrapping tag
@@ -458,9 +448,9 @@ pb=h("span",{style:"display:contents"},btn("",publish,Lp("Send all changes to Gi
 eb=h("div",{id:"eb"},pb);et=h("div",{id:"et",hidden:""});D.body.append(eb,et);if(draft[F.text])showText();
 if(PAGE&&!/^map\//.test(SRC)&&(PG=await pageObj(PAGE))){
 if(NEWP)D.title=(PG.title||"")+" · ASCW";
-eb.append(ib("↶","",()=>undo(1),Lp("Undo","Отменить")+" (Ctrl+Z)"),ib("↷","",()=>undo(0),Lp("Redo","Повторить")+" (Ctrl+Shift+Z)"),
+eb.append(ubn=ib("↶","",()=>undo(1),Lp("Undo","Отменить")+" (Ctrl+Z)"),rbn=ib("↷","",()=>undo(0),Lp("Redo","Повторить")+" (Ctrl+Shift+Z)"),
 ib("📄",Lp("Page","Страница"),settings,Lp("Title, description, background, subpages","Название, описание, фон, подстраницы")),ib("📱",Lp("Phone","Телефон"),preview,Lp("Preview on a phone screen","Как на экране телефона")),
-trb=ib("🌐","",nextTr,Lp("Next text written in one language only","Следующий текст без перевода")),ib("?","",help,Lp("Keyboard shortcuts","Горячие клавиши")),stb=h("span",{cls:"st"}))}
+stb=h("span",{cls:"st"}))}
 if(MP)eb.append(ib("📍",Lp("Add markers","Новые метки"),e=>{MKon^=1;e.currentTarget.classList.toggle("on",!!MKon);HT.classList.toggle("mke",!!MKon);if(MKon&&LBon)D.getElementById("lbb").click();
 if(MKon)toast(L("Click the map to place a marker. Drag markers to move them; click one to edit it.","Клик по карте ставит метку. Метки можно перетаскивать, клик по метке — редактировать."))},Lp("Place markers by clicking the map","Ставить метки кликом по карте")),
 ib("☰",Lp("Markers","Метки"),mkList,Lp("All markers","Все метки")),
