@@ -1,12 +1,11 @@
 {
  "title": "ASCW",
- "description": "Archive of the Second Continental War",
+ "description": "",
  "blocks": [
   {
    "t": "head",
    "k_en": "work-in-progress",
    "t_en": "Archive of the",
-   "d_en": "Fictional world, based on Cold War",
    "acc": true,
    "a_en": "SECOND CONTINENTAL WAR",
    "t_ru": "архив",
@@ -26,5 +25,7 @@
    "ru": "приятного чтения.",
    "ta": "center"
   }
- ]
+ ],
+ "title_ru": null,
+ "description_ru": null
 }
