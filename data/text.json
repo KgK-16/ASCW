@@ -54,5 +54,9 @@
  "tip_copy": {
   "en": "Copy coordinates (C)",
   "ru": "Скопировать координаты (C)"
+ },
+ "tip_ruler": {
+  "en": "Measure distance",
+  "ru": "Измерить расстояние"
  }
 }

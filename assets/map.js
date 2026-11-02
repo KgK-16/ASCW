@@ -4,12 +4,12 @@
 // Layers: geographic base (static/map/g*.webp) < country colours: light tint + inner colour band (canvas, toggleable) < country shapes for clicks/hover (svg) < borders of the version (static/map/<year>/b*.webp)
 // < selection: everything else dimmed, outline on top < graticule, labels, markers.
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
-[m,c,im,ov,sv,bi,hl,sl,mw,gx,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc,ld]="m c im ov sv bi hl sl mw gx g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc ld".split(" ").map($),
+[m,c,im,ov,sv,bi,hl,sl,mw,gx,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc,ld,zm,sb,mz]="m c im ov sv bi hl sl mw gx g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc ld zm sb mz".split(" ").map($),
 W=4096,H=2048,T0=320,T1=420, // visible timeline range
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-10L10 0 0 10-10 0zM0-7L7 0 0 7-7 0zM-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0z"], // marker shapes by kind (k): circle, circle in a diamond (capital)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
 P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d");
-let fv=[0,0],ft0=0,fr=0,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+let MON=0,MS=[],MP=[],MD=[0],sbK,fv=[0,0],ft0=0,fr=0,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
 try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
@@ -70,12 +70,29 @@ const mOn=q=>!(q.y0!=null&&yr<q.y0)&&!(q.y1!=null&&yr>q.y1),
 far=(q,zl=k/fit())=>(q.z==1&&zl<2.2)||(q.z==2&&zl<4.5),
 drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"} class="${far(q)?"z":""}${i===ms?" s":""}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="${q.k==1?15:12}" y="1"${q.f=="cap"?' class="c"':""}>${esc(mn(q))}</text></g>`).join("");posM()},
 posM=()=>{const zl=k/fit();mw.querySelectorAll("g").forEach((e,i)=>{const q=MK[i];if(!q)return;e.style.transform=`translate(${x+(q.o+180)/360*W*k}px,${y+(90-q.a)/180*H*k}px)`;
-e.classList.toggle("z",far(q,zl))});
+e.classList.toggle("z",far(q,zl))});drawMz();if(!G)sbU(2*Math.PI*RE*Math.max(.02,Math.cos(Math.min(1.5,Math.abs(Math.PI/2-(m.clientHeight/2-y)/k/H*Math.PI))))/(W*k));
 // graticule labels: light, pinned to the top / left edge of the view, hidden under the button column
 const t0=Math.max(y,0)+6,l0=Math.max(x,0)+6,xr=m.clientWidth-zc.parentNode.offsetWidth-82,yb=m.clientHeight-30; // sizes read once: no layout per label
 gx.querySelectorAll("span").forEach(e=>{if(e.dataset.o!=null){const X=x+(+e.dataset.o+180)/360*W*k+4;e.style.transform=`translate(${X}px,${t0}px)`;e.hidden=X<l0+40||X>xr}
 else{const Y=y+(90-e.dataset.a)/180*H*k-18;e.style.transform=`translate(${l0}px,${Y}px)`;e.hidden=Y<t0+18||Y>yb}})},
-esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;"),
+RE=6371, // the planet is Earth-sized: radius in km
+ll2v=(lo,la)=>{lo*=Math.PI/180;la*=Math.PI/180;return[Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo)]},
+v2ll=v=>[Math.atan2(v[0],v[2])*180/Math.PI,Math.asin(Math.max(-1,Math.min(1,v[1])))*180/Math.PI],
+km=d=>d.toLocaleString(ru()?"ru-RU":"en-US",{maximumFractionDigits:d<10?2:d<100?1:0})+L(" km"," км");
+function sbU(kp){ // scale bar: the longest round length (1, 2, 5 × 10ⁿ km) that fits in 100 px; kp = km per screen px at the view centre
+const L0=kp*100,e=10**Math.floor(Math.log10(L0)),n=[5,2,1].map(v=>v*e).find(v=>v<=L0)||e,key=n+"|"+HT.lang+"|"+(n/kp).toFixed(0);if(key==sbK)return;sbK=key;
+sb.firstChild.textContent=n<1?(n*1e3).toLocaleString()+L(" m"," м"):n.toLocaleString(ru()?"ru-RU":"en-US")+L(" km"," км");sb.lastChild.style.width=(n/kp).toFixed(1)+"px"}
+function msU(){ // measured route: great-circle arcs between the points, sampled every degree; cumulative distances
+MP=[];MD=[0];for(let i=1;i<MS.length;i++){const a=MS[i-1],b=MS[i],an=Math.acos(Math.max(-1,Math.min(1,a[0]*b[0]+a[1]*b[1]+a[2]*b[2]))),n=Math.max(1,Math.ceil(an*180/Math.PI)),q=[];
+MD.push(MD[i-1]+an*RE);for(let j=0;j<=n;j++){const t=j/n,sa=Math.sin(an),f=an<1e-9?1-t:Math.sin((1-t)*an)/sa,g2=an<1e-9?t:Math.sin(t*an)/sa;q.push([a[0]*f+b[0]*g2,a[1]*f+b[1]*g2,a[2]*f+b[2]*g2])}MP.push(q)}
+drawMz();if(G)rq()}
+function msTap(v,pts,cx,cy){ // measuring: a tap on a point removes it, anywhere else adds one
+const i=pts.findIndex(p=>p&&Math.hypot(p[0]-cx,p[1]-cy)<12);if(i>=0)MS.splice(i,1);else if(v)MS.push(v);msU()}
+function drawMz(){if(G||!MS.length){if(mz.firstChild)mz.innerHTML="";return} // flat map: the arcs bend as the real shortest way does
+let d="";const cw=m.clientWidth-140,sp=v=>{const[lo,la]=v2ll(v);return[x+(lo+180)/360*W*k,y+(90-la)/180*H*k,lo]};
+for(const q of MP){let pl=null;for(const v of q){const[X,Y,lo]=sp(v);d+=(pl==null||Math.abs(lo-pl)>180?"M":"L")+X.toFixed(1)+" "+Y.toFixed(1);pl=lo}}
+mz.innerHTML=`<path class="u" d="${d}"/><path d="${d}"/>`+MS.map((v,i)=>{const[X,Y]=sp(v);return`<circle cx="${X.toFixed(1)}" cy="${Y.toFixed(1)}" r="4.5"/>`+(i?`<text x="${(X+(X>cw?-9:9)).toFixed(1)}" y="${(Y-10).toFixed(1)}"${X>cw?' text-anchor="end"':""}>${km(MD[i])}</text>`:"")}).join("")}
 
 function names(){RG.forEach(r=>{r.n0??=r.name;r.r0??=r.ru;const o=COU[r.c]||{};r.name=o.en||r.n0;r.ru=o.ru||r.r0})} // names edited on the site win over the generated ones
 function setVer(){ // switch to the map version of the selected year
@@ -96,6 +113,7 @@ function panel(){if(ms!=null&&MK[ms]){const q=MK[ms];pt.textContent=mn(q);px.tex
 if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);px.textContent=(ru()?o.tru:o.ten)||L("Placeholder text","Текст-заглушка");MAP.onPanel?.(r)}}
 function col(on){CO=on;c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}drawOv()}
 zc.onclick=()=>col(!CO);
+zm.onclick=()=>{MON=!MON;zm.classList.toggle("on",MON);D.body.classList.toggle("msr",MON);if(!MON){MS=[];msU()}};
 
 m.onpointerdown=e=>{if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0;fv=[0,0];cancelAnimationFrame(fr);m.classList.add("dr")};
 m.onpointermove=e=>{coords(e);const q=P[e.pointerId];if(!q)return;
@@ -104,6 +122,7 @@ if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/
 m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];if(!Object.keys(P).length)m.classList.remove("dr");
 if(one&&mv>6&&performance.now()-ft0<80){let l=0;const st=t=>{const dt=l?Math.min((t-l)/1e3,.05):0;l=t;x+=fv[0]*dt;y+=fv[1]*dt;set();const d=Math.exp(-dt*4);fv=fv.map(v=>v*d);if(Math.hypot(...fv)>15)fr=requestAnimationFrame(st)};fr=requestAnimationFrame(st)} // a flicked map glides on
 if(!one||mv>6||e.type!="pointerup")return;const r=m.getBoundingClientRect(),t=Date.now();
+if(MON){const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k;return msTap(mx>=0&&mx<=W&&my>=0&&my<=H&&ll2v(mx/W*360-180,90-my/H*180),MS.map(v=>{const[lo,la]=v2ll(v);return[r.left+x+(lo+180)/360*W*k,r.top+y+(90-la)/180*H*k]}),e.clientX,e.clientY)}
 if(t-tap<300){zoom(2,e.clientX-r.left,e.clientY-r.top,1);tap=0;return}
 tap=t;const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k,g=D.elementFromPoint(e.clientX,e.clientY)?.closest("#mw [data-m]");
 if(g&&!MAP.onTap)return pickM(+g.dataset.m);if(!MAP.onTap?.(mx,my,g&&+g.dataset.m))pick(hit(mx,my))};
@@ -124,7 +143,7 @@ const fb=()=>{const t=D.createElement("textarea");t.value=CP;D.body.append(t);t.
 navigator.clipboard?navigator.clipboard.writeText(CP).catch(fb):fb();
 cd.textContent=L("COPIED: ","СКОПИРОВАНО: ")+CP;clearTimeout(fl);fl=setTimeout(()=>{fl=0;cd.innerHTML=CT},1200)}
 cd.onclick=copy;
-D.addEventListener("keydown",e=>{if(e.target.closest?.("input:not([type=range]),textarea,select,[contenteditable]"))return; /* typing in a field is not a shortcut */if(e.key=="Escape")tlOpen()?tlClose():pick();else if(tlOpen()||e.ctrlKey||e.metaKey||e.altKey)return;else if(e.code=="KeyC"&&!getSelection().toString())copy();
+D.addEventListener("keydown",e=>{if(e.target.closest?.("input:not([type=range]),textarea,select,[contenteditable]"))return; /* typing in a field is not a shortcut */if(e.key=="Escape")tlOpen()?tlClose():MON?zm.click():pick();else if(tlOpen()||e.ctrlKey||e.metaKey||e.altKey)return;else if(e.code=="KeyC"&&!getSelection().toString())copy();
 else if(e.key=="+"||e.key=="=")zi.click();else if(e.key=="-")zo.click();
 else if(/^Arrow/.test(e.key)){e.preventDefault();const h=e.key=="ArrowLeft"?1:e.key=="ArrowRight"?-1:0,v=e.key=="ArrowUp"?1:e.key=="ArrowDown"?-1:0; // arrows: look west / east / north / south
 if(G){gv=[h*(gD-1)*.9,v*(gD-1)*.9];fly=null;rq()}else{x+=h*m.clientWidth/4;y+=v*m.clientHeight/4;set(1)}}});
@@ -147,7 +166,7 @@ zt.onclick=()=>{tl.classList.add("o");tlB();tw.scrollLeft=60+(yr-T0)*PY-tw.clien
 xt.onclick=tlClose;
 
 if(matchMedia("(hover:none)").matches){const z=D.querySelector(".z");z.classList.add("hint");setTimeout(()=>z.classList.remove("hint"),3500);z.addEventListener("pointerdown",()=>z.classList.remove("hint"),{once:true})}
-D.addEventListener("lang",()=>{rs();drawM();panel();showC();if(tlOpen())tlB();if(G)tq()});
+D.addEventListener("lang",()=>{sbK=0;rs();drawM();panel();showC();if(tlOpen())tlB();if(G)tq()});
 addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
 const MAP=window.MAP={ // editor hooks
 redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
@@ -255,6 +274,7 @@ g.onpointermove=e=>{gC(e);const q=GP[e.pointerId];if(!q)return;const o=two(GP),d
 if(o){const n=two(GP);gT=cl(gT*o.d/n.d);gm=99;at(n.x,n.y)}else{const s=2*(gD-1)*SC/g.clientHeight,t=performance.now(),dt=Math.max(t-gt0,8)/1e3;gt0=t;ya+=dx*s;pa=Math.min(1.4,Math.max(-1.4,pa+dy*s));gv=[gv[0]*.4+dx*s/dt*.6,gv[1]*.4+dy*s/dt*.6]}};
 g.onpointerup=g.onpointercancel=e=>{const one=GP[e.pointerId]&&Object.keys(GP).length==1;delete GP[e.pointerId];if(!Object.keys(GP).length)g.classList.remove("dr");if(performance.now()-gt0>80||gm>=99)gv=[0,0];
 if(!one||gm>=6||e.type!="pointerup")return;gv=[0,0];const t=Date.now(),q=gll(e);
+if(MON){const r=g.getBoundingClientRect();return msTap(q&&[q.x,q.y,q.z],MS.map(v=>{const p=gp(v);return p&&[r.left+p[0],r.top+p[1]]}),e.clientX,e.clientY)}
 if(t-gtap<300){gtap=0;anc=null;if(q)fly={y:Math.atan2(-q.x,q.z),p:Math.min(1.4,Math.max(-1.4,Math.atan2(q.y,Math.hypot(q.x,q.z))))};gT=cl(gT/1.8);return} // double click: fly there and zoom in
 gtap=t;const m=D.elementFromPoint(e.clientX,e.clientY)?.closest("#gw [data-m]");if(m)return pickM(+m.dataset.m);pick(q&&hit(q.mx,q.my))};
 g.onlostpointercapture=e=>{delete GP[e.pointerId];if(!Object.keys(GP).length)g.classList.remove("dr")};
@@ -316,6 +336,9 @@ if(c=="M"||c=="m"){x=x0=n()+(c=="m"?x:0);y=y0=n()+(c=="m"?y:0);G.push(q=[]);u(x,
 else if(c=="l")pt(x+n(),y+n());else if(c=="L")pt(n(),n());else if(c=="h")pt(x+n(),y);else if(c=="H")pt(n(),y);else if(c=="v")pt(x,y+n());else if(c=="V")pt(x,n());
 else if(c=="z"||c=="Z"){pt(x0,y0);c=""}else i++}
 let a=0,b=0,e=0;G.flat().forEach((v,j)=>j%3==0?a+=v:j%3==1?b+=v:e+=v);const l=Math.hypot(a,b,e)||1;r.cn=[a/l,b/l,e/l];return G}
+function gp(v){ // planet point -> screen px in the globe view (null on the far side)
+const w=g.clientWidth,h=g.clientHeight,Y=ya+sa,c=Math.cos(Y),s=Math.sin(Y),e=Math.cos(pa),f=Math.sin(pa),x1=c*v[0]+s*v[2],z1=-s*v[0]+c*v[2],y2=e*v[1]-f*z1,z2=f*v[1]+e*z1;
+if(z2<1/gD)return null;const dp=gD-z2;return[(x1/(SC*AS)/dp+1)*w/2,(1-y2/SC/dp)*h/2]}
 function gO(w,h,r){ // vector country edges above the globe, as on the flat map: colour bands inside the borders, selection glow + 2 px line; crisp at any zoom
 const o=go.getContext("2d");o.setTransform(r,0,0,r,0,0);o.clearRect(0,0,w,h);
 const Y=ya+sa,c=Math.cos(Y),s=Math.sin(Y),e=Math.cos(pa),f=Math.sin(pa),hz=1/gD,Rp=h/(2*SC*Math.sqrt(gD*gD-1)),Lo=ry(SW,-sa),S0=R[sel];
@@ -327,7 +350,12 @@ const dp=gD-z2,X=(x1/(SC*AS)/dp+1)*w/2,V=(1-y2/SC/dp)*h/2;on?P.lineTo(X,V):P.mov
 return any&&[P,C]};
 if(CO)for(const rg of RG){if(rg==S0)continue;const a=pr(rg,1);if(!a)continue;const n=rg.cn,d=n[0]*Lo[0]+n[1]*Lo[1]+n[2]*Lo[2];
 o.save();o.clip(a[1],"evenodd");o.globalAlpha=.85*Math.min(1,Math.max(.2,.6+d*2));o.strokeStyle=rg.c;o.lineWidth=7;o.stroke(a[0]);o.restore()} // dimmer on the night side
-const a=S0&&pr(S0);if(!a)return;o.strokeStyle="#e8e8e0";o.globalAlpha=.22;o.lineWidth=7;o.stroke(a[0]);o.globalAlpha=1;o.lineWidth=2;o.stroke(a[0])}
+const a=S0&&pr(S0);if(a){o.strokeStyle="#e8e8e0";o.globalAlpha=.22;o.lineWidth=7;o.stroke(a[0]);o.globalAlpha=1;o.lineWidth=2;o.stroke(a[0])}
+sbU(RE*2*SC*(gD-1)/h);if(!MS.length)return; // measured route, as on the flat map
+const P=new Path2D;for(const q of MP){let on=0;for(const v of q){const p=gp(v);if(!p){on=0;continue}on?P.lineTo(...p):P.moveTo(...p);on=1}}
+o.strokeStyle="#000a";o.lineWidth=5;o.stroke(P);o.strokeStyle="#e8e8e0";o.lineWidth=2;o.stroke(P);o.font='400 13px "Exo 2",sans-serif';o.textBaseline="middle";
+MS.forEach((v,i)=>{const p=gp(v);if(!p)return;o.beginPath();o.arc(p[0],p[1],4.5,0,6.2832);o.fillStyle="#e8e8e0";o.fill();o.lineWidth=1.5;o.strokeStyle="#000";o.stroke();
+if(i){const t=km(MD[i]),l=p[0]>w-140;o.textAlign=l?"right":"left";o.lineWidth=3;o.strokeStyle="#000b";o.strokeText(t,p[0]+(l?-9:9),p[1]-10);o.fillText(t,p[0]+(l?-9:9),p[1]-10)}})}
 function gF(w,h){ // per frame: project names, fade at the horizon, hide by zoom and where they would overlap a more important one
 const Y=ya+sa,c=Math.cos(Y),s=Math.sin(Y),e=Math.cos(pa),f=Math.sin(pa),zl=Math.PI/(2*SC*(gD-1)),hz=1/gD,pr=Math.PI/H*h/2/SC,mx=Math.min(20,Math.max(13,Math.min(w,h)/28)),B=[],sel=GO.find(q=>q.m===ms);
 for(const q of sel?[sel,...GO.filter(v=>v!=sel)]:GO){const[px,py,pz]=q.p,x1=c*px+s*pz,z1=-s*px+c*pz,y2=e*py-f*z1,z2=f*py+e*z1,dp=gD-z2,
