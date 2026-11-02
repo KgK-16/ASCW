@@ -35,6 +35,7 @@ function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>
 // ---- flat map ----
 const fit=()=>m.clientHeight/H,kmax=()=>Math.max(2,fit());
 function set(anim){
+if(!isFinite(k+x+y)){k=fit();x=y=0} // never keep a broken view
 k=Math.min(Math.max(k,fit()),kmax());
 const w=W*k,h=H*k,cw=m.clientWidth,ch=m.clientHeight;
 x=w<cw?(cw-w)/2:Math.min(0,Math.max(cw-w,x));
@@ -366,9 +367,10 @@ let on=al>.05&&(q.c||!far(q.q,zl))&&!B.some(b=>b[0]<bx[2]-g&&bx[0]+g<b[2]&&b[1]<
 q.d.style.transform=`translate(${Math.round(X)}px,${Math.round(V)}px)`; // whole pixels and real font sizes: text does not shimmer
 if(q.c&&q.fs!==fs)q.d.firstChild.style.fontSize=(q.fs=fs)+"px";
 const o=(al*(q.o??1)).toFixed(2);if(q.ov!==o)q.d.style.opacity=q.ov=o;if(q.on!==on)q.d.classList.toggle("gh",!(q.on=on))}}
-function sw(){G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";const cw=m.clientWidth,ch=m.clientHeight; // the view stays on the same place at a similar scale
+function sw(){const gr=g.getBoundingClientRect(),q=G&&SC&&gr.width&&gll({clientX:gr.left+gr.width/2,clientY:gr.top+gr.height/2}); // globe centre, read while the globe is still shown
+G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";const cw=m.clientWidth,ch=m.clientHeight; // the view stays on the same place at a similar scale
 if(G){const lo=(cw/2-x)/k/W*6.2832-3.1416,la=1.5708-(ch/2-y)/k/H*3.1416,sc=.364*Math.max(1,g.clientHeight/g.clientWidth);ya=-lo-sa;pa=Math.min(1.4,Math.max(-1.4,la));gv=[0,0];fly=anc=null;gD=gT=cl(1+Math.PI/(2*sc*k/fit()));gB()}
-else{const r=g.getBoundingClientRect(),q=SC&&gll({clientX:r.left+r.width/2,clientY:r.top+r.height/2});if(q){k=Math.PI/(2*SC*(gD-1))*fit();k=Math.min(Math.max(k,fit()),kmax());x=cw/2-q.mx*k;y=ch/2-q.my*k;set()}}}
+else{if(q&&isFinite(q.mx+q.my)){k=Math.min(Math.max(Math.PI/(2*SC*(gD-1))*fit(),fit()),kmax());x=cw/2-q.mx*k;y=ch/2-q.my*k}set()}}
 function gB(){ // borders of the current version for the globe texture
 const v=cv;if(!v.b)return tq();const i=new Image;i.onload=()=>{if(v!=cv)return;const o=bb.getContext("2d");o.clearRect(0,0,bb.width,bb.height);o.drawImage(i,0,0,bb.width,bb.height);tq()};i.src=bsrc(2)} // 4096 px level = globe texture size
 zg.onclick=()=>{if(gl)return sw();if(busy)return;busy=1;ld.hidden=false;zg.setAttribute("aria-busy","true");const i=new Image,done=()=>{busy=0;ld.hidden=true;zg.removeAttribute("aria-busy")};i.onerror=done;
