@@ -12,6 +12,7 @@ section{width:100%;padding:0;border:0;position:relative;overflow:hidden}
 #gw i{display:flex;align-items:center;transform:translate(-11px,-50%);font-style:normal;pointer-events:auto;cursor:pointer}#gw svg{width:22px;height:22px;flex:none;overflow:visible}#gw path{fill:#e8e8e0;stroke:#000;stroke-width:1.5px;stroke-linejoin:round}#gw .s path{fill:#e8b04a}
 #gw b{margin-left:1px;font:400 14px Play,sans-serif;letter-spacing:1px;text-transform:uppercase;color:#e8e8e0;-webkit-text-stroke:3px #000b;paint-order:stroke fill}#gw b.d{margin-left:4px}#gw b[data-c]{font-size:17px;text-decoration:underline;text-underline-offset:3px}
 .g #m{visibility:hidden}.g #g{display:block}#m.dr,#g.dr{cursor:grabbing}
+#fcv{position:absolute;left:0;top:0;width:100%;height:100%;display:block}#m.fg .mc>img,#m.fg .mc>canvas{display:none}
 .mc{position:absolute;left:0;top:0;width:4096px;height:2048px;transform-origin:0 0}
 .mc.t{transition:transform .25s}
 .mc>*{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
@@ -70,7 +71,7 @@ aside>button{position:absolute;right:6px;top:2px;font-size:20px;width:40px;heigh
 <button type="button" id="cd" {{ partial "tip" "tip_copy" }}>—</button><div id="sb" aria-hidden="true"><span></span><i></i></div>
 <div id="ld" hidden role="status"><i></i></div>
 <div id="g"></div>
-<div id="m"><div id="c" class="mc"><img id="im" alt="" decoding="async"><canvas id="ov" class="ov" width="4096" height="2048"></canvas><svg id="sv" class="sv" viewBox="0 0 4096 2048"></svg><img id="bi" alt="" decoding="async"><svg id="hl" class="hl" viewBox="0 0 4096 2048"></svg><svg id="sl" viewBox="0 0 4096 2048"></svg></div><svg id="mw"></svg><svg id="mz"></svg><div id="gx"></div></div>
+<div id="m"><canvas id="fcv"></canvas><div id="c" class="mc"><img id="im" alt="" decoding="async"><canvas id="ov" class="ov" width="4096" height="2048"></canvas><svg id="sv" class="sv" viewBox="0 0 4096 2048"></svg><img id="bi" alt="" decoding="async"><svg id="hl" class="hl" viewBox="0 0 4096 2048"></svg><svg id="sl" viewBox="0 0 4096 2048"></svg></div><svg id="mw"></svg><svg id="mz"></svg><div id="gx"></div></div>
 </section></main>
 {{ with partial "js" (resources.Get "map.js") -}}
 <script>var U="{{ "" | relURL }}",V={{ (resources.Get "map.json").Content | safeJS }},MK={{ (resources.Get "markers.json").Content | safeJS }},EV={{ (resources.Get "events.json").Content | safeJS }},COU={{ (resources.Get "countries.json").Content | safeJS }};{{ .Content | safeJS }}</script>

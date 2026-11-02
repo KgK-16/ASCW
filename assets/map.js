@@ -12,7 +12,7 @@ P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d"),
 cq=Object.assign(c.cloneNode(false),{id:"",hidden:true}), // the world repeats east and west: a second copy of the map layers, shown only where the seam is in view
 wx=v=>(v%W+W)%W; // map x wrapped into the world
 c.after(cq);cq.setAttribute("aria-hidden","true");
-let cqd=1,MR,GR,VW=0,VH=0,ZW=0,GW=0,GH=0,GX=[],ovK,cdr=0,MG=null,MON=0,MS=[],MP=[],MD=[0],sbK,fv=null,fdc=8,fa=0,fl0=0,HS=[],vD=0,vT=0,fan=null,ffl=null,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+let FG=null,cqd=1,MR,GR,VW=0,VH=0,ZW=0,GW=0,GH=0,GX=[],ovK,cdr=0,MG=null,MON=0,MS=[],MP=[],MD=[0],sbK,fv=null,fdc=8,fa=0,fl0=0,HS=[],vD=0,vT=0,fan=null,ffl=null,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
 try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
@@ -46,14 +46,14 @@ x-=w*Math.ceil(x/w); // no east / west edge: x stays in (-w, 0], the copy covers
 y=h<ch?(ch-h)/2:Math.min(0,Math.max(ch-h,y));
 an=anim;if(!raf)raf=requestAnimationFrame(apply); // at most one DOM update per frame
 const n=W*k*devicePixelRatio,l=n>4500?3:n>2200?2:n>1100?1:0; // image levels 1024/2048/4096/8192 px
-if(l>lv){if(lv<0&&l)im.src=U+"map/g0.webp"; // light preview while the sharp level loads
+if(!FG&&l>lv){if(lv<0&&l)im.src=U+"map/g0.webp"; // light preview while the sharp level loads
 lv=l;load(im,U+`map/g${l}.webp`);lvB()}}
-function lvB(){if(lv<0)return;bi.hidden=!cv.b;cqd=1;if(cv.b)load(bi,bsrc(lv))}
-function apply(){raf=0;posM();c.classList.toggle("t",!!an);mw.classList.toggle("t",!!an);c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
+function lvB(){if(FG)return fgB();if(lv<0)return;bi.hidden=!cv.b;cqd=1;if(cv.b)load(bi,bsrc(lv))}
+function apply(){raf=0;fdr();posM();c.classList.toggle("t",!!an);mw.classList.toggle("t",!!an);c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
 const sq=x+W*k<VW;if(sq){if(cqd)cqS();cq.className=c.className;cq.style.transform=`translate(${x+W*k}px,${y}px) scale(${k})`}if(cq.hidden==sq)cq.hidden=!sq;
 c.classList.add("mv");clearTimeout(mvT);mvT=setTimeout(rest,250)} // while moving: GPU layer only, no restyle/repaint
 function rest(){c.classList.remove("mv");cq.classList.remove("mv");if(k!=kk){c.style.setProperty("--k",kk=k);cq.style.setProperty("--k",k)}}
-function cqS(){cqd=0;cq.innerHTML=c.innerHTML;cq.querySelectorAll("[id]").forEach(e=>e.removeAttribute("id"));cq.querySelector("canvas").getContext("2d").drawImage(ov,0,0)} // refresh the copy (only after the map layers changed, and only when it is in view) // after: zoom-dependent widths, crisp re-raster
+function cqS(){cqd=0;cq.innerHTML=c.innerHTML;cq.querySelectorAll("[id]").forEach(e=>e.removeAttribute("id"));if(!FG)cq.querySelector("canvas").getContext("2d").drawImage(ov,0,0)} // refresh the copy (only after the map layers changed, and only when it is in view) // after: zoom-dependent widths, crisp re-raster
 // Flat map controls, built on the globe's: zoom is kept as a camera distance (vD) with the globe's mapping to scale, sensitivity and easing,
 // so a wheel notch, a button press or a double click zooms the same way and as smoothly in 2D as in 3D.
 const fsc=()=>.364*Math.max(1,VH/VW), // the globe's view constant for this window
@@ -70,6 +70,41 @@ if(ffl){const f=Math.min(1,dt*5),w=W*k,e0=VW/2-x-ffl.mx*k,ex=e0-w*Math.round(e0/
 if(fv){x+=fv[0]*dt;y+=fv[1]*dt;set();const d=Math.exp(-dt*fdc);fv=[fv[0]*d,fv[1]*d];if(Math.hypot(...fv)<12)fv=null;else on=1}
 if(on)fa=requestAnimationFrame(fmo);else fl0=0}
 function fz(f,cx,cy){zst();vT=vcl(vT*f);fv=null;ffl=null;fan=cx==null?null:{mx:(cx-x)/k,my:(cy-y)/k,sx:cx,sy:cy};fgo()} // zoom by a distance factor, towards a screen point or the centre
+// The flat map's pictures (relief, country colours, borders) are drawn by WebGL as mipmapped textures, like the globe: panning and zooming
+// only move a camera, nothing is decoded or re-rasterised (huge <img> layers did that and froze); the world repeats east-west by itself.
+// Without WebGL the <img> / <canvas> layers inside #c are used instead.
+function fgI(){const e=$("fcv"),f=e&&e.getContext("webgl",{alpha:false,antialias:false});if(!f)return;
+const sh=(t,src)=>{const o=f.createShader(t);f.shaderSource(o,src);f.compileShader(o);return o},q=f.createProgram();
+f.attachShader(q,sh(f.VERTEX_SHADER,"attribute vec2 g;void main(){gl_Position=vec4(g,0.,1.);}"));
+f.attachShader(q,sh(f.FRAGMENT_SHADER,"#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\nuniform sampler2D T;uniform sampler2D B;uniform sampler2D O;uniform vec4 V;uniform vec2 S;uniform float co;"+
+"void main(){vec2 p=vec2(gl_FragCoord.x,S.y-gl_FragCoord.y)/V.w,u=vec2((p.x-V.x)/(V.z*4096.),(p.y-V.y)/(V.z*2048.));vec4 o=texture2D(O,u)*co;gl_FragColor=vec4((texture2D(T,u).rgb*(1.-o.a)+o.rgb)*(1.-texture2D(B,u).a),1.);}"));
+f.bindAttribLocation(q,0,"g");f.linkProgram(q);if(!f.getProgramParameter(q,f.LINK_STATUS))return;f.useProgram(q);
+f.bindBuffer(f.ARRAY_BUFFER,f.createBuffer());f.bufferData(f.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),f.STATIC_DRAW);f.enableVertexAttribArray(0);f.vertexAttribPointer(0,2,f.FLOAT,0,0,0);
+const MX=f.getParameter(f.MAX_TEXTURE_SIZE),A=f.getExtension("EXT_texture_filter_anisotropic"),
+nt=(u,fm,px)=>{f.activeTexture(f.TEXTURE0+u);const t=f.createTexture();f.bindTexture(f.TEXTURE_2D,t);f.texParameteri(f.TEXTURE_2D,f.TEXTURE_MIN_FILTER,f.LINEAR_MIPMAP_LINEAR);
+f.texParameteri(f.TEXTURE_2D,f.TEXTURE_WRAP_S,f.REPEAT);f.texParameteri(f.TEXTURE_2D,f.TEXTURE_WRAP_T,f.CLAMP_TO_EDGE); // REPEAT: the endless east-west world
+if(A)f.texParameterf(f.TEXTURE_2D,A.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,f.getParameter(A.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+f.texImage2D(f.TEXTURE_2D,0,fm,1,1,0,fm,f.UNSIGNED_BYTE,new Uint8Array(px));f.generateMipmap(f.TEXTURE_2D);f.uniform1i(f.getUniformLocation(q,"TBO"[u]),u);return t};
+FG={f,e,V:f.getUniformLocation(q,"V"),S:f.getUniformLocation(q,"S"),co:f.getUniformLocation(q,"co"),T:nt(0,f.RGB,[21,33,57,0]),B:nt(1,f.ALPHA,[0,0,0,0]),O:nt(2,f.RGBA,[0,0,0,0]),
+lv:MX>=8192&&!(matchMedia("(pointer:coarse)").matches&&(navigator.deviceMemory||4)<6)?3:2}; // 8192 px where the device can hold it
+e.addEventListener("webglcontextlost",()=>{FG=null;m.classList.remove("fg");lv=-1;cqd=1;set();lvB();drawOv()}); // GPU reset: back to the picture layers
+m.classList.add("fg");
+const bm=src=>fetch(src).then(r=>r.blob()).then(b=>createImageBitmap(b)); // decoded off the main thread
+bm(U+"map/g1.webp").then(i=>{fgT(i);return FG&&bm(U+`map/g${FG.lv}.webp`)}).then(i=>i&&idle(()=>fgT(i)),()=>{})} // quick level first, then the sharp one
+function idle(fn){(function t(){fa||raf||Object.keys(P).length?setTimeout(t,150):fn()})()} // big texture uploads wait until the map is still, so they never stall a movement
+function fgT(i){if(!FG)return i.close?.();const f=FG.f;f.activeTexture(f.TEXTURE0);f.bindTexture(f.TEXTURE_2D,FG.T);f.texImage2D(f.TEXTURE_2D,0,f.RGB,f.RGB,f.UNSIGNED_BYTE,i);f.generateMipmap(f.TEXTURE_2D);i.close?.();fdr()}
+function fgB(){if(!FG)return;const v=cv; // borders of the version, the site's own levels as mipmaps (thin lines stay visible zoomed out)
+if(!v.b)return mipA(FG.f,FG.B,1,[]),fdr();Promise.all(Array.from({length:FG.lv+1},(_,j)=>fetch(bsrc(FG.lv-j)).then(r=>r.blob()).then(b=>createImageBitmap(b)))).then(a=>idle(()=>{if(FG&&v==cv){mipA(FG.f,FG.B,1,a);fdr()}a.forEach(i=>i.close?.())}),()=>{})}
+function fgO(){if(!FG)return;const f=FG.f;f.activeTexture(f.TEXTURE2);f.bindTexture(f.TEXTURE_2D,FG.O);f.pixelStorei(f.UNPACK_PREMULTIPLY_ALPHA_WEBGL,true); // country colours: redrawn only when they change
+f.texImage2D(f.TEXTURE_2D,0,f.RGBA,f.RGBA,f.UNSIGNED_BYTE,ov);f.pixelStorei(f.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);f.generateMipmap(f.TEXTURE_2D);fdr()}
+function fdr(){if(!FG||G)return;const f=FG.f,r=Math.min(devicePixelRatio||1,2),w=Math.round(VW*r),h=Math.round(VH*r); // one frame: a single full-screen triangle
+if(FG.e.width!=w||FG.e.height!=h){FG.e.width=w;FG.e.height=h}f.viewport(0,0,w,h);f.uniform4f(FG.V,x,y,k,w/VW);f.uniform2f(FG.S,w,h);f.uniform1f(FG.co,CO?1:0);f.drawArrays(f.TRIANGLES,0,3)}
+function mipA(f,t,u,im){ // alpha texture whose mipmaps are the given levels, smaller ones drawn from the last
+f.activeTexture(f.TEXTURE0+u);f.bindTexture(f.TEXTURE_2D,t);const A=f.ALPHA,T2=f.TEXTURE_2D,UB=f.UNSIGNED_BYTE;
+if(!im.length){f.texImage2D(T2,0,A,1,1,0,A,UB,new Uint8Array(1));f.generateMipmap(T2)}
+else{let l=0,pv;for(const i of im)f.texImage2D(T2,l++,A,A,UB,pv=i);let w=pv.width,h=pv.height;
+while(w>1||h>1){w=Math.max(1,w>>1);h=Math.max(1,h>>1);const e=D.createElement("canvas");e.width=w;e.height=h;e.getContext("2d").drawImage(pv,0,0,w,h);f.texImage2D(T2,l++,A,A,UB,pv=e)}}
+f.activeTexture(f.TEXTURE0)}
 function zoom(f,px,py,anim){const k2=Math.min(Math.max(k*f,fit()),kmax());x=px-(px-x)*k2/k;y=py-(py-y)*k2/k;k=k2;set(anim)}
 
 function rs(){ // (re)build the SVG overlays: country shapes, graticule, labels
@@ -85,7 +120,7 @@ cqd=1;hl.innerHTML=r?`<path class="dm" fill-rule="evenodd" d="M0 0H${W}V${H}H0z$
 drawOv()}
 function drawOv(){ // country colours as one raster layer (cheap to pan/zoom): light tint + inner colour band; the selected country keeps pure relief
 cqd=1;if(CO){const o=ox;o.clearRect(0,0,W,H);o.lineJoin="round";
-RG.forEach(r=>{const q=path(r);o.globalAlpha=r==R[sel]?0:.28;o.fillStyle=r.c;o.fill(q,"evenodd");o.save();o.clip(q,"evenodd");o.globalAlpha=.85;o.strokeStyle=r.c;o.lineWidth=14;o.stroke(q);o.restore()});o.globalAlpha=1}
+RG.forEach(r=>{const q=path(r);o.globalAlpha=r==R[sel]?0:.28;o.fillStyle=r.c;o.fill(q,"evenodd");o.save();o.clip(q,"evenodd");o.globalAlpha=.85;o.strokeStyle=r.c;o.lineWidth=14;o.stroke(q);o.restore()});o.globalAlpha=1;fgO()}
 if(G)tq()}
 // markers live outside the zoomed layer and are re-positioned each frame, so icons and names stay crisp vectors at any zoom
 // marker: {o lon, a lat, n / r name EN / RU, k kind, f font, ten / tru text, y0 / y1 years shown, z importance: 0 always, 1 from medium zoom, 2 close-up only}
@@ -141,7 +176,7 @@ p.classList.toggle("o",!!(sel||ms!=null));hi();drawM()}
 function pickM(i){ms=i;sel=null;hi();panel();p.classList.add("o");drawM()} // marker selected: its name and text in the side panel
 function panel(){if(ms!=null&&MK[ms]){const q=MK[ms];pt.textContent=mn(q);px.textContent=(ru()?q.tru||q.ten:q.ten||q.tru)||"";MAP.onMarker?.(ms);return}
 if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);px.textContent=(ru()?o.tru:o.ten)||L("Placeholder text","Текст-заглушка");MAP.onPanel?.(r)}}
-function col(on){CO=on;c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}hi()}
+function col(on){CO=on;fdr();c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}hi()}
 zc.onclick=()=>col(!CO);
 function mode(n){MON=n;zm.classList.toggle("on",n==1);zk.classList.toggle("on",n==2);D.body.classList.toggle("msr",!!n);MS=[];msU()} // measuring: 0 off, 1 route (ruler), 2 circle
 zm.onclick=()=>mode(MON==1?0:1);zk.onclick=()=>mode(MON==2?0:2);
@@ -209,7 +244,7 @@ sel:()=>sel&&R[sel],pick,W,H};
 function sz(){VW=m.clientWidth;VH=m.clientHeight;ZW=zc.parentNode.offsetWidth;GW=g.clientWidth||VW;GH=g.clientHeight||VH;MR=m.getBoundingClientRect();GR=G?g.getBoundingClientRect():MR}
 addEventListener("scroll",sz,{passive:true}); // positions on screen are cached too (cursor coordinates on every pointer move) // view sizes, read only when they change
 new ResizeObserver(()=>{sz();set();if(G)rq()}).observe(m);
-sz();upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();lx=(VW/2-x)/k;ly=(VH/2-y)/k;showC(); /* start with the view centre */D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
+sz();fgI();upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();lx=(VW/2-x)/k;ly=(VH/2-y)/k;showC(); /* start with the view centre */D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
@@ -347,12 +382,7 @@ if(sel){const q=path(R[sel]),d=new Path2D;d.rect(0,0,W,H);d.addPath(q);o.save();
 gL();
 gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,ot);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,true);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,tc);
 gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.generateMipmap(gl.TEXTURE_2D);gl.activeTexture(gl.TEXTURE0)}
-function upB(im){ // borders texture: the site's own levels as its mipmaps (they keep thin lines visible when zoomed out), smaller ones drawn from the last
-gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,bt);const A=gl.ALPHA,T2=gl.TEXTURE_2D,UB=gl.UNSIGNED_BYTE;
-if(!im.length)gl.texImage2D(T2,0,A,1,1,0,A,UB,new Uint8Array(1)),gl.generateMipmap(T2);
-else{let l=0,pv;for(const i of im)gl.texImage2D(T2,l++,A,A,UB,pv=i);let w=pv.width,h=pv.height;
-while(w>1||h>1){w=Math.max(1,w>>1);h=Math.max(1,h>>1);const e=D.createElement("canvas");e.width=w;e.height=h;e.getContext("2d").drawImage(pv,0,0,w,h);gl.texImage2D(T2,l++,A,A,UB,pv=e)}}
-gl.activeTexture(gl.TEXTURE0)}
+function upB(im){mipA(gl,bt,2,im)} // globe borders: the site's own levels as mipmaps
 function at(cx,cy){const q=gll({clientX:cx,clientY:cy}),r=g.getBoundingClientRect();anc=q&&{p:[q.x,q.y,q.z],x:cx-r.left,y:cy-r.top}} // zoom anchor
 function gC(e){const q=gll(e);if(q){lx=q.mx;ly=q.my;showC()}} // coordinates under the cursor, as on the flat map
 function gll(e){ // screen point -> planet point {x,y,z} and map point {mx,my}; null off the globe
