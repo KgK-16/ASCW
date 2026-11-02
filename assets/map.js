@@ -9,7 +9,7 @@ W=4096,H=2048,T0=320,T1=420, // visible timeline range
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-10L10 0 0 10-10 0zM0-7L7 0 0 7-7 0zM-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0z"], // marker shapes by kind (k): circle, circle in a diamond (capital)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
 P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d");
-let MON=0,MS=[],MP=[],MD=[0],sbK,fv=[0,0],ft0=0,fr=0,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+let MG=null,MON=0,MS=[],MP=[],MD=[0],sbK,fv=[0,0],ft0=0,fr=0,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
 try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
@@ -91,6 +91,8 @@ if(MON==2&&MS.length==2){const[C,E]=MS,t=Math.acos(Math.max(-1,Math.min(1,C[0]*E
 cr=(p,q)=>[p[1]*q[2]-p[2]*q[1],p[2]*q[0]-p[0]*q[2],p[0]*q[1]-p[1]*q[0]],nz=v=>{const l=Math.hypot(...v);return v.map(c=>c/l)},u=nz(cr(C,a)),w=cr(C,u),q=[];
 for(let j=0;j<=180;j++){const f=j/180*6.2832,c=Math.cos(f)*Math.sin(t),s2=Math.sin(f)*Math.sin(t);q.push([0,1,2].map(i=>C[i]*Math.cos(t)+u[i]*c+w[i]*s2))}MP.push(q)}
 drawMz();if(G)rq()}
+function mHit(cx,cy){if(!MON)return-1;const r=(G?g:m).getBoundingClientRect(); // measuring point under the pointer (screen px), -1 if none
+return MS.findIndex(v=>{let p;if(G)p=gp(v);else{const[lo,la]=v2ll(v);p=[x+(lo+180)/360*W*k,y+(90-la)/180*H*k]}return p&&Math.hypot(r.left+p[0]-cx,r.top+p[1]-cy)<12})}
 function msTap(v,pts,cx,cy){ // measuring: a tap on a point removes it, anywhere else adds one
 const i=pts.findIndex(p=>p&&Math.hypot(p[0]-cx,p[1]-cy)<12);if(i>=0)MS.splice(i,1);else if(v){if(MON==2&&MS.length>1)MS=[];MS.push(v)}msU()} // circle: centre, then a point on the edge; the next tap starts a new one
 function drawMz(){if(G||!MS.length){if(mz.firstChild)mz.innerHTML="";return} // flat map: the arcs bend as the real shortest way does
@@ -120,11 +122,12 @@ zc.onclick=()=>col(!CO);
 function mode(n){MON=n;zm.classList.toggle("on",n==1);zk.classList.toggle("on",n==2);D.body.classList.toggle("msr",!!n);MS=[];msU()} // measuring: 0 off, 1 route (ruler), 2 circle
 zm.onclick=()=>mode(MON==1?0:1);zk.onclick=()=>mode(MON==2?0:2);
 
-m.onpointerdown=e=>{if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0;fv=[0,0];cancelAnimationFrame(fr);m.classList.add("dr")};
-m.onpointermove=e=>{coords(e);const q=P[e.pointerId];if(!q)return;
+m.onpointerdown=e=>{if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0;fv=[0,0];cancelAnimationFrame(fr);m.classList.add("dr");MG=mHit(e.clientX,e.clientY);if(MG<0)MG=null}; // pressing a measuring point drags it
+m.onpointermove=e=>{coords(e);const q=P[e.pointerId];if(!q)return m.classList.toggle("mh",mHit(e.clientX,e.clientY)>=0);
+if(MG!=null){mv+=Math.abs(e.clientX-q.x)+Math.abs(e.clientY-q.y);q.x=e.clientX;q.y=e.clientY;const r=m.getBoundingClientRect(),mx=Math.min(W,Math.max(0,(e.clientX-r.left-x)/k)),my=Math.min(H,Math.max(0,(e.clientY-r.top-y)/k));MS[MG]=ll2v(mx/W*360-180,90-my/H*180);return msU()}
 const o=two(P),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;mv+=Math.abs(dx)+Math.abs(dy);
 if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/o.d,n.x-r.left,n.y-r.top)}else{const t=performance.now(),dt=Math.max(t-ft0,8)/1e3;ft0=t;fv=[fv[0]*.4+dx/dt*.6,fv[1]*.4+dy/dt*.6];x+=dx;y+=dy;set()}};
-m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];if(!Object.keys(P).length)m.classList.remove("dr");
+m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];if(!Object.keys(P).length)m.classList.remove("dr");if(MG!=null){MG=null;if(mv>4)return} // a dragged point stays; a tapped one is removed below
 if(one&&mv>6&&performance.now()-ft0<80){let l=0;const st=t=>{const dt=l?Math.min((t-l)/1e3,.05):0;l=t;x+=fv[0]*dt;y+=fv[1]*dt;set();const d=Math.exp(-dt*4);fv=fv.map(v=>v*d);if(Math.hypot(...fv)>15)fr=requestAnimationFrame(st)};fr=requestAnimationFrame(st)} // a flicked map glides on
 if(!one||mv>6||e.type!="pointerup")return;const r=m.getBoundingClientRect(),t=Date.now();
 if(MON){const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k;return msTap(mx>=0&&mx<=W&&my>=0&&my<=H&&ll2v(mx/W*360-180,90-my/H*180),MS.map(v=>{const[lo,la]=v2ll(v);return[r.left+x+(lo+180)/360*W*k,r.top+y+(90-la)/180*H*k]}),e.clientX,e.clientY)}
@@ -274,10 +277,11 @@ tc=mk();tx2=tc.getContext("2d");
 tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bc);
 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);tp();
 const e=gl.getExtension("EXT_texture_filter_anisotropic");if(e)gl.texParameterf(gl.TEXTURE_2D,e.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(e.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
-g.onpointerdown=e=>{if(e.pointerType=="mouse")for(const i in GP)delete GP[i];g.setPointerCapture(e.pointerId);GP[e.pointerId]={x:e.clientX,y:e.clientY};gm=0;gv=[0,0];fly=null;anc=null;g.classList.add("dr");if(e.pointerType!="mouse")gC(e)};
-g.onpointermove=e=>{gC(e);const q=GP[e.pointerId];if(!q)return;const o=two(GP),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;gm+=Math.abs(dx)+Math.abs(dy);
+g.onpointerdown=e=>{if(e.pointerType=="mouse")for(const i in GP)delete GP[i];g.setPointerCapture(e.pointerId);GP[e.pointerId]={x:e.clientX,y:e.clientY};gm=0;gv=[0,0];fly=null;anc=null;g.classList.add("dr");if(e.pointerType!="mouse")gC(e);MG=mHit(e.clientX,e.clientY);if(MG<0)MG=null};
+g.onpointermove=e=>{gC(e);const q=GP[e.pointerId];if(!q)return g.classList.toggle("mh",mHit(e.clientX,e.clientY)>=0);
+if(MG!=null){gm+=Math.abs(e.clientX-q.x)+Math.abs(e.clientY-q.y);q.x=e.clientX;q.y=e.clientY;const p=gll(e);if(p){MS[MG]=[p.x,p.y,p.z];msU()}return}const o=two(GP),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;gm+=Math.abs(dx)+Math.abs(dy);
 if(o){const n=two(GP);gT=cl(gT*o.d/n.d);gm=99;at(n.x,n.y)}else{const s=2*(gD-1)*SC/g.clientHeight,t=performance.now(),dt=Math.max(t-gt0,8)/1e3;gt0=t;ya+=dx*s;pa=Math.min(1.4,Math.max(-1.4,pa+dy*s));gv=[gv[0]*.4+dx*s/dt*.6,gv[1]*.4+dy*s/dt*.6]}};
-g.onpointerup=g.onpointercancel=e=>{const one=GP[e.pointerId]&&Object.keys(GP).length==1;delete GP[e.pointerId];if(!Object.keys(GP).length)g.classList.remove("dr");if(performance.now()-gt0>80||gm>=99)gv=[0,0];
+g.onpointerup=g.onpointercancel=e=>{const one=GP[e.pointerId]&&Object.keys(GP).length==1;delete GP[e.pointerId];if(!Object.keys(GP).length)g.classList.remove("dr");if(MG!=null){MG=null;if(gm>4)return gv=[0,0]}if(performance.now()-gt0>80||gm>=99)gv=[0,0];
 if(!one||gm>=6||e.type!="pointerup")return;gv=[0,0];const t=Date.now(),q=gll(e);
 if(MON){const r=g.getBoundingClientRect();return msTap(q&&[q.x,q.y,q.z],MS.map(v=>{const p=gp(v);return p&&[r.left+p[0],r.top+p[1]]}),e.clientX,e.clientY)}
 if(t-gtap<300){gtap=0;anc=null;if(q)fly={y:Math.atan2(-q.x,q.z),p:Math.min(1.4,Math.max(-1.4,Math.atan2(q.y,Math.hypot(q.x,q.z))))};gT=cl(gT/1.8);return} // double click: fly there and zoom in
