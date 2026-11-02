@@ -214,7 +214,7 @@ stb.textContent=ru()?w+" "+(w%10==1&&w%100!=11?"слово":w%10>1&&w%10<5&&(w%1
 function nextTr(){const T=B().map((b,i)=>[i,miss(b)]).filter(x=>x[1].length);if(!T.length)return toast(L("Every text is written in both languages","Все тексты написаны на обоих языках"));
 const [i,m]=T.find(x=>x[0]>(CB??-1))||T[0];if(!m.includes(HT.lang))D.getElementById("lq").click(); // switch to the missing language
 CB=i;gutAt(i);DOC.querySelector(`[data-i="${i}"]`)?.scrollIntoView({block:"center",behavior:"smooth"});focusF(i,null,0)}
-function help(){const K=[["Enter",L("new paragraph","новый абзац")],["Shift+Enter",L("line break","перенос строки")],["/",L("in an empty paragraph: block menu with search","в пустом абзаце: меню блоков с поиском")],
+function help(){const K=[["Enter",L("new paragraph inside the block","новый абзац внутри блока")],["Ctrl+Enter",L("new block","новый блок")],["Shift+Enter",L("line break","перенос строки")],["/",L("in an empty paragraph: block menu with search","в пустом абзаце: меню блоков с поиском")],
 ["## · ### · - · 1. · > · ---",L("at the start of a paragraph: heading, subheading, list, numbered list, quote, divider","в начале абзаца: заголовок, подзаголовок, список, нумерованный список, цитата, разделитель")],
 ["Ctrl+B · Ctrl+I · Ctrl+K",L("bold, italic, link","жирный, курсив, ссылка")],["Ctrl+Z · Ctrl+Shift+Z",L("undo, redo","отменить, повторить")],["Alt+↑ · Alt+↓",L("move the block","переместить блок")],
 ["Ctrl+D",L("duplicate the block","дублировать блок")],["Backspace",L("in an empty block: delete it; at the start of a paragraph: join it with the one above","в пустом блоке: удалить его; в начале абзаца: соединить с предыдущим")],
@@ -306,7 +306,9 @@ if(e.key=="/"&&b.t=="p"&&!el.textContent){e.preventDefault();const r=el.getBound
 if(e.key=="Enter"&&!e.shiftKey){
 if(m=="li"){const s=getSelection(),li=s.anchorNode&&(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement).closest("li");
 if(li&&!li.textContent&&li==el.lastElementChild){e.preventDefault();li.remove();el.dispatchEvent(new Event("input",{bubbles:true}));insert({t:"p"},i+1)}return}
-if(m=="block")return;e.preventDefault();if(!/^(p|h|quote)$/.test(b.t)||el.dataset.f!="")return;
+if(m=="block")return;e.preventDefault();
+if(m=="inline"&&b.t!="h"&&!(e.ctrlKey||e.metaKey)){const s=getSelection(),r=s.rangeCount&&s.getRangeAt(0);if(!r)return;r.deleteContents();const a=h("br"),z=h("br");r.insertNode(z);r.insertNode(a);let nx=z.nextSibling;while(nx&&nx.nodeType==3&&!nx.data)nx=nx.nextSibling;if(!nx)z.after(h("br")); /* at the end the browser needs one more break to show the new line */r.setStartAfter(z);r.collapse(true);s.removeAllRanges();s.addRange(r);el.dispatchEvent(new Event("input",{bubbles:true}));return} // Enter: a new paragraph inside the same block; Ctrl+Enter starts a new block
+if(!/^(p|h|quote)$/.test(b.t)||el.dataset.f!="")return;
 // split the paragraph / heading at the caret: the rest goes to a new paragraph
 const s=getSelection();if(!s.rangeCount)return;const r=s.getRangeAt(0);r.deleteContents();const tail=D.createRange();tail.selectNodeContents(el);tail.setStart(r.endContainer,r.endOffset);
 const t=h("div");t.append(tail.extractContents());snapN();const rest=b.t=="h"?esc(t.textContent):clean(t.innerHTML,"inline");
