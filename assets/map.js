@@ -9,7 +9,7 @@ W=4096,H=2048,T0=320,T1=420, // visible timeline range
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-10L10 0 0 10-10 0zM0-7L7 0 0 7-7 0zM-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0z"], // marker shapes by kind (k): circle, circle in a diamond (capital)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
 P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d");
-let k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+let fv=[0,0],ft0=0,fr=0,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
 try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
@@ -85,7 +85,7 @@ lvB();rs();if(G)gB()}
 function upd(){ // apply the selected year
 zt.textContent=ty.textContent=yr;
 tz.querySelectorAll(".f").forEach(f=>f.classList.toggle("a",f.dataset.y<=yr));
-if(ver()!=cv)setVer();drawM()}
+if(ver()!=cv)setVer();drawM();if(G)tq()}
 const hit=(mx,my)=>RG.find(r=>hc.isPointInPath(path(r),mx,my,"evenodd"))?.id; // country under a map point
 function pick(id){
 id=id&&R[id]?+id:null;if(id!=null)ms=null;
@@ -97,19 +97,20 @@ if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);px.textContent=(ru()?
 function col(on){CO=on;c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}drawOv()}
 zc.onclick=()=>col(!CO);
 
-m.onpointerdown=e=>{if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0};
+m.onpointerdown=e=>{if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0;fv=[0,0];cancelAnimationFrame(fr);m.classList.add("dr")};
 m.onpointermove=e=>{coords(e);const q=P[e.pointerId];if(!q)return;
 const o=two(P),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;mv+=Math.abs(dx)+Math.abs(dy);
-if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/o.d,n.x-r.left,n.y-r.top)}else{x+=dx;y+=dy;set()}};
-m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];
+if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/o.d,n.x-r.left,n.y-r.top)}else{const t=performance.now(),dt=Math.max(t-ft0,8)/1e3;ft0=t;fv=[fv[0]*.4+dx/dt*.6,fv[1]*.4+dy/dt*.6];x+=dx;y+=dy;set()}};
+m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];if(!Object.keys(P).length)m.classList.remove("dr");
+if(one&&mv>6&&performance.now()-ft0<80){let l=0;const st=t=>{const dt=l?Math.min((t-l)/1e3,.05):0;l=t;x+=fv[0]*dt;y+=fv[1]*dt;set();const d=Math.exp(-dt*4);fv=fv.map(v=>v*d);if(Math.hypot(...fv)>15)fr=requestAnimationFrame(st)};fr=requestAnimationFrame(st)} // a flicked map glides on
 if(!one||mv>6||e.type!="pointerup")return;const r=m.getBoundingClientRect(),t=Date.now();
 if(t-tap<300){zoom(2,e.clientX-r.left,e.clientY-r.top,1);tap=0;return}
 tap=t;const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k,g=D.elementFromPoint(e.clientX,e.clientY)?.closest("#mw [data-m]");
 if(g&&!MAP.onTap)return pickM(+g.dataset.m);if(!MAP.onTap?.(mx,my,g&&+g.dataset.m))pick(hit(mx,my))};
-m.onlostpointercapture=e=>{delete P[e.pointerId]};
+m.onlostpointercapture=e=>{delete P[e.pointerId];if(!Object.keys(P).length)m.classList.remove("dr")};
 m.onwheel=e=>{e.preventDefault();const r=m.getBoundingClientRect();zoom(Math.exp(-e.deltaY*.002),e.clientX-r.left,e.clientY-r.top)};
-zi.onclick=()=>G?(gT=cl(gT/1.5),rq()):zoom(1.6,m.clientWidth/2,m.clientHeight/2,1);
-zo.onclick=()=>G?(gT=cl(gT*1.5),rq()):zoom(1/1.6,m.clientWidth/2,m.clientHeight/2,1);
+zi.onclick=()=>G?(gT=cl(gT/1.5),anc=null,rq()):zoom(1.6,m.clientWidth/2,m.clientHeight/2,1);
+zo.onclick=()=>G?(gT=cl(gT*1.5),anc=null,rq()):zoom(1/1.6,m.clientWidth/2,m.clientHeight/2,1);
 pc.onclick=()=>{ms=null;pick()};
 
 // ---- cursor coordinates (2D) ----
@@ -123,7 +124,10 @@ const fb=()=>{const t=D.createElement("textarea");t.value=CP;D.body.append(t);t.
 navigator.clipboard?navigator.clipboard.writeText(CP).catch(fb):fb();
 cd.textContent=L("COPIED: ","СКОПИРОВАНО: ")+CP;clearTimeout(fl);fl=setTimeout(()=>{fl=0;cd.innerHTML=CT},1200)}
 cd.onclick=copy;
-D.addEventListener("keydown",e=>{if(e.target.closest?.("input:not([type=range]),textarea,select,[contenteditable]"))return; /* typing in a field is not a shortcut */if(e.key=="Escape")tlOpen()?tlClose():pick();else if(e.code=="KeyC"&&!G&&!tlOpen()&&!getSelection().toString())copy()});
+D.addEventListener("keydown",e=>{if(e.target.closest?.("input:not([type=range]),textarea,select,[contenteditable]"))return; /* typing in a field is not a shortcut */if(e.key=="Escape")tlOpen()?tlClose():pick();else if(tlOpen()||e.ctrlKey||e.metaKey||e.altKey)return;else if(e.code=="KeyC"&&!getSelection().toString())copy();
+else if(e.key=="+"||e.key=="=")zi.click();else if(e.key=="-")zo.click();
+else if(/^Arrow/.test(e.key)){e.preventDefault();const h=e.key=="ArrowLeft"?1:e.key=="ArrowRight"?-1:0,v=e.key=="ArrowUp"?1:e.key=="ArrowDown"?-1:0; // arrows: look west / east / north / south
+if(G){gv=[h*(gD-1)*.9,v*(gD-1)*.9];fly=null;rq()}else{x+=h*m.clientWidth/4;y+=v*m.clientHeight/4;set(1)}}});
 
 // ---- timeline ----
 function tlB(){
@@ -147,14 +151,14 @@ D.addEventListener("lang",()=>{rs();drawM();panel();showC();if(tlOpen())tlB();if
 addEventListener("resize",()=>{set();if(G)rq();if(tlOpen())tlB()});
 const MAP=window.MAP={ // editor hooks
 redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
-markers(){drawM();if(G)tq()},pickM,yr:()=>yr,focus(o,a){if(G)sw();k=Math.max(k,fit()*5);x=m.clientWidth/2-(o+180)/360*W*k;y=m.clientHeight/2-(90-a)/180*H*k;set(1)},timeline(){if(tlOpen())tlB()},
+markers(){drawM();if(G)tq()},pickM,yr:()=>yr,focus(o,a){if(G){fly={y:-o*Math.PI/180,p:Math.min(1.4,Math.max(-1.4,a*Math.PI/180))};gT=cl(Math.min(gT,2.2));return rq()}k=Math.max(k,fit()*5);x=m.clientWidth/2-(o+180)/360*W*k;y=m.clientHeight/2-(90-a)/180*H*k;set(1)},timeline(){if(tlOpen())tlB()},
 toMap(e){const r=m.getBoundingClientRect();return{mx:(e.clientX-r.left-x)/k,my:(e.clientY-r.top-y)/k}},
 sel:()=>sel&&R[sel],pick,W,H};
 upd();col(CO);k=fit();x=(m.clientWidth-W*k)/2;set();rest();drawM();lx=(m.clientWidth/2-x)/k;ly=(m.clientHeight/2-y)/k;showC(); /* start with the view centre */D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
-let gl,gc,go,gw,tc,tx2,bc,bb,tex,bp,pp,sp,fp,tb,pb,eb,gD=3,gT=3,gv=[0,0],gt0=0,fly=null,gtap=0,GI=[],GO=[],gsig="",ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0,FD;
+let gl,gc,go,gw,tc,tx2,bc,bb,tex,bp,pp,sp,fp,tb,pb,eb,gD=3,gT=3,gv=[0,0],gt0=0,fly=null,gtap=0,anc=null,GI=[],GO=[],gsig="",ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0,FD;
 const GP={},cl=v=>Math.min(4.5,Math.max(1.6,v)),
 SW=(v=>{const l=Math.hypot(...v);return v.map(a=>a/l)})([.62,.32,.72]),
 SPIN=6.2832/430,CLOUD=[1/600,1/950], // one turn in ~7 min; cloud layers drift (uv/s)
@@ -166,6 +170,8 @@ function tick(t){loop=0;if(!G||D.hidden)return;const dt=last?Math.min((t-last)/1
 D.addEventListener("visibilitychange",rq);
 function mo(dt){ // camera motion as in Google Earth: eased zoom, drag inertia, fly to a double-clicked point
 gD+=(gT-gD)*Math.min(1,dt*8);
+if(anc){const w=g.clientWidth,h=g.clientHeight,Y=ya+sa,c=Math.cos(Y),s=Math.sin(Y),e=Math.cos(pa),f=Math.sin(pa),[px,py,pz]=anc.p,x1=c*px+s*pz,z1=-s*px+c*pz,y2=e*py-f*z1,dp=gD-(f*py+e*z1),k=2*(gD-1)*SC/h; // zoom towards the cursor: the point under it stays there
+ya+=(anc.x-(x1/(SC*AS)/dp+1)*w/2)*k;pa=Math.min(1.4,Math.max(-1.4,pa+(anc.y-(1-y2/SC/dp)*h/2)*k));if(Math.abs(gT-gD)<1e-3)anc=null}
 if(fly){const f=Math.min(1,dt*5),d=((fly.y-sa-ya)%6.2832+9.4248)%6.2832-3.1416;ya+=d*f;pa+=(fly.p-pa)*f;if(Math.abs(d)+Math.abs(fly.p-pa)<1e-3)fly=null}
 else if(!Object.keys(GP).length&&(gv[0]||gv[1])){ya+=gv[0]*dt;pa=Math.min(1.4,Math.max(-1.4,pa+gv[1]*dt));const k=Math.exp(-dt*3.5);gv=gv.map(v=>Math.abs(v*k)<.003?0:v*k)}}
 const PR="#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n",
@@ -244,15 +250,15 @@ tc=mk();tx2=tc.getContext("2d");
 tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bc);
 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);tp();
 const e=gl.getExtension("EXT_texture_filter_anisotropic");if(e)gl.texParameterf(gl.TEXTURE_2D,e.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(e.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
-g.onpointerdown=e=>{if(e.pointerType=="mouse")for(const i in GP)delete GP[i];g.setPointerCapture(e.pointerId);GP[e.pointerId]={x:e.clientX,y:e.clientY};gm=0;gv=[0,0];fly=null};
-g.onpointermove=e=>{const q=GP[e.pointerId];if(!q)return;const o=two(GP),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;gm+=Math.abs(dx)+Math.abs(dy);
-if(o){gD=gT=cl(gD*o.d/two(GP).d);gm=99}else{const s=2*(gD-1)*SC/g.clientHeight,t=performance.now(),dt=Math.max(t-gt0,8)/1e3;gt0=t;ya+=dx*s;pa=Math.min(1.4,Math.max(-1.4,pa+dy*s));gv=[gv[0]*.4+dx*s/dt*.6,gv[1]*.4+dy*s/dt*.6]}};
-g.onpointerup=g.onpointercancel=e=>{const one=GP[e.pointerId]&&Object.keys(GP).length==1;delete GP[e.pointerId];if(performance.now()-gt0>80||gm>=99)gv=[0,0];
+g.onpointerdown=e=>{if(e.pointerType=="mouse")for(const i in GP)delete GP[i];g.setPointerCapture(e.pointerId);GP[e.pointerId]={x:e.clientX,y:e.clientY};gm=0;gv=[0,0];fly=null;anc=null;g.classList.add("dr");if(e.pointerType!="mouse")gC(e)};
+g.onpointermove=e=>{gC(e);const q=GP[e.pointerId];if(!q)return;const o=two(GP),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;gm+=Math.abs(dx)+Math.abs(dy);
+if(o){const n=two(GP);gT=cl(gT*o.d/n.d);gm=99;at(n.x,n.y)}else{const s=2*(gD-1)*SC/g.clientHeight,t=performance.now(),dt=Math.max(t-gt0,8)/1e3;gt0=t;ya+=dx*s;pa=Math.min(1.4,Math.max(-1.4,pa+dy*s));gv=[gv[0]*.4+dx*s/dt*.6,gv[1]*.4+dy*s/dt*.6]}};
+g.onpointerup=g.onpointercancel=e=>{const one=GP[e.pointerId]&&Object.keys(GP).length==1;delete GP[e.pointerId];if(!Object.keys(GP).length)g.classList.remove("dr");if(performance.now()-gt0>80||gm>=99)gv=[0,0];
 if(!one||gm>=6||e.type!="pointerup")return;gv=[0,0];const t=Date.now(),q=gll(e);
-if(t-gtap<300){gtap=0;if(q)fly={y:Math.atan2(-q.x,q.z),p:Math.min(1.4,Math.max(-1.4,Math.atan2(q.y,Math.hypot(q.x,q.z))))};gT=cl(gT/1.8);return} // double click: fly there and zoom in
+if(t-gtap<300){gtap=0;anc=null;if(q)fly={y:Math.atan2(-q.x,q.z),p:Math.min(1.4,Math.max(-1.4,Math.atan2(q.y,Math.hypot(q.x,q.z))))};gT=cl(gT/1.8);return} // double click: fly there and zoom in
 gtap=t;const m=D.elementFromPoint(e.clientX,e.clientY)?.closest("#gw [data-m]");if(m)return pickM(+m.dataset.m);pick(q&&hit(q.mx,q.my))};
-g.onlostpointercapture=e=>{delete GP[e.pointerId]};
-g.onwheel=e=>{e.preventDefault();gT=cl(gT*Math.exp(e.deltaY*.0015));rq()};
+g.onlostpointercapture=e=>{delete GP[e.pointerId];if(!Object.keys(GP).length)g.classList.remove("dr")};
+g.onwheel=e=>{e.preventDefault();fly=null;gT=cl(gT*Math.exp(e.deltaY*.0015));at(e.clientX,e.clientY);rq()};
 return 1}
 function dr(){if(tdirty){tdirty=0;tx()}
 const w=g.clientWidth,h=g.clientHeight,r=Math.min(devicePixelRatio||1,2),cw=Math.round(w*r),ch=Math.round(h*r);
@@ -283,6 +289,8 @@ o.fillStyle="#04040a";o.globalAlpha=.5;o.fill(d,"evenodd");o.restore()}
 gL();
 gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,tc);gl.generateMipmap(gl.TEXTURE_2D);
 }
+function at(cx,cy){const q=gll({clientX:cx,clientY:cy}),r=g.getBoundingClientRect();anc=q&&{p:[q.x,q.y,q.z],x:cx-r.left,y:cy-r.top}} // zoom anchor
+function gC(e){const q=gll(e);if(q){lx=q.mx;ly=q.my;showC()}} // coordinates under the cursor, as on the flat map
 function gll(e){ // screen point -> planet point {x,y,z} and map point {mx,my}; null off the globe
 const r=g.getBoundingClientRect(),nx=(e.clientX-r.left)/r.width*2-1,ny=1-(e.clientY-r.top)/r.height*2,dx=nx*SC*AS,dy=ny*SC,a=dx*dx+dy*dy+1,b=-2*gD,cc=gD*gD-1,f=b*b-4*a*cc;
 if(f<0)return null;
@@ -330,7 +338,9 @@ let on=al>.05&&(q.c||!far(q.q,zl))&&!B.some(b=>b[0]<bx[2]-g&&bx[0]+g<b[2]&&b[1]<
 q.d.style.transform=`translate(${Math.round(X)}px,${Math.round(V)}px)`; // whole pixels and real font sizes: text does not shimmer
 if(q.c&&q.fs!==fs)q.d.firstChild.style.fontSize=(q.fs=fs)+"px";
 const o=(al*(q.o??1)).toFixed(2);if(q.ov!==o)q.d.style.opacity=q.ov=o;if(q.on!==on)q.d.classList.toggle("gh",!(q.on=on))}}
-function sw(){G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";if(G)gB()}
+function sw(){G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";const cw=m.clientWidth,ch=m.clientHeight; // the view stays on the same place at a similar scale
+if(G){const lo=(cw/2-x)/k/W*6.2832-3.1416,la=1.5708-(ch/2-y)/k/H*3.1416,sc=.364*Math.max(1,g.clientHeight/g.clientWidth);ya=-lo-sa;pa=Math.min(1.4,Math.max(-1.4,la));gv=[0,0];fly=anc=null;gD=gT=cl(1+Math.PI/(2*sc*k/fit()));gB()}
+else{const r=g.getBoundingClientRect(),q=SC&&gll({clientX:r.left+r.width/2,clientY:r.top+r.height/2});if(q){k=Math.PI/(2*SC*(gD-1))*fit();k=Math.min(Math.max(k,fit()),kmax());x=cw/2-q.mx*k;y=ch/2-q.my*k;set()}}}
 function gB(){ // borders of the current version for the globe texture
 const v=cv;if(!v.b)return tq();const i=new Image;i.onload=()=>{if(v!=cv)return;const o=bb.getContext("2d");o.clearRect(0,0,bb.width,bb.height);o.drawImage(i,0,0,bb.width,bb.height);tq()};i.src=bsrc(2)} // 4096 px level = globe texture size
 zg.onclick=()=>{if(gl)return sw();if(busy)return;busy=1;ld.hidden=false;zg.setAttribute("aria-busy","true");const i=new Image,done=()=>{busy=0;ld.hidden=true;zg.removeAttribute("aria-busy")};i.onerror=done;
