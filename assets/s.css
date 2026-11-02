@@ -23,7 +23,8 @@ section:has(.doc){justify-content:flex-start}
 .doc :is(h2,h3,h4){font:400 22px/1.3 "Exo 2",sans-serif;text-transform:uppercase;letter-spacing:2px;color:#e8e8e0;margin-top:1.8em;margin-bottom:.6em}.doc h3{font-size:17px;letter-spacing:1.5px}
 .doc a{color:#8d8cf0;font:inherit;letter-spacing:inherit;text-decoration:underline;text-underline-offset:3px;white-space:normal}
 .doc b,.doc strong{font-weight:600;color:#e8e8e0}.doc i,.doc em{font:inherit;font-style:italic;color:inherit;letter-spacing:inherit}
-.doc code{font:14px ui-monospace,monospace;background:#e8e8e014;padding:1px 4px}
+.doc code{font:14px ui-monospace,monospace;background:#e8e8e014;padding:1px 4px}.doc mark{background:#e8b04a40;color:inherit;padding:0 2px}.doc :is(sup,sub){font-size:.75em;line-height:0}
+.doc .ta-center{text-align:center}.doc .ta-right{text-align:right}.doc .ta-justify{text-align:justify;hyphens:auto}.doc :is(ul,ol):is(.ta-center,.ta-right){list-style-position:inside;padding-left:0}
 .doc blockquote{border-left:2px solid #6665c0;padding:2px 0 2px 20px;font-style:italic;color:#e8e8e0b3}.doc blockquote p{margin:0}.doc cite{display:block;margin-top:.4em;font-size:13px;font-style:normal;color:#e8e8e080}
 .doc :is(ul,ol):not(.b-links){padding-left:1.4em}.doc li{margin:.3em 0}.doc li::marker{color:#6665c0}
 .doc .b-hr{width:100%;margin:2em 0;opacity:.3}

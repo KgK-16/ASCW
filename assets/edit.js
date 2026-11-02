@@ -84,7 +84,7 @@ D.head.append(h("style",{},`
 .mn{position:fixed;z-index:46;background:#05050d;border:1px solid #6665c0;min-width:220px;max-height:min(70vh,520px);overflow:auto;padding:4px;display:flex;flex-direction:column;text-transform:none;font:400 13px "Exo 2",sans-serif;box-shadow:0 8px 30px #000a}
 .mn button{display:flex;gap:10px;align-items:center;text-align:left;padding:7px 10px;color:#e8e8e0;cursor:pointer;letter-spacing:.3px}.mn button:hover,.mn button.f{background:#6665c040}
 .mn button i{width:20px;text-align:center;font-style:normal;color:#8d8cf0}.mn button small{margin-left:auto;padding-left:16px;font:400 11px ui-monospace,monospace;color:#e8e8e066}.mn [hidden]{display:none}.mn .ei{margin-bottom:4px}.mn hr{width:auto;margin:4px 6px;opacity:.25}.mn .on::after{content:"✓";margin-left:auto;padding-left:12px;color:#8d8cf0}
-#ift{position:absolute;z-index:47;display:flex;gap:2px;background:#05050d;border:1px solid #6665c0;padding:2px;text-transform:none}#ift[hidden]{display:none}
+#ift{position:absolute;z-index:47;display:flex;flex-wrap:wrap;max-width:min(440px,calc(100vw - 16px));gap:2px;background:#05050d;border:1px solid #6665c0;padding:2px;text-transform:none}#ift[hidden]{display:none}
 #ift button{min-width:30px;height:28px;padding:0 6px;font:600 13px Inter,sans-serif;color:#e8e8e0;cursor:pointer}#ift button:hover{background:#6665c040}
 #dln{position:absolute;z-index:29;height:2px;background:#e8b04a;pointer-events:none}#dln[hidden]{display:none}
 .ed .doc.dropping{outline:1px dashed #e8b04a;outline-offset:-4px}
@@ -151,17 +151,18 @@ TYPES=()=>[["p","¶",L("Text","Текст")],["h2","H",L("Heading","Заголо
 ["card","▤",L("Fact card","Карточка фактов")],["hr","―",L("Divider","Разделитель"),"---"],"-",["links","☰",L("Links to subpages","Ссылки на подстраницы")],["head","▀",L("Page header","Шапка страницы")]],
 mk=k=>({p:{t:"p"},h2:{t:"h",lv:2},h3:{t:"h",lv:3},quote:{t:"quote"},ul:{t:"list"},ol:{t:"list",ord:true},img:{t:"img",al:"center"},cols:{t:"cols",c:[{t:"text"},{t:"text"}]},
 card:{t:"card",rows:[{},{}]},hr:{t:"hr"},links:{t:"links"},head:{t:"head"}})[k],
-TXT=new Set(["p","h","quote","list"]);
+TXT=new Set(["p","h","quote","list"]),
+ALG=()=>[["left","⇤",L("Align left","По левому краю")],["center","↔",L("Centre","По центру")],["right","⇥",L("Align right","По правому краю")],["justify","☰",L("Justify","По ширине")]];
 // stored HTML is limited to a few tags: inline (b, i, s, a, code, br), list items, and for columns also paragraphs, subheadings and lists
 function clean(html,mode){const t=D.createElement("template");t.innerHTML=html;
-const INL={B:"b",STRONG:"b",I:"i",EM:"i",S:"s",STRIKE:"s",DEL:"s",A:"a",BR:"br",CODE:"code"},BLK={P:"p",DIV:"p",H1:"h3",H2:"h3",H3:"h3",H4:"h3",UL:"ul",OL:"ol",LI:"li",BLOCKQUOTE:"p"},
+const INL={B:"b",STRONG:"b",I:"i",EM:"i",S:"s",STRIKE:"s",DEL:"s",U:"u",INS:"u",A:"a",BR:"br",CODE:"code",MARK:"mark",SUP:"sup",SUB:"sub"},BLK={P:"p",DIV:"p",H1:"h3",H2:"h3",H3:"h3",H4:"h3",UL:"ul",OL:"ol",LI:"li",BLOCKQUOTE:"p"},
 walk=n=>[...n.childNodes].map(c=>{if(c.nodeType==3)return esc(c.data.replace(/\u00a0/g," "));if(c.nodeType!=1)return"";
 const st=c.style||{},fw=st.fontWeight,bo=fw=="bold"||+fw>=600;let g=INL[c.tagName]||(mode=="block"&&BLK[c.tagName])||(mode=="li"&&c.tagName=="LI"&&"li"),in_=walk(c);
 if(g=="b"&&fw&&!bo)g=null; // Google Docs wraps everything in <b style="font-weight:normal">
-if(!g){if(c.tagName=="SPAN"&&in_){if(bo)in_=`<b>${in_}</b>`;if(st.fontStyle=="italic")in_=`<i>${in_}</i>`;if(/line-through/.test(st.textDecoration))in_=`<s>${in_}</s>`}
+if(!g){if(c.tagName=="SPAN"&&in_){if(bo)in_=`<b>${in_}</b>`;if(st.fontStyle=="italic")in_=`<i>${in_}</i>`;if(/line-through/.test(st.textDecoration))in_=`<s>${in_}</s>`;if(/underline/.test(st.textDecoration))in_=`<u>${in_}</u>`}
 return in_+(mode!="inline"&&/^(P|DIV)$/.test(c.tagName)?"<br>":"")}
 if(g=="br")return"<br>";if(g=="a"){const u=c.getAttribute("href")||"";return/^(https?:|\/|#|mailto:)/i.test(u)?`<a href="${esc(u)}">${in_}</a>`:in_}return`<${g}>${in_}</${g}>`}).join("");
-let r=walk(t.content).replace(/(<br>)+(<\/(p|li|h3)>|$)/g,"$2").replace(/<(p|li|h3|b|i|s)><\/\1>/g,"").trim();
+let r=walk(t.content).replace(/(<br>)+(<\/(p|li|h3)>|$)/g,"$2").replace(/<(p|li|h3|b|i|s|u|mark|sup|sub|code)><\/\1>/g,"").trim();
 if(mode=="li"&&r&&!/^<li>/.test(r))r="<li>"+r.replace(/<\/?li>/g,"")+"</li>";
 if(mode=="block"&&r&&!/^<(p|h3|ul|ol)>/.test(r))r="<p>"+r+"</p>";return r}
 const plain=h=>{const t=D.createElement("template");t.innerHTML=(h||"").replace(/<\/(li|p)>|<br>/g," $&");return t.content.textContent.trim()};
@@ -190,14 +191,14 @@ d_:L("Description","Описание"),cap_:L("Caption","Подпись"),cite_:
 if(!ED)return v||w?`<${tag}${a}>${v||w}</${tag}>`:"";
 return`<${tag}${a} data-f="${f}" data-m="${m}" contenteditable="${m=="plain"?"plaintext-only":"true"}" data-ph="${esc(ph)}" spellcheck="true">${v}</${tag}>`}
 let ED=1;
-function rb(b,i){const mi=ED?miss(b):[],di=ED?` data-i="${i}"${mi.length?` data-tm="${mi.join(" ").toUpperCase()}"`:""}`:"",l=HT.lang;
+function rb(b,i){const mi=ED?miss(b):[],ta=b.ta?` class="ta-${b.ta}"`:"",di=(ED?` data-i="${i}"${mi.length?` data-tm="${mi.join(" ").toUpperCase()}"`:""}`:""),l=HT.lang;
 switch(b.t){
 case"head":{const own=b.k_en||b.k_ru,kd={k_en:TX.wip?.en||"",k_ru:TX.wip?.ru||TX.wip?.en||""}; // without its own kicker the header shows the shared "work in progress" text
 return`<header class="b-head${b.tall?" tall":""}"${di}>${E("p",b,own||ED?b:kd,"k_","plain",' class="k"',own?null:kd["k_"+l])}<h1>${E("span",b,b,"t_","plain")}${b.a_en||b.a_ru||b.acc?`<b>${E("span",b,b,"a_","plain")}</b>`:""}</h1><hr>${E("p",b,b,"d_","plain",' class="ds"')}</header>`}
-case"h":return E("h"+(b.lv||2),b,b,"","plain",di);
-case"p":return E("p",b,b,"","inline",di,L("Write, or press / for blocks","Пишите или нажмите / — меню блоков"));
-case"quote":return`<blockquote${di}>${E("p",b,b,"","inline")}${E("cite",b,b,"cite_","plain")}</blockquote>`;
-case"list":{const t=b.ord?"ol":"ul",e=E(t,b,b,"","li",di);return ED?e.replace(/data-ph="([^"]*)"([^>]*)><\/(ul|ol)>$/,'data-ph="$1"$2><li data-ph="$1"></li></$3>'):e}
+case"h":return E("h"+(b.lv||2),b,b,"","plain",ta+di);
+case"p":return E("p",b,b,"","inline",ta+di,L("Write, or press / for blocks","Пишите или нажмите / — меню блоков"));
+case"quote":return`<blockquote${ta}${di}>${E("p",b,b,"","inline")}${E("cite",b,b,"cite_","plain")}</blockquote>`;
+case"list":{const t=b.ord?"ol":"ul",e=E(t,b,b,"","li",ta+di);return ED?e.replace(/data-ph="([^"]*)"([^>]*)><\/(ul|ol)>$/,'data-ph="$1"$2><li data-ph="$1"></li></$3>'):e}
 case"img":return`<figure class="b-img al-${b.al||"center"}"${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>`:ED?`<button type="button" class="pi" data-pick="">🖼 ${L("Choose an image or drop a file here","Выберите изображение или перетащите файл")}</button>`:""}${E("figcaption",b,b,"cap_","plain")}</figure>`;
 case"card":return`<aside class="b-card"${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>`:""}${E("h4",b,b,"t_","plain")}<dl>${(b.rows||[]).map((r,j)=>
 `<div>${E("dt",b,r,"k_","plain",` data-r="${j}"`,L("Property","Свойство"))}${E("dd",b,r,"v_","inline",` data-r="${j}"`,L("Value","Значение"))}</div>`).join("")}</dl>${ED?`<button type="button" class="add" data-act="row">+ ${L("Row","Строка")}</button>`:""}</aside>`;
@@ -239,7 +240,7 @@ nr=!rt&&r.left<70;gut.classList.toggle("nr",nr);gut.classList.toggle("rt",rt); /
 gut.style.top=r.top-d.top-(nr?30:0)+"px";gut.style.left=(nr||rt?r.right:r.left)-d.left+"px";gut.dataset.i=i}
 function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],k:t[3],f:()=>{const b=mk(t[0]);if(replace){act(()=>B()[i]=b);b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}),1)}
 function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>act(()=>{if(v==null)delete b[k];else b[k]=v}),items=[];
-if(TXT.has(b.t))items.push(...TYPES().slice(0,6).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h2"&&b.t=="h"&&b.lv!=3)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-");
+if(TXT.has(b.t))items.push(...TYPES().slice(0,6).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h2"&&b.t=="h"&&b.lv!=3)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-",...ALG().map(([a,ic,t])=>({i:ic,t,on:(b.ta||"left")==a,f:()=>set("ta",a=="left"?null:a)})),"-");
 if(b.t=="img")items.push(...[["center","▣",L("Centred, text width","По центру, ширина текста")],["full","▭",L("Full strip width","Во всю ширину ленты")],["left","◧",L("Left, text wraps","Слева, текст обтекает")],["right","◨",L("Right, text wraps","Справа, текст обтекает")]]
 .map(([a,ic,t])=>({i:ic,t,on:(b.al||"center")==a,f:()=>set("al",a)})),{i:"🖼",t:L("Replace image…","Заменить изображение…"),f:()=>pickImg(b)},"-");
 if(b.t=="card")items.push({i:"🖼",t:b.src?L("Replace image…","Заменить изображение…"):L("Add image…","Добавить изображение…"),f:()=>pickImg(b)},...(b.src?[{i:"✕",t:L("Remove image","Убрать изображение"),f:()=>set("src")}]:[]),
@@ -260,8 +261,10 @@ gut=h("div",{id:"gut",hidden:""},h("button",{type:"button",title:L("Add a block"
 onclick:e=>{const r=e.currentTarget.getBoundingClientRect();addMenu(+gut.dataset.i,r.left,r.bottom+4)}},"+"),
 h("button",{type:"button",cls:"hd",title:L("Drag to move · click for block options","Перетащите, чтобы переместить · клик — настройки блока"),"aria-label":L("Block options","Настройки блока")},"⠿"));
 dln=h("div",{id:"dln",hidden:""});
-ift=h("div",{id:"ift",hidden:""},...[["B","bold",L("Bold","Жирный")+" (Ctrl+B)"],["I","italic",L("Italic","Курсив")+" (Ctrl+I)"],["S","strikeThrough",L("Strikethrough","Зачёркнутый")],["🔗","link",L("Link","Ссылка")+" (Ctrl+K)"],["⌫","removeFormat",L("Clear formatting","Убрать оформление")]]
-.map(([t,c,ti])=>h("button",{type:"button",title:ti,"aria-label":ti,onmousedown:e=>{e.preventDefault();fmt2(c)}},t)));D.body.append(ift);
+ift=h("div",{id:"ift",hidden:""},...[["B","bold",L("Bold","Жирный")+" (Ctrl+B)"],["I","italic",L("Italic","Курсив")+" (Ctrl+I)"],["U","underline",L("Underline","Подчёркнутый")+" (Ctrl+U)"],["S","strikeThrough",L("Strikethrough","Зачёркнутый")],
+["▮","mark",L("Highlight","Выделить маркером")],["</>","code",L("Code","Код")],["x²","superscript",L("Superscript","Надстрочный")],["x₂","subscript",L("Subscript","Подстрочный")],["🔗","link",L("Link","Ссылка")+" (Ctrl+K)"],["⌫","removeFormat",L("Clear formatting","Убрать оформление")],
+...ALG().map(([a,ic,t])=>[ic,"ta:"+a,t])]
+.map(([t,c,ti])=>h("button",{type:"button",title:ti,"aria-label":ti,"data-c":c,onmousedown:e=>{e.preventDefault();fmt2(c)}},t)));D.body.append(ift);
 let hT;DOC.addEventListener("mouseover",e=>{if(gut.contains(e.target))return clearTimeout(hT);const k=e.target.closest("[data-i]");clearTimeout(hT);if(k&&!DG&&+k.dataset.i!==CB)hT=setTimeout(()=>gutAt(CB=+k.dataset.i),250)});
 DOC.addEventListener("pointerdown",e=>{const k=e.target.closest("[data-i]");if(k)gutAt(CB=+k.dataset.i)});
 DOC.addEventListener("focusin",e=>{const k=e.target.closest("[data-i]");if(k)gutAt(CB=+k.dataset.i)});
@@ -334,6 +337,10 @@ function selTb(){const s=getSelection(),el=s.rangeCount&&!s.isCollapsed&&(s.anch
 if(!el||ift.contains(D.activeElement)){if(!ift.contains(D.activeElement))ift.hidden=true;return}const r=s.getRangeAt(0).getBoundingClientRect();ift.hidden=false;
 ift.style.left=Math.max(8,Math.min(r.left+scrollX+r.width/2-ift.offsetWidth/2,innerWidth-ift.offsetWidth-8))+"px";ift.style.top=r.top+scrollY-ift.offsetHeight-8+"px"}
 function fmt2(c){const s=getSelection(),el=(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('[contenteditable="true"]');if(!el)return;
+if(c.startsWith("ta:")){const k=el.closest("[data-i]"),b=k&&B()[+k.dataset.i];if(b&&TXT.has(b.t)){const a=c.slice(3);act(()=>{if(a=="left")delete b.ta;else b.ta=a})}return} // alignment of the whole block
+if(c=="mark"||c=="code"){const r=s.rangeCount&&s.getRangeAt(0),on=(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement).closest(c);if(!r)return; // toggle a wrapping tag
+if(on&&el.contains(on)){on.replaceWith(...on.childNodes)}else if(!r.collapsed){const w=D.createElement(c);w.append(r.extractContents());r.insertNode(w);s.selectAllChildren(w)}
+el.dispatchEvent(new Event("input",{bubbles:true}));return}
 if(c=="link"){const r=s.rangeCount&&s.getRangeAt(0).cloneRange(),cur=(s.anchorNode.parentElement?.closest("a"))?.getAttribute("href")||"https://",i=inp(cur,()=>{}),
 w=dialog(L("Link","Ссылка"),lab(L("Address (empty — remove the link)","Адрес (пусто — убрать ссылку)"),i),h("div",{cls:"row"},btn("OK",ok)));
 i.onkeydown=e=>{if(e.key=="Enter")ok()};function ok(){w.remove();el.focus();getSelection().removeAllRanges();getSelection().addRange(r);const u=i.value.trim();
