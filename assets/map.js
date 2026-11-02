@@ -116,7 +116,7 @@ if(a)t+=`<text data-i="${r.id}"${a.o!=null?` opacity="${a.o}"`:""} x="${a.xs.map
 sv.innerHTML=s;sl.innerHTML=`<g class="gr">${q}</g><g class="lb">${t}</g>`;cqd=1;gx.innerHTML=l;GX=[...gx.children].map(e=>({e,o:e.dataset.o!=null?+e.dataset.o:null,a:+e.dataset.a}));posM();hi()}
 function hi(){ // selection layer above the borders: the rest of the map is dimmed, the country keeps its own relief colours
 const r=sel&&R[sel],key=CO+"|"+sel+"|"+cv?.y;if(key==ovK)return;ovK=key; // nothing changed: skip the costly redraws (also of the globe texture)
-cqd=1;hl.innerHTML=r?`<path class="dm" fill-rule="evenodd" d="M0 0H${W}V${H}H0z${r.d}"/><path class="gw" d="${r.d}"/><path class="ol" d="${r.d}"/>`:"";
+cqd=1;if(VW)set();hl.innerHTML=r?`<path class="dm" fill-rule="evenodd" d="M0 0H${W}V${H}H0z${r.d}"/><path class="gw" d="${r.d}"/><path class="ol" d="${r.d}"/>`:"";
 drawOv()}
 function drawOv(){ // country colours as one raster layer (cheap to pan/zoom): light tint + inner colour band; the selected country keeps pure relief
 cqd=1;if(CO){const o=ox;o.clearRect(0,0,W,H);o.lineJoin="round";
