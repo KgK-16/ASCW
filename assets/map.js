@@ -9,7 +9,7 @@ W=4096,H=2048,T0=320,T1=420, // visible timeline range
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-10L10 0 0 10-10 0zM0-7L7 0 0 7-7 0zM-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0z"], // marker shapes by kind (k): circle, circle in a diamond (capital)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
 P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d");
-let MR,GR,VW=0,VH=0,ZW=0,GW=0,GH=0,GX=[],ovK,cdr=0,MG=null,MON=0,MS=[],MP=[],MD=[0],sbK,fv=[0,0],ft0=0,fr=0,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+let MR,GR,VW=0,VH=0,ZW=0,GW=0,GH=0,GX=[],ovK,cdr=0,MG=null,MON=0,MS=[],MP=[],MD=[0],sbK,fv=null,fz=null,fa=0,fl0=0,HS=[],k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
 try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
@@ -48,6 +48,13 @@ function lvB(){if(lv<0)return;bi.hidden=!cv.b;if(cv.b)load(bi,bsrc(lv))}
 function apply(){raf=0;posM();c.classList.toggle("t",!!an);mw.classList.toggle("t",!!an);c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
 c.classList.add("mv");clearTimeout(mvT);mvT=setTimeout(rest,250)} // while moving: GPU layer only, no restyle/repaint
 function rest(){c.classList.remove("mv");if(k!=kk)c.style.setProperty("--k",kk=k)} // after: zoom-dependent widths, crisp re-raster
+function fmo(t){ // flat map motion, one frame at a time: eased wheel zoom towards the cursor, glide after a flick
+const dt=Math.min(fl0&&t>fl0?(t-fl0)/1e3:1/60,.05);fl0=t;fa=0;let on=0; // the first frame already moves: no pause after letting go
+if(fz){zoom((fz.k/k)**Math.min(1,dt*14),fz.x,fz.y);if(Math.abs(Math.log(fz.k/k))<.003){zoom(fz.k/k,fz.x,fz.y);fz=null}else on=1}
+if(fv){x+=fv[0]*dt;y+=fv[1]*dt;set();const d=Math.exp(-dt*8);fv=[fv[0]*d,fv[1]*d];if(Math.hypot(...fv)<12)fv=null;else on=1}
+if(on)fa=requestAnimationFrame(fmo);else fl0=0}
+const fgo=()=>{if(!fa){fl0=0;fa=requestAnimationFrame(fmo)}},fst=()=>{cancelAnimationFrame(fa);fa=fl0=0;fz=fv=null}, // start / stop it
+wd=e=>e.deltaY*(e.deltaMode==1?33:e.deltaMode==2?VH:1); // wheel delta in px whatever the browser reports
 function zoom(f,px,py,anim){const k2=Math.min(Math.max(k*f,fit()),kmax());x=px-(px-x)*k2/k;y=py-(py-y)*k2/k;k=k2;set(anim)}
 
 function rs(){ // (re)build the SVG overlays: country shapes, graticule, labels
@@ -122,20 +129,21 @@ zc.onclick=()=>col(!CO);
 function mode(n){MON=n;zm.classList.toggle("on",n==1);zk.classList.toggle("on",n==2);D.body.classList.toggle("msr",!!n);MS=[];msU()} // measuring: 0 off, 1 route (ruler), 2 circle
 zm.onclick=()=>mode(MON==1?0:1);zk.onclick=()=>mode(MON==2?0:2);
 
-m.onpointerdown=e=>{if(e.pointerType=="mouse"&&e.button)return;if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0;fv=[0,0];cancelAnimationFrame(fr);m.classList.add("dr");MG=mHit(e.clientX,e.clientY);if(MG<0)MG=null}; // pressing a measuring point drags it
+m.onpointerdown=e=>{if(e.pointerType=="mouse"&&e.button)return;if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0;fst();HS=[];m.classList.add("dr");MG=mHit(e.clientX,e.clientY);if(MG<0)MG=null}; // pressing a measuring point drags it
 m.onpointermove=e=>{coords(e);const q=P[e.pointerId];if(!q)return m.classList.toggle("mh",mHit(e.clientX,e.clientY)>=0);
 if(MG!=null){mv+=Math.abs(e.clientX-q.x)+Math.abs(e.clientY-q.y);q.x=e.clientX;q.y=e.clientY;const r=m.getBoundingClientRect(),mx=Math.min(W,Math.max(0,(e.clientX-r.left-x)/k)),my=Math.min(H,Math.max(0,(e.clientY-r.top-y)/k));MS[MG]=ll2v(mx/W*360-180,90-my/H*180);return msU()}
 const o=two(P),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;mv+=Math.abs(dx)+Math.abs(dy);
-if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/o.d,n.x-r.left,n.y-r.top)}else{const t=performance.now(),dt=Math.max(t-ft0,8)/1e3;ft0=t;fv=[fv[0]*.4+dx/dt*.6,fv[1]*.4+dy/dt*.6];x+=dx;y+=dy;set()}};
+if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/o.d,n.x-r.left,n.y-r.top)}else{const t=performance.now();HS.push([t,e.clientX,e.clientY]);while(t-HS[0][0]>150)HS.shift();x+=dx;y+=dy;set()}};
 m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];if(!Object.keys(P).length)m.classList.remove("dr");if(MG!=null){MG=null;if(mv>4)return} // a dragged point stays; a tapped one is removed below
-if(one&&mv>6&&performance.now()-ft0<80){let l=0;const st=t=>{const dt=l?Math.min((t-l)/1e3,.05):0;l=t;x+=fv[0]*dt;y+=fv[1]*dt;set();const d=Math.exp(-dt*8);fv=fv.map(v=>v*d);if(Math.hypot(...fv)>15)fr=requestAnimationFrame(st)};fr=requestAnimationFrame(st)} // a flicked map glides on
+if(one&&mv>6&&HS.length>1){const t=performance.now(),l=HS.at(-1),f=HS.find(h=>t-h[0]<=110)||HS[0],d=(l[0]-f[0])/1e3; // flick speed: averaged over the last ~0.1 s, so one uneven event does not throw the map
+if(t-l[0]<60&&d>.012){fv=[(l[1]-f[1])/d,(l[2]-f[2])/d];fgo()}} // it goes on at the speed it was let go, then slows down (twice the old friction: half the glide)
 if(!one||mv>6||e.type!="pointerup")return;const r=m.getBoundingClientRect(),t=Date.now();
 if(MON){const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k;return msTap(mx>=0&&mx<=W&&my>=0&&my<=H&&ll2v(mx/W*360-180,90-my/H*180),MS.map(v=>{const[lo,la]=v2ll(v);return[r.left+x+(lo+180)/360*W*k,r.top+y+(90-la)/180*H*k]}),e.clientX,e.clientY)}
 if(t-tap<300){zoom(2,e.clientX-r.left,e.clientY-r.top,1);tap=0;return}
 tap=t;const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k,g=D.elementFromPoint(e.clientX,e.clientY)?.closest("#mw [data-m]");
 if(g&&!MAP.onTap)return pickM(+g.dataset.m);if(!MAP.onTap?.(mx,my,g&&+g.dataset.m))pick(hit(mx,my))};
 m.onlostpointercapture=e=>{delete P[e.pointerId];if(!Object.keys(P).length)m.classList.remove("dr")};
-m.onwheel=e=>{e.preventDefault();const r=m.getBoundingClientRect();zoom(Math.exp(-e.deltaY*.002),e.clientX-r.left,e.clientY-r.top)};
+m.onwheel=e=>{e.preventDefault();const k0=fz?fz.k:k;fz={k:Math.min(Math.max(k0*Math.exp(-wd(e)*.002),fit()),kmax()),x:e.clientX-MR.left,y:e.clientY-MR.top};fv=null;fgo()}; // eased, like the globe
 zi.onclick=()=>G?(gT=cl(gT/1.5),anc=null,rq()):zoom(1.6,VW/2,VH/2,1);
 zo.onclick=()=>G?(gT=cl(gT*1.5),anc=null,rq()):zoom(1/1.6,VW/2,VH/2,1);
 pc.onclick=()=>{ms=null;pick()};
@@ -294,7 +302,7 @@ if(MON){const r=g.getBoundingClientRect();return msTap(q&&[q.x,q.y,q.z],MS.map(v
 if(t-gtap<300){gtap=0;anc=null;if(q)fly={y:Math.atan2(-q.x,q.z),p:Math.min(1.4,Math.max(-1.4,Math.atan2(q.y,Math.hypot(q.x,q.z))))};gT=cl(gT/1.8);return} // double click: fly there and zoom in
 gtap=t;const m=D.elementFromPoint(e.clientX,e.clientY)?.closest("#gw [data-m]");if(m)return pickM(+m.dataset.m);pick(q&&hit(q.mx,q.my))};
 g.onlostpointercapture=e=>{delete GP[e.pointerId];if(!Object.keys(GP).length)g.classList.remove("dr")};
-g.onwheel=e=>{e.preventDefault();fly=null;gT=cl(gT*Math.exp(e.deltaY*.0015));at(e.clientX,e.clientY);rq()};
+g.onwheel=e=>{e.preventDefault();fly=null;gT=cl(gT*Math.exp(wd(e)*.0015));at(e.clientX,e.clientY);rq()};
 return 1}
 function dr(){if(tdirty){tdirty=0;tx()}
 const w=GW,h=GH,r=Math.min(devicePixelRatio||1,2),cw=Math.round(w*r),ch=Math.round(h*r);
@@ -386,7 +394,7 @@ q.d.style.transform=`translate(${Math.round(X)}px,${Math.round(V)}px)`; // whole
 if(q.c&&q.fs!==fs)q.d.firstChild.style.fontSize=(q.fs=fs)+"px";
 const o=(al*(q.o??1)).toFixed(2);if(q.ov!==o)q.d.style.opacity=q.ov=o;if(q.on!==on)q.d.classList.toggle("gh",!(q.on=on))}}
 function sw(){const gr=g.getBoundingClientRect(),q=G&&SC&&gr.width&&gll({clientX:gr.left+gr.width/2,clientY:gr.top+gr.height/2}); // globe centre, read while the globe is still shown
-cancelAnimationFrame(fr);G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";sz();const cw=VW,ch=VH; // the view stays on the same place at a similar scale
+fst();G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";sz();const cw=VW,ch=VH; // the view stays on the same place at a similar scale
 if(G){const lo=(cw/2-x)/k/W*6.2832-3.1416,la=1.5708-(ch/2-y)/k/H*3.1416,sc=.364*Math.max(1,GH/GW);ya=-lo-sa;pa=Math.min(1.4,Math.max(-1.4,la));gv=[0,0];fly=anc=null;gD=gT=cl(1+Math.PI/(2*sc*k/fit()));gB()}
 else{if(q&&isFinite(q.mx+q.my)){k=Math.min(Math.max(Math.PI/(2*SC*(gD-1))*fit(),fit()),kmax());x=cw/2-q.mx*k;y=ch/2-q.my*k}set()}}
 function gB(){ // borders of the current version for the globe
