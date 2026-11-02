@@ -1,8 +1,8 @@
 [
 {"a":42.729,"o":-103.821,"r":"Каскадия","ten":"Capital of Great Cascadia","tru":"Столица Великой Каскадии","n":"Cascadia","z":1,"y1":450,"y0":212,"f":"cap","k":1},
 {"a":49.28,"o":-18.978,"n":"Tornst","r":"Торнст","ten":"Capital of Talmark Federation","tru":"Столица федерации Талмарк","y0":0,"y1":450,"z":1,"k":1,"f":"cap"},
-{"a":35.043,"o":-2.543,"n":"Solstium Canal","r":"Солстиумский Канал","z":1,"k":1,"f":"cap"},
-{"a":29.929,"o":23.226,"n":"Equilibrium","r":"Эквилибриум","ten":"The largest city in the world, capital of the Central Empire of Exiar.","tru":"Крупнейший город мира, столица Центральной Империи Эксиар.","y0":0,"y1":450,"k":1,"f":"cap"},
+{"a":35.043,"o":-2.543,"n":"Solstium Canal","r":"Солстиумский Канал","z":1,"k":1,"f":"cap","y0":0,"y1":450},
+{"a":29.929,"o":23.226,"n":"Equilibrium","r":"Эквилибриум","ten":"The largest city in the world, capital of the Central Empire of Exiar.","tru":"Крупнейший город мира, столица Центральной Империи Эксиар.","y0":0,"y1":450,"k":1,"f":"cap","z":1},
 {"a":26.437,"o":119.549,"n":"Keishi","ten":"Capital of Kai'zen Empire","tru":"Столица Империи Кай'зен","r":"Кейши","z":1,"y0":0,"y1":450,"f":"cap","k":1},
 {"a":22.402,"o":147.916,"r":"Канг-Лао","n":"Kang-Lao","ten":"Capital of Norvella","tru":"Столица Норвеллы","z":1,"y0":0,"y1":450,"f":"cap","k":1},
 {"a":8.327,"o":8.13,"n":"Irlit","r":"Ирлит","ten":"Capital of Shevran","tru":"Столица Шеврана","z":1,"y1":450,"y0":0,"k":1,"f":"cap"},
