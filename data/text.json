@@ -58,5 +58,9 @@
  "tip_ruler": {
   "en": "Measure distance",
   "ru": "Измерить расстояние"
+ },
+ "tip_circle": {
+  "en": "Circle: centre and radius",
+  "ru": "Окружность: центр и радиус"
  }
 }

@@ -4,7 +4,7 @@
 // Layers: geographic base (static/map/g*.webp) < country colours: light tint + inner colour band (canvas, toggleable) < country shapes for clicks/hover (svg) < borders of the version (static/map/<year>/b*.webp)
 // < selection: everything else dimmed, outline on top < graticule, labels, markers.
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
-[m,c,im,ov,sv,bi,hl,sl,mw,gx,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc,ld,zm,sb,mz]="m c im ov sv bi hl sl mw gx g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc ld zm sb mz".split(" ").map($),
+[m,c,im,ov,sv,bi,hl,sl,mw,gx,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc,ld,zm,zk,sb,mz]="m c im ov sv bi hl sl mw gx g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc ld zm zk sb mz".split(" ").map($),
 W=4096,H=2048,T0=320,T1=420, // visible timeline range
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-10L10 0 0 10-10 0zM0-7L7 0 0 7-7 0zM-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0z"], // marker shapes by kind (k): circle, circle in a diamond (capital)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
@@ -87,9 +87,12 @@ sb.firstChild.textContent=n<1?(n*1e3).toLocaleString()+L(" m"," м"):n.toLocaleS
 function msU(){ // measured route: great-circle arcs between the points, sampled every degree; cumulative distances
 MP=[];MD=[0];for(let i=1;i<MS.length;i++){const a=MS[i-1],b=MS[i],an=Math.acos(Math.max(-1,Math.min(1,a[0]*b[0]+a[1]*b[1]+a[2]*b[2]))),n=Math.max(1,Math.ceil(an*180/Math.PI)),q=[];
 MD.push(MD[i-1]+an*RE);for(let j=0;j<=n;j++){const t=j/n,sa=Math.sin(an),f=an<1e-9?1-t:Math.sin((1-t)*an)/sa,g2=an<1e-9?t:Math.sin(t*an)/sa;q.push([a[0]*f+b[0]*g2,a[1]*f+b[1]*g2,a[2]*f+b[2]*g2])}MP.push(q)}
+if(MON==2&&MS.length==2){const[C,E]=MS,t=Math.acos(Math.max(-1,Math.min(1,C[0]*E[0]+C[1]*E[1]+C[2]*E[2]))),a=Math.abs(C[1])<.9?[0,1,0]:[1,0,0], // circle: all points at the same distance over the surface from the centre
+cr=(p,q)=>[p[1]*q[2]-p[2]*q[1],p[2]*q[0]-p[0]*q[2],p[0]*q[1]-p[1]*q[0]],nz=v=>{const l=Math.hypot(...v);return v.map(c=>c/l)},u=nz(cr(C,a)),w=cr(C,u),q=[];
+for(let j=0;j<=180;j++){const f=j/180*6.2832,c=Math.cos(f)*Math.sin(t),s2=Math.sin(f)*Math.sin(t);q.push([0,1,2].map(i=>C[i]*Math.cos(t)+u[i]*c+w[i]*s2))}MP.push(q)}
 drawMz();if(G)rq()}
 function msTap(v,pts,cx,cy){ // measuring: a tap on a point removes it, anywhere else adds one
-const i=pts.findIndex(p=>p&&Math.hypot(p[0]-cx,p[1]-cy)<12);if(i>=0)MS.splice(i,1);else if(v)MS.push(v);msU()}
+const i=pts.findIndex(p=>p&&Math.hypot(p[0]-cx,p[1]-cy)<12);if(i>=0)MS.splice(i,1);else if(v){if(MON==2&&MS.length>1)MS=[];MS.push(v)}msU()} // circle: centre, then a point on the edge; the next tap starts a new one
 function drawMz(){if(G||!MS.length){if(mz.firstChild)mz.innerHTML="";return} // flat map: the arcs bend as the real shortest way does
 let d="";const cw=m.clientWidth-140,sp=v=>{const[lo,la]=v2ll(v);return[x+(lo+180)/360*W*k,y+(90-la)/180*H*k,lo]};
 for(const q of MP){let pl=null;for(const v of q){const[X,Y,lo]=sp(v);d+=(pl==null||Math.abs(lo-pl)>180?"M":"L")+X.toFixed(1)+" "+Y.toFixed(1);pl=lo}}
@@ -114,7 +117,8 @@ function panel(){if(ms!=null&&MK[ms]){const q=MK[ms];pt.textContent=mn(q);px.tex
 if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);px.textContent=(ru()?o.tru:o.ten)||L("Placeholder text","Текст-заглушка");MAP.onPanel?.(r)}}
 function col(on){CO=on;c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}drawOv()}
 zc.onclick=()=>col(!CO);
-zm.onclick=()=>{MON=!MON;zm.classList.toggle("on",MON);D.body.classList.toggle("msr",MON);if(!MON){MS=[];msU()}};
+function mode(n){MON=n;zm.classList.toggle("on",n==1);zk.classList.toggle("on",n==2);D.body.classList.toggle("msr",!!n);MS=[];msU()} // measuring: 0 off, 1 route (ruler), 2 circle
+zm.onclick=()=>mode(MON==1?0:1);zk.onclick=()=>mode(MON==2?0:2);
 
 m.onpointerdown=e=>{if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0;fv=[0,0];cancelAnimationFrame(fr);m.classList.add("dr")};
 m.onpointermove=e=>{coords(e);const q=P[e.pointerId];if(!q)return;
@@ -144,7 +148,7 @@ const fb=()=>{const t=D.createElement("textarea");t.value=CP;D.body.append(t);t.
 navigator.clipboard?navigator.clipboard.writeText(CP).catch(fb):fb();
 cd.textContent=L("COPIED: ","СКОПИРОВАНО: ")+CP;clearTimeout(fl);fl=setTimeout(()=>{fl=0;cd.innerHTML=CT},1200)}
 cd.onclick=copy;
-D.addEventListener("keydown",e=>{if(e.target.closest?.("input:not([type=range]),textarea,select,[contenteditable]"))return; /* typing in a field is not a shortcut */if(e.key=="Escape")tlOpen()?tlClose():MON?zm.click():pick();else if(tlOpen()||e.ctrlKey||e.metaKey||e.altKey)return;else if(e.code=="KeyC"&&!getSelection().toString())copy();
+D.addEventListener("keydown",e=>{if(e.target.closest?.("input:not([type=range]),textarea,select,[contenteditable]"))return; /* typing in a field is not a shortcut */if(e.key=="Escape")tlOpen()?tlClose():MON?mode(0):pick();else if(tlOpen()||e.ctrlKey||e.metaKey||e.altKey)return;else if(e.code=="KeyC"&&!getSelection().toString())copy();
 else if(e.key=="+"||e.key=="=")zi.click();else if(e.key=="-")zo.click();
 else if(/^Arrow/.test(e.key)){e.preventDefault();const h=e.key=="ArrowLeft"?1:e.key=="ArrowRight"?-1:0,v=e.key=="ArrowUp"?1:e.key=="ArrowDown"?-1:0; // arrows: look west / east / north / south
 if(G){gv=[h*(gD-1)*.9,v*(gD-1)*.9];fly=null;rq()}else{x+=h*m.clientWidth/4;y+=v*m.clientHeight/4;set(1)}}});
