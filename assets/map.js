@@ -128,7 +128,7 @@ if(MG!=null){mv+=Math.abs(e.clientX-q.x)+Math.abs(e.clientY-q.y);q.x=e.clientX;q
 const o=two(P),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;mv+=Math.abs(dx)+Math.abs(dy);
 if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/o.d,n.x-r.left,n.y-r.top)}else{const t=performance.now(),dt=Math.max(t-ft0,8)/1e3;ft0=t;fv=[fv[0]*.4+dx/dt*.6,fv[1]*.4+dy/dt*.6];x+=dx;y+=dy;set()}};
 m.onpointerup=m.onpointercancel=e=>{const one=Object.keys(P).length==1;delete P[e.pointerId];if(!Object.keys(P).length)m.classList.remove("dr");if(MG!=null){MG=null;if(mv>4)return} // a dragged point stays; a tapped one is removed below
-if(one&&mv>6&&performance.now()-ft0<80){let l=0;const st=t=>{const dt=l?Math.min((t-l)/1e3,.05):0;l=t;x+=fv[0]*dt;y+=fv[1]*dt;set();const d=Math.exp(-dt*4);fv=fv.map(v=>v*d);if(Math.hypot(...fv)>15)fr=requestAnimationFrame(st)};fr=requestAnimationFrame(st)} // a flicked map glides on
+if(one&&mv>6&&performance.now()-ft0<80){let l=0;const st=t=>{const dt=l?Math.min((t-l)/1e3,.05):0;l=t;x+=fv[0]*dt;y+=fv[1]*dt;set();const d=Math.exp(-dt*8);fv=fv.map(v=>v*d);if(Math.hypot(...fv)>15)fr=requestAnimationFrame(st)};fr=requestAnimationFrame(st)} // a flicked map glides on
 if(!one||mv>6||e.type!="pointerup")return;const r=m.getBoundingClientRect(),t=Date.now();
 if(MON){const mx=(e.clientX-r.left-x)/k,my=(e.clientY-r.top-y)/k;return msTap(mx>=0&&mx<=W&&my>=0&&my<=H&&ll2v(mx/W*360-180,90-my/H*180),MS.map(v=>{const[lo,la]=v2ll(v);return[r.left+x+(lo+180)/360*W*k,r.top+y+(90-la)/180*H*k]}),e.clientX,e.clientY)}
 if(t-tap<300){zoom(2,e.clientX-r.left,e.clientY-r.top,1);tap=0;return}
@@ -188,10 +188,10 @@ sz();upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();lx=(VW/2-x)/k;ly=(V
 
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
-let gl,gc,go,gw,tc,tx2,bc,bb,tex,bp,pp,sp,fp,tb,pb,eb,gD=3,gT=3,gv=[0,0],gt0=0,fly=null,gtap=0,anc=null,GI=[],GO=[],gsig="",ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0,FD;
+let gl,gc,go,gw,tc,tx2,tex,bt,ot,LV=2,AN,bp,pp,sp,fp,tb,pb,eb,gD=3,gT=3,gv=[0,0],gt0=0,fly=null,gtap=0,anc=null,GI=[],GO=[],gsig="",ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0,FD;
 const GP={},cl=v=>Math.min(4.5,Math.max(1.6,v)),
 SW=(v=>{const l=Math.hypot(...v);return v.map(a=>a/l)})([.62,.32,.72]),
-SPIN=6.2832/430,CLOUD=[1/600,1/950], // one turn in ~7 min; cloud layers drift (uv/s)
+SPIN=6.2832/573,CLOUD=[1/1200,1/1900], // one turn in ~9.5 min; cloud layers drift (uv/s)
 ry=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[c*v[0]+s*v[2],v[1],-s*v[0]+c*v[2]]},
 rx=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[v[0],c*v[1]-s*v[2],s*v[1]+c*v[2]]},
 rq=()=>{if(!loop&&G){last=0;loop=requestAnimationFrame(tick)}}, // render loop runs while the globe is shown
@@ -214,10 +214,10 @@ PV=`attribute vec3 p;attribute vec2 t;uniform vec3 u;uniform vec2 a;uniform floa
 CL=`uniform sampler2D C;uniform vec4 cw;float cl(vec2 w){float a=texture2D(C,w+cw.xy).r,b=texture2D(C,vec2(w.x+cw.z,1.-w.y)).r;return smoothstep(.3,.95,a*.65+b*.5);}
 vec2 tl(vec3 ob,vec3 Lo){vec3 e=normalize(vec3(ob.z,0.,-ob.x)+vec3(1e-4,0.,0.)),nr=cross(ob,e);float cs=max(sqrt(1.-ob.y*ob.y),.1);return vec2(dot(Lo,e)/(6.2832*cs),-dot(Lo,nr)/3.1416);}`, // uv step towards the sun
 // ground: map, day/night lighting, ocean glint + sky reflection, cloud shadows, atmospheric haze
-PF=PR+CL+`uniform sampler2D T;uniform float d;uniform vec3 L;uniform vec3 Lo;varying vec2 v;varying vec3 q;varying vec3 o;
+PF=PR+CL+`uniform sampler2D T;uniform sampler2D B;uniform sampler2D O;uniform float d;uniform vec3 L;uniform vec3 Lo;varying vec2 v;varying vec3 q;varying vec3 o;
 void main(){vec3 n=normalize(q),V=normalize(vec3(0.,0.,d)-q),ob=normalize(o),H=normalize(L+V);float ndl=dot(n,L),h=1./d,al=smoothstep(h,h+.03,q.z),nv=max(dot(n,V),0.);
 float day=smoothstep(-.08,.3,ndl),tw=exp(-pow(ndl*6.,2.)),wr=clamp((ndl+.15)/1.15,0.,1.);
-vec3 m=texture2D(T,v).rgb;float cd=cl(v),sh=cl(v+tl(ob,Lo)*.014);
+vec4 ov=texture2D(O,v);vec3 m=(texture2D(T,v).rgb*(1.-ov.a)+ov.rgb)*(1.-texture2D(B,v).a);float cd=cl(v),sh=cl(v+tl(ob,Lo)*.014);
 float sea=smoothstep(.02,.07,m.b-m.r)*(1.-smoothstep(.18,.28,m.r));
 vec3 g=m*(1.-.55*sh*day)*mix(1.,.82,sea);
 vec3 c=mix(m*vec3(.045,.06,.1),g*(.08+1.02*wr),day);
@@ -262,7 +262,7 @@ a.forEach((n,i)=>gl.bindAttribLocation(q,i,n));gl.linkProgram(q);q.u={};u.forEac
 function tp(){gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE)}
 function gi(img){
 gc=D.createElement("canvas");gl=gc.getContext("webgl",{antialias:true});if(!gl){zg.style.display="none";return}go=D.createElement("canvas");gw=D.createElement("div");gw.id="gw";g.append(gc,go,gw);new ResizeObserver(()=>{if(G){sz();rq()}}).observe(g);
-bp=prog(FV,BF,["g"],["u","a","S"]);pp=prog(PV,PF,["p","t"],["u","a","R","d","L","Lo","cw","T","C"]);sp=prog(PV,CS,["p","t"],["u","a","R","d","L","Lo","cw","C"]);fp=prog(FV,FF,["g"],["u","S2"]);const cp=prog(FV,CF,["g"],["rs"]);
+bp=prog(FV,BF,["g"],["u","a","S"]);pp=prog(PV,PF,["p","t"],["u","a","R","d","L","Lo","cw","T","C","B","O"]);sp=prog(PV,CS,["p","t"],["u","a","R","d","L","Lo","cw","C"]);fp=prog(FV,FF,["g"],["u","S2"]);const cp=prog(FV,CF,["g"],["rs"]);
 tb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
 const b=[],ix=[];for(let j=0;j<=48;j++)for(let i=0;i<=96;i++){const th=(i/96-.5)*6.2832,ph=(.5-j/48)*3.1416;b.push(Math.cos(ph)*Math.sin(th),Math.sin(ph),Math.cos(ph)*Math.cos(th),i/96,j/48)}
 for(let j=0;j<48;j++)for(let i=0;i<96;i++){const a=j*97+i;ix.push(a,a+1,a+97,a+1,a+98,a+97)}
@@ -274,14 +274,16 @@ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);tp();
 const fo=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,fo);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,ct,0);
 gl.viewport(0,0,CW,CW/2);gl.useProgram(cp);gl.uniform2f(cp.u.rs,CW,CW/2);gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0);gl.drawArrays(gl.TRIANGLES,0,3);
 gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.deleteFramebuffer(fo);gl.deleteProgram(cp);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.generateMipmap(gl.TEXTURE_2D);
-gl.activeTexture(gl.TEXTURE0);gl.useProgram(pp);gl.uniform1i(pp.u.T,0);gl.uniform1i(pp.u.C,1);gl.useProgram(sp);gl.uniform1i(sp.u.C,1);
-// map texture: base image is downscaled once, overlays are redrawn on top of it by tx()
-const S=Math.min(4096,gl.getParameter(gl.MAX_TEXTURE_SIZE)),mk=()=>{const e=D.createElement("canvas");e.width=S;e.height=S/2;return e};
-bc=mk();bb=mk();const bx=bc.getContext("2d");bx.imageSmoothingQuality="high";bx.drawImage(img,0,0,S,S/2);
-tc=mk();tx2=tc.getContext("2d");
-tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bc);
-gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);tp();
-const e=gl.getExtension("EXT_texture_filter_anisotropic");if(e)gl.texParameterf(gl.TEXTURE_2D,e.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(e.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+gl.activeTexture(gl.TEXTURE0);gl.useProgram(pp);gl.uniform1i(pp.u.T,0);gl.uniform1i(pp.u.C,1);gl.uniform1i(pp.u.B,2);gl.uniform1i(pp.u.O,3);gl.useProgram(sp);gl.uniform1i(sp.u.C,1);
+// textures: base map (T) and borders (B) at the flat map's best level where the device can hold it; tint, graticule and dimming (O) are redrawn by tx()
+const MX=gl.getParameter(gl.MAX_TEXTURE_SIZE),S=Math.min(4096,MX),mk=(w,h)=>{const e=D.createElement("canvas");e.width=w;e.height=h;return e};
+LV=MX>=8192&&!(matchMedia("(pointer:coarse)").matches&&(navigator.deviceMemory||4)<6)?3:2; // 8192 px like the closest flat level; 4096 on small phones
+AN=gl.getExtension("EXT_texture_filter_anisotropic");
+const nt=u=>{gl.activeTexture(gl.TEXTURE0+u);const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);tp();
+if(AN)gl.texParameterf(gl.TEXTURE_2D,AN.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(AN.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));return t};
+tex=nt(0);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,MX<4096?(e=>{e.getContext("2d").drawImage(img,0,0,S,S/2);return e})(mk(S,S/2)):img);gl.generateMipmap(gl.TEXTURE_2D);
+if(LV>2){const i=new Image;i.src=U+"map/g3.webp";i.decode().then(()=>{gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,i);gl.generateMipmap(gl.TEXTURE_2D);rq()},()=>{})} // sharp level after the quick one
+bt=nt(2);upB([]);ot=nt(3);tc=mk(S,S/2);tx2=tc.getContext("2d");gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,tc);gl.activeTexture(gl.TEXTURE0);
 g.onpointerdown=e=>{if(e.pointerType=="mouse"){if(e.button)return;for(const i in GP)delete GP[i]}g.setPointerCapture(e.pointerId);GP[e.pointerId]={x:e.clientX,y:e.clientY};gm=0;gv=[0,0];fly=null;anc=null;g.classList.add("dr");if(e.pointerType!="mouse")gC(e);MG=mHit(e.clientX,e.clientY);if(MG<0)MG=null};
 g.onpointermove=e=>{gC(e);const q=GP[e.pointerId];if(!q)return g.classList.toggle("mh",mHit(e.clientX,e.clientY)>=0);
 if(MG!=null){gm+=Math.abs(e.clientX-q.x)+Math.abs(e.clientY-q.y);q.x=e.clientX;q.y=e.clientY;const p=gll(e);if(p){MS[MG]=[p.x,p.y,p.z];msU()}return}const o=two(GP),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;gm+=Math.abs(dx)+Math.abs(dy);
@@ -311,18 +313,21 @@ sx=Lv[0]/-Lv[2]/(SC*AS),sy=Lv[1]/-Lv[2]/SC,on=vis*Math.max(0,1-Math.hypot(sx,sy)
 if(on>0){gl.blendFunc(gl.ONE,gl.ONE);gl.useProgram(fp);gl.bindBuffer(gl.ARRAY_BUFFER,tb);gl.vertexAttribPointer(0,2,gl.FLOAT,0,0,0);gl.disableVertexAttribArray(1);
 gl.uniform3f(fp.u.u,gD,AS,SC);gl.uniform3f(fp.u.S2,sx,sy,on);gl.drawArrays(gl.TRIANGLES,0,3)}}
 gO(w,h,r);gF(w,h)}
-function tx(){ // rebuild the globe texture: base map, country colours, borders, graticule, selection (names float above it: gL)
-const S=tc.width,Sh=S/2,s=S/W,o=tx2;
-o.drawImage(bc,0,0);
+function tx(){ // globe overlay texture: country tint, graticule, dimming outside the selection (names float above: gL; vector edges: gO)
+const S=tc.width,Sh=S/2,s=S/W,o=tx2;o.clearRect(0,0,S,Sh);
 if(CO){o.save();o.scale(s,s);o.globalAlpha=.28;RG.forEach(r=>{if(r!=R[sel]){o.fillStyle=r.c;o.fill(path(r),"evenodd")}});o.restore()} // light tint; the colour bands are vector (gO)
-if(cv.b)o.drawImage(bb,0,0);
 o.strokeStyle="#00000059";o.lineWidth=2;o.beginPath();for(let i=1;i<24;i++){o.moveTo(i*S/24,0);o.lineTo(i*S/24,Sh)}for(let i=1;i<12;i++){o.moveTo(0,i*Sh/12);o.lineTo(S,i*Sh/12)}o.stroke();
 o.strokeStyle="#000000b3";o.lineWidth=3;o.beginPath();o.moveTo(S/2,0);o.lineTo(S/2,Sh);o.moveTo(0,Sh/2);o.lineTo(S,Sh/2);o.stroke();
-if(sel){const q=path(R[sel]),d=new Path2D;d.rect(0,0,W,H);d.addPath(q);o.save();o.scale(s,s);o.lineJoin="round";
-o.fillStyle="#04040a";o.globalAlpha=.5;o.fill(d,"evenodd");o.restore()}
+if(sel){const q=path(R[sel]),d=new Path2D;d.rect(0,0,W,H);d.addPath(q);o.save();o.scale(s,s);o.fillStyle="#04040a";o.globalAlpha=.5;o.fill(d,"evenodd");o.restore()}
 gL();
-gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,tc);gl.generateMipmap(gl.TEXTURE_2D);
-}
+gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,ot);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,true);gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,gl.RGBA,gl.UNSIGNED_BYTE,tc);
+gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.generateMipmap(gl.TEXTURE_2D);gl.activeTexture(gl.TEXTURE0)}
+function upB(im){ // borders texture: the site's own levels as its mipmaps (they keep thin lines visible when zoomed out), smaller ones drawn from the last
+gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,bt);const A=gl.ALPHA,T2=gl.TEXTURE_2D,UB=gl.UNSIGNED_BYTE;
+if(!im.length)gl.texImage2D(T2,0,A,1,1,0,A,UB,new Uint8Array(1)),gl.generateMipmap(T2);
+else{let l=0,pv;for(const i of im)gl.texImage2D(T2,l++,A,A,UB,pv=i);let w=pv.width,h=pv.height;
+while(w>1||h>1){w=Math.max(1,w>>1);h=Math.max(1,h>>1);const e=D.createElement("canvas");e.width=w;e.height=h;e.getContext("2d").drawImage(pv,0,0,w,h);gl.texImage2D(T2,l++,A,A,UB,pv=e)}}
+gl.activeTexture(gl.TEXTURE0)}
 function at(cx,cy){const q=gll({clientX:cx,clientY:cy}),r=g.getBoundingClientRect();anc=q&&{p:[q.x,q.y,q.z],x:cx-r.left,y:cy-r.top}} // zoom anchor
 function gC(e){const q=gll(e);if(q){lx=q.mx;ly=q.my;showC()}} // coordinates under the cursor, as on the flat map
 function gll(e){ // screen point -> planet point {x,y,z} and map point {mx,my}; null off the globe
@@ -384,7 +389,8 @@ function sw(){const gr=g.getBoundingClientRect(),q=G&&SC&&gr.width&&gll({clientX
 cancelAnimationFrame(fr);G=!G;D.body.classList.toggle("g",G);zg.textContent=G?"2D":"3D";sz();const cw=VW,ch=VH; // the view stays on the same place at a similar scale
 if(G){const lo=(cw/2-x)/k/W*6.2832-3.1416,la=1.5708-(ch/2-y)/k/H*3.1416,sc=.364*Math.max(1,GH/GW);ya=-lo-sa;pa=Math.min(1.4,Math.max(-1.4,la));gv=[0,0];fly=anc=null;gD=gT=cl(1+Math.PI/(2*sc*k/fit()));gB()}
 else{if(q&&isFinite(q.mx+q.my)){k=Math.min(Math.max(Math.PI/(2*SC*(gD-1))*fit(),fit()),kmax());x=cw/2-q.mx*k;y=ch/2-q.my*k}set()}}
-function gB(){ // borders of the current version for the globe texture
-const v=cv;if(!v.b)return tq();const i=new Image;i.onload=()=>{if(v!=cv)return;const o=bb.getContext("2d");o.clearRect(0,0,bb.width,bb.height);o.drawImage(i,0,0,bb.width,bb.height);tq()};i.src=bsrc(2)} // 4096 px level = globe texture size
+function gB(){ // borders of the current version for the globe
+const v=cv;if(!v.b){upB([]);return tq()}
+Promise.all(Array.from({length:LV+1},(_,j)=>{const i=new Image;i.src=bsrc(LV-j);return i.decode().then(()=>i)})).then(a=>{if(v==cv){upB(a);tq()}},()=>{})}
 zg.onclick=()=>{if(gl)return sw();if(busy)return;busy=1;ld.hidden=false;zg.setAttribute("aria-busy","true");const i=new Image,done=()=>{busy=0;ld.hidden=true;zg.removeAttribute("aria-busy")};i.onerror=done;
 i.onload=()=>Promise.all([D.fonts.load("20px A"),D.fonts.load("20px Play")]).then(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r)))).then(()=>{if(gi(i)){FD=done;sw()}else done()}); /* the spinner stays until the first globe frame is drawn (shaders compile on the first draw) */i.src=U+"map/g2.webp"}; // 4096 px level
