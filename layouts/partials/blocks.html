@@ -1,7 +1,7 @@
 {{- /* page body: a vertical list of blocks (front matter "blocks"). The editor (assets/edit.js) draws the same markup.
    head  — kicker, title (+ accent line), line, description; defaults to the page title and description
    h     — heading (lv 2 | 3)      p — paragraph      quote — quote (+ cite)      list — list (ord) of <li> items
-   img   — image (al: center | full | left | right) + caption      card — fact card (title, rows of key / value, image), floats right
+   img   — image (al: center | full | left | right; w: frame width, % of the text) + caption      card — fact card (title, rows of key / value, image), floats right
    cols  — two columns of text or image      hr — divider      links — links to the subpages (hide: page sources left out) */ -}}
 {{- $P := . }}{{ $T := hugo.Data.text -}}
 {{- range $b := .Params.blocks }}{{ $ta := cond (isset $b "ta") (printf "ta-%s" $b.ta) "" }}{{/* ta: text alignment left | center | right | justify */}}
@@ -13,7 +13,7 @@
 {{- else if eq $b.t "p" }}{{ partial "tx" (dict "b" $b "f" "" "tag" "p" "cls" $ta) }}
 {{- else if eq $b.t "quote" }}<blockquote{{ with $ta }} class="{{ . }}"{{ end }}>{{ partial "tx" (dict "b" $b "f" "" "tag" "p") }}{{ partial "tx" (dict "b" $b "f" "cite_" "tag" "cite") }}</blockquote>
 {{- else if eq $b.t "list" }}{{ partial "tx" (dict "b" $b "f" "" "tag" (cond (eq $b.ord true) "ol" "ul") "cls" $ta) }}
-{{- else if eq $b.t "img" }}<figure class="b-img al-{{ default "center" $b.al }}">{{ with $b.src }}{{ partial "img" . }}{{ end }}{{ partial "tx" (dict "b" $b "f" "cap_" "tag" "figcaption") }}</figure>
+{{- else if eq $b.t "img" }}<figure class="b-img al-{{ default "center" $b.al }}"{{ with $b.w }} style="--w:{{ . }}%"{{ end }}>{{ with $b.src }}{{ partial "img" . }}{{ end }}{{ partial "tx" (dict "b" $b "f" "cap_" "tag" "figcaption") }}</figure>
 {{- else if eq $b.t "card" }}<aside class="b-card">{{ with $b.src }}{{ partial "img" . }}{{ end }}{{ partial "tx" (dict "b" $b "f" "t_" "tag" "h4") }}
 {{- with $b.rows }}<dl>{{ range . }}<div>{{ partial "tx" (dict "b" . "f" "k_" "tag" "dt") }}{{ partial "tx" (dict "b" . "f" "v_" "tag" "dd") }}</div>{{ end }}</dl>{{ end }}</aside>
 {{- else if eq $b.t "cols" }}<div class="b-cols">{{ range $b.c }}<div class="cell">{{ if eq .t "img" }}<figure class="b-img">{{ with .src }}{{ partial "img" . }}{{ end }}{{ partial "tx" (dict "b" . "f" "cap_" "tag" "figcaption") }}</figure>{{ else }}{{ partial "tx" (dict "b" . "f" "" "tag" "div") }}{{ end }}</div>{{ end }}</div>

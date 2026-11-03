@@ -55,7 +55,8 @@ section:has(.doc){justify-content:flex-start}
 .doc .b-links a{color:#e8e8e0a6;text-decoration:none}.doc .b-links a:hover{color:#e8e8e0}
 @media(min-width:760px){ /* floats only where there is room for text beside them */
 .doc .al-left{float:left;width:45%;margin:4px 28px 1em 0}.doc .al-right{float:right;width:45%;margin:4px 0 1em 28px}
-.doc .b-card{float:right;width:300px;margin:4px 0 1em 28px}}
+.doc .b-card{float:right;width:300px;margin:4px 0 1em 28px}
+.doc .b-img[style]{width:var(--w)}.doc .b-img.al-center[style]{margin-left:auto;margin-right:auto}.doc .b-img[style] img{width:100%}} /* an image frame sized in the editor (w); stacked full width on narrow screens */
 .doc>:is(h2,h3,.b-hr,.b-cols,.al-full,.b-links){clear:both}
 @media(max-width:700px){.doc{padding:32px 0 48px}.b-cols{grid-template-columns:1fr;gap:20px}.b-head.tall{min-height:calc(100dvh - 160px)}}
 @media(max-width:900px){nav{padding:0 12px;gap:6px}nav .nl{padding-right:12px;margin-right:6px;border-right:1px solid #6665c04d}nav .br{display:none}nav div{gap:6px;flex:1;justify-content:space-between}a,.bt{letter-spacing:.5px;font-size:min(15px,3.2vw)}}

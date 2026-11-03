@@ -82,7 +82,11 @@ D.head.append(h("style",{},`
 .ed .doc [contenteditable]{outline:none;cursor:text}.ed .doc :is([contenteditable],li[data-ph]):empty::before{content:attr(data-ph);color:#e8e8e040;font-style:italic;pointer-events:none}
 .ed .doc [data-i]{position:relative;outline:1px dashed transparent;outline-offset:6px;transition:outline-color .12s}.ed .doc [data-i]:hover{outline-color:#6665c04d}.ed .doc [data-i].cur{outline:1px solid #6665c080;background:#6665c00d} /* each block is a visible box: hovered dashed, current solid */
 #eb .st{align-self:center;padding:0 6px;font:400 12px "Exo 2",sans-serif;color:#e8e8e099}@media(max-width:700px){#eb .st{display:none}}.ed .doc :is(.b-card,.al-left,.al-right){z-index:1} /* floats stay above the text that wraps them */
-.ed .doc .b-img img,.ed .doc .b-card img{cursor:pointer}.ed .doc .pi{display:block;width:100%;padding:36px 12px;border:1px dashed #6665c0;color:#e8e8e080;font:400 13px "Exo 2",sans-serif;cursor:pointer;text-align:center}
+.ed .doc .b-img img,.ed .doc .b-card img{cursor:pointer}
+.ed .doc .rz{display:none;position:absolute;z-index:2;width:14px;height:14px;margin:-7px 0 0 -7px;background:#020206;border:1px solid #8d8cf0;cursor:ew-resize;touch-action:none}
+@media(min-width:760px){.ed .doc .b-img:is(:hover,.cur,.rzg) .rz{display:block}} /* image size handle (sizes apply where images are not stacked full width) */
+.ed .doc .rzg .rz::after{content:attr(data-v);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);font:400 12px "Exo 2",sans-serif;color:#e8e8e0;background:#020206f2;border:1px solid #6665c04d;padding:3px 6px;white-space:nowrap}
+.ed .doc .rzg img{outline:1px solid #8d8cf0}.ed .doc .pi{display:block;width:100%;padding:36px 12px;border:1px dashed #6665c0;color:#e8e8e080;font:400 13px "Exo 2",sans-serif;cursor:pointer;text-align:center}
 .ed .doc .b-links .nw a{color:#e8b04a}.ed .doc .b-links a{pointer-events:none}
 .ed .doc .add{display:block;margin:4px 0 0;font:400 12px "Exo 2",sans-serif;color:#8d8cf0;cursor:pointer;text-transform:none;letter-spacing:.5px}
 .ed .doc .b-cols .cell{outline:1px dashed #6665c033;outline-offset:6px;min-height:40px}
@@ -210,7 +214,7 @@ case"h":return E("h"+(b.lv||2),b,b,"","plain",ta+di);
 case"p":return E("p",b,b,"","inline",ta+di,L("Write, or press / for blocks","Пишите или нажмите / — меню блоков"));
 case"quote":return`<blockquote${ta}${di}>${E("p",b,b,"","inline")}${E("cite",b,b,"cite_","plain")}</blockquote>`;
 case"list":{const t=b.ord?"ol":"ul",e=E(t,b,b,"","li",ta+di);return ED?e.replace(/data-ph="([^"]*)"([^>]*)><\/(ul|ol)>$/,'data-ph="$1"$2><li data-ph="$1"></li></$3>'):e}
-case"img":return`<figure class="b-img al-${b.al||"center"}"${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>`:ED?`<button type="button" class="pi" data-pick="">🖼 ${L("Choose an image or drop a file here","Выберите изображение или перетащите файл")}</button>`:""}${E("figcaption",b,b,"cap_","plain")}</figure>`;
+case"img":return`<figure class="b-img al-${b.al||"center"}"${b.w?` style="--w:${b.w}%"`:""}${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>${ED?'<i class="rz" title="'+L("Drag to resize","Потяните, чтобы изменить размер")+'"></i>':""}`:ED?`<button type="button" class="pi" data-pick="">🖼 ${L("Choose an image or drop a file here","Выберите изображение или перетащите файл")}</button>`:""}${E("figcaption",b,b,"cap_","plain")}</figure>`;
 case"card":return`<aside class="b-card"${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>`:""}${E("h4",b,b,"t_","plain")}<dl>${(b.rows||[]).map((r,j)=>
 `<div>${E("dt",b,r,"k_","plain",` data-r="${j}"`,L("Property","Свойство"))}${E("dd",b,r,"v_","inline",` data-r="${j}"`,L("Value","Значение"))}</div>`).join("")}</dl>${ED?`<button type="button" class="add" data-act="row">+ ${L("Row","Строка")}</button>`:""}</aside>`;
 case"cols":return`<div class="b-cols"${di}>${(b.c||[]).map((c,j)=>`<div class="cell">${c.t=="img"?`<figure class="b-img">${c.src?`<img src="${img(c.src)}" alt=""${ED?` data-pick="" data-c="${j}"`:""}>`:ED?`<button type="button" class="pi" data-pick="" data-c="${j}">🖼</button>`:""}${E("figcaption",b,c,"cap_","plain",` data-c="${j}"`)}</figure>`
@@ -223,8 +227,10 @@ function status(){if(!stb)return;const l=HT.lang,w=B().flatMap(b=>fields(b).map(
 stb.textContent=ru()?w+" "+(w%10==1&&w%100!=11?"слово":w%10>1&&w%10<5&&(w%100<12||w%100>14)?"слова":"слов"):w+(w==1?" word":" words")}
 function render(){if(!DOC)return;const a=D.activeElement?.closest?.("[data-f]"),ai=a?.closest("[data-i]")?.dataset.i,af=a?.dataset.f;
 DOC.innerHTML=B().map(rb).join("")+(ED&&!B().length?`<button type="button" class="eb" data-act="first" style="display:block;margin:0 auto">+ ${L("Add the first block","Добавить первый блок")}</button>`:"");
-if(ED){DOC.append(gut,dln);if(CB!=null&&!DOC.querySelector(`[data-i="${CB}"]`))CB=null;gutAt(CB);status()}
+if(ED){DOC.append(gut,dln);if(CB!=null&&!DOC.querySelector(`[data-i="${CB}"]`))CB=null;gutAt(CB);status();DOC.querySelectorAll(".b-img").forEach(rzPos)}
 if(ai!=null)focusF(+ai,af)}
+function rzPos(f){const z=f?.querySelector(".rz"),im=f?.querySelector("img");if(!z||!im)return;const a=f.getBoundingClientRect(),r=im.getBoundingClientRect(); // the size handle sits at the picture's lower outer corner
+z.style.left=((f.classList.contains("al-right")?r.left:r.right)-a.left)+"px";z.style.top=(r.bottom-a.top)+"px"}
 function focusF(i,f,end=1){const k=DOC.querySelector(`[data-i="${i}"]`);if(!k)return;const e=f!=null?(k.matches(`[data-f="${f}"]`)?k:k.querySelector(`[data-f="${f}"]`)):k.matches("[data-f]")?k:k.querySelector("[data-f]");
 if(!e)return;e.focus();const r=D.createRange();r.selectNodeContents(e);r.collapse(!end);const s=getSelection();s.removeAllRanges();s.addRange(r)}
 function insert(b,at,focus=1){B().splice(at,0,b);commit();CB=at;gutAt(at);if(focus){if(b.t=="img"&&!b.src)pickImg(b);else focusF(at,null,0)}}
@@ -241,7 +247,7 @@ function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],
 function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>act(()=>{if(v==null)delete b[k];else b[k]=v}),items=[];
 if(TXT.has(b.t))items.push(...TYPES().slice(0,6).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h2"&&b.t=="h"&&b.lv!=3)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-",...ALG().map(([a,ic,t])=>({i:ic,t,on:(b.ta||"left")==a,f:()=>set("ta",a=="left"?null:a)})),"-");
 if(b.t=="img")items.push(...[["center","▣",L("Centred, text width","По центру, ширина текста")],["full","▭",L("Full strip width","Во всю ширину ленты")],["left","◧",L("Left, text wraps","Слева, текст обтекает")],["right","◨",L("Right, text wraps","Справа, текст обтекает")]]
-.map(([a,ic,t])=>({i:ic,t,on:(b.al||"center")==a,f:()=>set("al",a)})),{i:"🖼",t:L("Replace image…","Заменить изображение…"),f:()=>pickImg(b)},"-");
+.map(([a,ic,t])=>({i:ic,t,on:(b.al||"center")==a,f:()=>set("al",a)})),...(b.w?[{i:"↺",t:L("Original size","Исходный размер"),f:()=>set("w")}]:[]),{i:"🖼",t:L("Replace image…","Заменить изображение…"),f:()=>pickImg(b)},"-");
 if(b.t=="card")items.push({i:"🖼",t:b.src?L("Replace image…","Заменить изображение…"):L("Add image…","Добавить изображение…"),f:()=>pickImg(b)},...(b.src?[{i:"✕",t:L("Remove image","Убрать изображение"),f:()=>set("src")}]:[]),
 {i:"+",t:L("Add row","Добавить строку"),f:()=>act(()=>(b.rows??=[]).push({}))},...((b.rows||[]).length?[{i:"−",t:L("Remove last row","Убрать последнюю строку"),f:()=>act(()=>b.rows.pop())}]:[]),"-");
 if(b.t=="cols")b.c.forEach((c,j)=>items.push({i:c.t=="img"?"¶":"🖼",t:(j?L("Right column: ","Правая колонка: "):L("Left column: ","Левая колонка: "))+(c.t=="img"?L("text","текст"):L("image","изображение")),
@@ -275,6 +281,13 @@ if(mt){const k2={"##":"h2","###":"h3","-":"ul","*":"ul","1.":"ol",">":"quote","-
 if(k2=="hr"){B()[i]={t:"hr"};B().splice(i+1,0,{t:"p"});store();render();focusF(i+1)}else convert(i,k2);return}}
 snap1();sv(b,o,f,l,m=="plain"?esc(el.textContent):clean(el.innerHTML,m));store();if(bound(b,f)&&f=="t_")D.title=(PG[pf(f,l)]||"")+" · ASCW";
 clearTimeout(stT);stT=setTimeout(status,400)});let stT;
+DOC.addEventListener("pointerover",e=>{const f=e.target.closest?.(".b-img");if(f)rzPos(f)}); // image frame size: the handle at the picture's corner
+DOC.addEventListener("load",e=>{if(e.target.tagName=="IMG")rzPos(e.target.closest(".b-img"))},true);
+DOC.addEventListener("pointerdown",e=>{const z=e.target.closest(".rz");if(!z)return;e.preventDefault();e.stopPropagation();const f=z.parentNode,i=+f.dataset.i,b=B()[i],im=f.querySelector("img"),
+W=DOC.getBoundingClientRect().width,r=im.getBoundingClientRect(),al=b.al||"center",sg=al=="right"?-1:1,k=al=="center"||al=="full"?2:1,x0=e.clientX,w0=r.width;let w=null;
+z.setPointerCapture(e.pointerId);f.classList.add("rzg");if(al=="full")f.classList.replace("al-full","al-center");
+z.onpointermove=ev=>{w=Math.round(Math.min(100,Math.max(10,(w0+sg*k*(ev.clientX-x0))/W*100)));f.style.setProperty("--w",w+"%");z.dataset.v=w+"%";rzPos(f)};
+z.onpointerup=z.onpointercancel=()=>{z.onpointermove=z.onpointerup=z.onpointercancel=null;f.classList.remove("rzg");if(w!=null)act(()=>{b.w=w;if(al=="full")delete b.al});else rzPos(f)}},true);
 DOC.addEventListener("keydown",keys);
 DOC.addEventListener("paste",paste);
 DOC.addEventListener("click",e=>{const p=e.target.closest("[data-pick]");if(p){const k=p.closest("[data-i]"),b=B()[+k.dataset.i];pickImg(p.dataset.c!=null?b.c[+p.dataset.c]:b);return}
