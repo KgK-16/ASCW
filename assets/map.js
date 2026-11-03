@@ -127,7 +127,7 @@ if(G)tq()}
 const mOn=q=>!(q.y0!=null&&yr<q.y0)&&!(q.y1!=null&&yr>q.y1),
 zp=(zl,zx)=>Math.min(100,Math.max(1,1+99*Math.log(Math.max(zl,1))/Math.log(zx))), // zoom in % (1 = whole world, 100 = closest), log scale
 fZ=()=>zp(k/fit(),kmax()/fit()),gZ=()=>zp(Math.PI/(2*SC*(gD-1)),Math.PI/(2*SC*(cl(0)-1))),
-far=(q,p=G?gZ():fZ())=>p<(q.k==1?60:80), // capitals (circle in a diamond) from 60 %, other markers from 80 %
+far=(q,p=G?gZ():fZ())=>p<(q.k==1?50:80), // capitals (circle in a diamond) from 50 %, other markers from 80 %
 NH=80, // country names fade out from this zoom
 drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"} class="${far(q)?"z":""}${i===ms?" s":""}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="${q.k==1?15:12}" y="1"${q.f=="cap"?' class="c"':""}>${esc(mn(q))}</text></g>`).join("");posM();if(G)GI.forEach(e=>e.m!=null&&e.d.classList.toggle("s",e.m===ms))},
 posM=()=>{const zl=fZ();if(m.classList.contains("nl")!=(zl>=NH))m.classList.toggle("nl",zl>=NH);[...mw.children].forEach((e,i)=>{const q=MK[i];if(!q)return;{const w=W*k,X=x+(q.o+180)/360*w;e.style.transform=`translate(${X-w*Math.floor((X+40)/w)}px,${y+(90-q.a)/180*H*k}px)`}
