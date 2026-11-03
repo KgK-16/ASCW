@@ -413,7 +413,6 @@ placeBtn(q,saveMK,()=>q.n||q.r,()=>q.r||q.n),
 h("div",{cls:"row"},lab(L("Icon","Значок"),sel(q.k==1?1:0,KINDS().map(([s,t],j)=>[j,s+" "+t]),v=>ch("k",+v||""))),
 lab(L("Font","Шрифт"),sel(q.f=="cap"?"cap":"",[["","Play"],["cap",L("Play, large, underlined (capital)","Play, крупный с подчёркиванием (столица)")]],v=>ch("f",v)))),
 h("div",{cls:"row"},lab(L("Shown from year","Видна с года"),num("y0","—")),lab(L("to year","по год"),num("y1","—"))),
-lab(L("Visible","Видимость"),sel(q.z|0,[[0,L("Always","Всегда")],[1,L("From medium zoom","С среднего приближения")],[2,L("Close-up only","Только вблизи")]],v=>ch("z",+v||""))),
 h("div",{cls:"row"},lab(L("Latitude","Широта"),num("a")),lab(L("Longitude","Долгота"),num("o"))),
 h("div",{cls:"row"},btn(L("Done","Готово"),()=>D.getElementById("pc").click()),btn("🗑 "+L("Delete","Удалить"),()=>{MK.splice(i,1);saveMK();PF?.remove();PF=null;D.getElementById("pc").click()})));
 if(pform(f,"m"+i)&&!q.n&&!q.r)setTimeout(()=>f.querySelector("input").focus())}

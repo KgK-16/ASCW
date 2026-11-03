@@ -125,9 +125,12 @@ if(G)tq()}
 // markers live outside the zoomed layer and are re-positioned each frame, so icons and names stay crisp vectors at any zoom
 // marker: {o lon, a lat, n / r name EN / RU, k kind, f font, ten / tru text, y0 / y1 years shown, z importance: 0 always, 1 from medium zoom, 2 close-up only}
 const mOn=q=>!(q.y0!=null&&yr<q.y0)&&!(q.y1!=null&&yr>q.y1),
-far=(q,zl=k/fit())=>(q.z==1&&zl<2.2)||(q.z==2&&zl<4.5),
+zp=(zl,zx)=>Math.min(100,Math.max(1,1+99*Math.log(Math.max(zl,1))/Math.log(zx))), // zoom in % (1 = whole world, 100 = closest), log scale
+fZ=()=>zp(k/fit(),kmax()/fit()),gZ=()=>zp(Math.PI/(2*SC*(gD-1)),Math.PI/(2*SC*(cl(0)-1))),
+far=(q,p=G?gZ():fZ())=>p<(q.k==1?60:80), // capitals (circle in a diamond) from 60 %, other markers from 80 %
+NH=80, // country names fade out from this zoom
 drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"} class="${far(q)?"z":""}${i===ms?" s":""}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="${q.k==1?15:12}" y="1"${q.f=="cap"?' class="c"':""}>${esc(mn(q))}</text></g>`).join("");posM();if(G)GI.forEach(e=>e.m!=null&&e.d.classList.toggle("s",e.m===ms))},
-posM=()=>{const zl=k/fit();[...mw.children].forEach((e,i)=>{const q=MK[i];if(!q)return;{const w=W*k,X=x+(q.o+180)/360*w;e.style.transform=`translate(${X-w*Math.floor((X+40)/w)}px,${y+(90-q.a)/180*H*k}px)`}
+posM=()=>{const zl=fZ();if(m.classList.contains("nl")!=(zl>=NH))m.classList.toggle("nl",zl>=NH);[...mw.children].forEach((e,i)=>{const q=MK[i];if(!q)return;{const w=W*k,X=x+(q.o+180)/360*w;e.style.transform=`translate(${X-w*Math.floor((X+40)/w)}px,${y+(90-q.a)/180*H*k}px)`}
 e.classList.toggle("z",far(q,zl))});drawMz();if(!G)sbU(k/fit(),kmax()/fit(),2*Math.PI*RE*Math.max(.02,Math.cos(Math.min(1.5,Math.abs(Math.PI/2-(VH/2-y)/k/H*Math.PI))))/(W*k));
 // graticule labels: light, pinned to the top / left edge of the view, hidden under the button column
 const t0=Math.max(y,0)+6,l0=Math.max(x,0)+6,xr=VW-ZW-82,yb=VH-30; // sizes are cached (sz): no layout reads while the map moves
@@ -426,12 +429,12 @@ o.strokeStyle="#000a";o.lineWidth=5;o.stroke(P);o.strokeStyle="#e8e8e0";o.lineWi
 MS.forEach((v,i)=>{const p=gp(v);if(!p)return;o.beginPath();o.arc(p[0],p[1],4.5,0,6.2832);o.fillStyle="#e8e8e0";o.fill();o.lineWidth=1.5;o.strokeStyle="#000";o.stroke();
 if(i){const t=km(MD[i]),l=p[0]>w-140;o.textAlign=l?"right":"left";o.lineWidth=3;o.strokeStyle="#000b";o.strokeText(t,p[0]+(l?-9:9),p[1]-10);o.fillText(t,p[0]+(l?-9:9),p[1]-10)}})}
 function gF(w,h){ // per frame: project names, fade at the horizon, hide by zoom and where they would overlap a more important one
-const Y=ya+sa,c=Math.cos(Y),s=Math.sin(Y),e=Math.cos(pa),f=Math.sin(pa),zl=Math.PI/(2*SC*(gD-1)),hz=1/gD,pr=Math.PI/H*h/2/SC,mx=Math.min(20,Math.max(13,Math.min(w,h)/28)),B=[],sel=GO.find(q=>q.m===ms);
+const Y=ya+sa,c=Math.cos(Y),s=Math.sin(Y),e=Math.cos(pa),f=Math.sin(pa),zl=gZ(),hz=1/gD,pr=Math.PI/H*h/2/SC,mx=Math.min(20,Math.max(13,Math.min(w,h)/28)),B=[],sel=GO.find(q=>q.m===ms);
 for(const q of sel?[sel,...GO.filter(v=>v!=sel)]:GO){const[px,py,pz]=q.p,x1=c*px+s*pz,z1=-s*px+c*pz,y2=e*py-f*z1,z2=f*py+e*z1,dp=gD-z2,
 X=(x1/(SC*AS)/dp+1)*w/2,V=(1-y2/SC/dp)*h/2,al=Math.min(1,Math.max(0,(z2-hz)/.12)),fs=q.c?Math.round(Math.min(mx,Math.max(10,q.s*pr/dp))*2)/2:0,sc=fs/20,
 bx=q.c?[X-q.w*sc/2-4,V-q.h*sc/2,X+q.w*sc/2+4,V+q.h*sc/2]:[X-11,V-10,X-11+q.w+4,V+10];
 const g=q.on?3:0; // a shown name yields only to a clear overlap: no flicker at the edge
-let on=al>.05&&(q.c||!far(q.q,zl))&&!B.some(b=>b[0]<bx[2]-g&&bx[0]+g<b[2]&&b[1]<bx[3]-g&&bx[1]+g<b[3]);if(on)B.push(bx);
+let on=al>.05&&(q.c?zl<NH:!far(q.q,zl))&&!B.some(b=>b[0]<bx[2]-g&&bx[0]+g<b[2]&&b[1]<bx[3]-g&&bx[1]+g<b[3]);if(on)B.push(bx);
 q.d.style.transform=`translate(${Math.round(X)}px,${Math.round(V)}px)`; // whole pixels and real font sizes: text does not shimmer
 if(q.c&&q.fs!==fs)q.d.firstChild.style.fontSize=(q.fs=fs)+"px";
 const o=(al*(q.o??1)).toFixed(2);if(q.ov!==o)q.d.style.opacity=q.ov=o;if(q.on!==on)q.d.classList.toggle("gh",!(q.on=on))}}
