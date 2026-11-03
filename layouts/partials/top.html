@@ -13,11 +13,11 @@
    with ?edit and loaded only in edit mode, after the page is parsed */}}
 <script>{const D=document,d=D.documentElement,t=D.querySelector("title"),tp=()=>D.querySelectorAll("[data-ten]").forEach(e=>{const v=e.dataset[d.lang=="ru"?"tru":"ten"];e.title=v;e.setAttribute("aria-label",v)}),
 s=l=>{d.lang=l;D.title=t.dataset[l];tp()};let l,k={};try{l=localStorage.ascwLang;if(/[?&]edit\b/.test(location.search))localStorage.ascwEdit=1;k=localStorage}catch{}s((l||navigator.language||"").slice(0,2)=="ru"?"ru":"en");
+if(/[?&]embed\b/.test(location.search)){d.classList.add("emb");D.head.append(Object.assign(D.createElement("base"),{target:"_top"}))} // a page shown inside the map's side strip: no menu, links open in the whole window
+addEventListener("storage",e=>{if(e.key=="ascwLang"&&e.newValue&&e.newValue!=d.lang){s(e.newValue);D.dispatchEvent(new Event("lang"))}}); // the language follows other tabs and the map around an embedded page
 D.addEventListener("click",e=>{if(e.target.closest("#lq")){const n=d.lang=="ru"?"en":"ru";s(n);try{localStorage.ascwLang=n}catch{}D.dispatchEvent(new Event("lang"))}});
 D.addEventListener("DOMContentLoaded",()=>{tp();const e=D.getElementById("ed"),on=()=>D.head.append(Object.assign(D.createElement("script"),{src:e.dataset.js}));
 if(e&&k.ascwEdit){e.hidden=false;e.onclick=()=>{if(window.EDIT)EDIT.toggle();else{k.ascwEditOn=1;on()}};if(k.ascwEditOn)on()}})}</script>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400&family=Inter:ital,wght@0,400;0,600;1,300;1,400{{ if eq .Section "map" }}&family=Play{{ end }}&display=swap" rel="stylesheet">
 <link rel="preload" href="{{ "fonts/a.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
 <meta name="src" content="{{ with .File }}{{ .Path }}{{ end }}">

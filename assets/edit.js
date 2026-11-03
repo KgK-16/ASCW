@@ -13,6 +13,8 @@ h=(t,a={},...c)=>{const e=D.createElement(t);for(const k in a)k.startsWith("on")
 esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 let draft={},base={},pend={},blobs={},on=0,tok=LS.ascwTok||"";
 try{draft=JSON.parse(LS.ascwDraft||"{}")}catch{}
+const EMB=HT.classList.contains("emb"); // a page inside the map's side strip: only its text is edited here, the map's bar publishes
+addEventListener("storage",e=>{if(e.key=="ascwDraft"){try{draft=JSON.parse(e.newValue||"{}")}catch{draft={}}base={};pend={};bar()}}); // the map and the page in its strip share one draft
 
 // ---------- storage: draft, GitHub ----------
 function save(){try{LS.ascwDraft=JSON.stringify(draft)}catch{toast(L("Draft too big to keep after closing the page — publish first","Черновик слишком большой, чтобы пережить закрытие страницы — сначала опубликуйте"),1)}bar()}
@@ -89,14 +91,15 @@ D.head.append(h("style",{},`
 .ed .doc.dropping{outline:1px dashed #e8b04a;outline-offset:-4px}
 #pvw{position:fixed;inset:0;z-index:55;background:#020206e6;display:flex;align-items:center;justify-content:center;gap:16px;flex-direction:column}
 #pvw iframe{width:390px;height:min(844px,calc(100vh - 90px));border:1px solid #6665c0;border-radius:16px;background:#04040a}
-.ed aside{justify-content:flex-start;overflow:auto;padding-top:44px}.ed aside .ef{display:flex;flex-direction:column;gap:8px;margin-top:14px;text-align:left}.ed aside .ef textarea{min-height:80px}
-.ef .row>label{min-width:0}@media(max-width:700px){.ed aside{height:62%}body:has(#p.o) :is(#eb,#et),.ed aside.o~#cd{display:none}}body:has(#p.o) :is(#eb,#et){left:572px}
+.ef .row>label{min-width:0}.ef textarea{min-height:80px}
 .lbe #sl .lb text{pointer-events:auto;cursor:move}.lbe #sl .lb text:hover{fill:#e8b04a}.ef input[type=range]{padding:0;accent-color:#8d8cf0}
 .ed #mw g{cursor:grab}.mke #m{cursor:crosshair}
+.cx{position:fixed;z-index:45;width:min(340px,calc(100vw - 16px));max-height:calc(100vh - 72px);padding:12px 14px;gap:8px;box-shadow:0 8px 30px #000a}.cx h3{font-size:13px}.cx .ef{display:flex;flex-direction:column;gap:8px} /* marker / country properties next to it */
+body:has(#p.o) :is(#eb,#et){left:calc(min(1000px,100%) + 12px)}@media(max-width:1100px){body:has(#p.o) :is(#eb,#et){left:12px}}
 .ml{display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow:auto}.ml button{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:6px 8px;color:#e8e8e0;cursor:pointer;font:400 14px Inter,sans-serif}.ml button:hover{background:#6665c040}.ml small{color:#e8e8e080}
 `));
 let pb,eb,et,ubn,rbn;
-function bar(){if(!on||PV)return;if(ubn){ubn.disabled=!HI.length;rbn.disabled=!HR.length}pb.firstChild.textContent=(n()?"● "+n()+" · ":"")+L("Publish","Опубликовать");pb.firstChild.classList.toggle("n",!!n());pb.lastChild.disabled=!n()}
+function bar(){if(!on||PV)return;if(ubn){ubn.disabled=!HI.length;rbn.disabled=!HR.length}if(EMB)return;pb.firstChild.textContent=(n()?"● "+n()+" · ":"")+L("Publish","Опубликовать");pb.firstChild.classList.toggle("n",!!n());pb.lastChild.disabled=!n()}
 const Lp=(e,r)=>Object.assign(new String(ru()?r:e),{e,r}); // a label that remembers both languages
 let tt;function toast(t,x){if(!et)return;const up=()=>et.style.bottom=eb.offsetHeight+20+"px";up();requestAnimationFrame(up);D.fonts?.ready.then(up); // always above the bar, also when it wraps to two rows
 et.textContent=t;et.className=x?"x":"";et.hidden=false;clearTimeout(tt);tt=setTimeout(()=>et.hidden=true,x?12e3:6e3)}
@@ -388,11 +391,17 @@ const MP=window.MAP;let MKon=0,PF=null;
 const KINDS=()=>[["●",L("Circle","Круг")],["◈",L("Circle in a diamond","Круг в ромбе")],["▲",L("Triangle","Треугольник")]],
 ll=(my,mx)=>({a:+(90-my/MP.H*180).toFixed(3),o:+(mx/MP.W*360-180).toFixed(3)}),
 saveMK=()=>{WJ(F.mk,MK);MP.markers()};
-function pform(el,key){const a=D.getElementById("p");if(PF?.key==key&&a.contains(PF))return 0;PF?.remove();PF=el;el.key=key;a.append(el);return 1}
+function pform(el,key){if(PF?.key==key&&PF.isConnected)return 0;PF?.remove(); // properties of a marker / country: a small window next to it on the map
+PF=h("div",{cls:"dlb cx",tabindex:-1},h("h3",{},h("span",{},D.getElementById("pt").textContent),h("button",{type:"button",cls:"x",title:L("Close","Закрыть"),"aria-label":L("Close","Закрыть"),onclick:()=>{PF?.remove();PF=null}},"×")),el);PF.key=key;D.body.append(PF);
+const [lx,ly]=MP.lp(),dx=MP.rdx||0,w=PF.offsetWidth,hh=PF.offsetHeight,X=lx+dx+18+w<innerWidth?lx+dx+18:lx+dx-18-w;PF.style.left=Math.max(8,Math.min(innerWidth-w-8,X))+"px";PF.style.top=Math.max(56,Math.min(innerHeight-hh-8,ly-30))+"px";return 1}
+function placeNew(o,save,en,ru){const px=D.getElementById("px"); // no page yet: the empty strip offers to create it
+px.append(h("div",{cls:"row",style:"justify-content:center;margin-top:24px"},btn("📄 "+L("Create its page","Создать страницу"),async()=>{
+let s=(en()||"place").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"place",b=s,j=2;while(await read(`content/places/${s}/_index.md`)!=null||(window.PL||[]).includes(s))s=b+"-"+j++;
+await WJ(`content/places/${s}/_index.md`,{title:en()||ru(),title_ru:ru()||en(),description:"",description_ru:"",blocks:[{t:"head"},{t:"p"}]});o.pg=s;save();MP.panel()})))}
 async function mapInit(){if(!MP)return;
 window.MK=await J(F.mk,MK);window.EV=await J(F.ev,EV);window.COU=await J(F.co,COU);MP.redraw();
 MP.onTap=(mx,my,i)=>{if(i!=null){MP.pickM(i);return 1}if(!MKon)return 0;MK.push({...ll(my,mx),n:"",r:""});saveMK();MP.pickM(MK.length-1);return 1};
-MP.onMarker=i=>mkForm(i);lbInit();MP.onPanel=r=>coForm(r);if(MP.sel())coForm(MP.sel());
+MP.pageOK=g=>(window.PL||[]).includes(g)||!!draft[`content/places/${g}/_index.md`];MP.onMarker=i=>mkForm(i);lbInit();MP.onPanel=r=>coForm(r);if(MP.sel())coForm(MP.sel());
 D.getElementById("pc").addEventListener("click",()=>{PF?.remove();PF=null;const n=MK.length;window.MK=MK.filter(q=>q.n||q.r||q.pg);if(MK.length!=n)saveMK()}); // unnamed new markers are dropped on close
 const mw=D.getElementById("mw");let dg=null;
 mw.addEventListener("pointerdown",e=>{const g=e.target.closest("[data-m]");if(!g)return;e.stopPropagation();mw.setPointerCapture(e.pointerId);dg={i:+g.dataset.m,x:e.clientX,y:e.clientY,mv:0}});
@@ -400,22 +409,16 @@ mw.addEventListener("pointermove",e=>{if(!dg)return;dg.mv+=Math.abs(e.clientX-dg
 const {mx,my}=MP.toMap(e);Object.assign(MK[dg.i],ll(my,mx));MP.markers()});
 mw.addEventListener("pointerup",()=>{if(!dg)return;const d=dg;dg=null;if(d.mv<4)MP.pickM(d.i);else{saveMK();if(PF?.key=="m"+d.i){PF=null;mkForm(d.i)}}});
 D.getElementById("xt")?.after(h("button",{type:"button",id:"xe",style:"position:absolute;right:56px;top:4px;z-index:2;width:44px;height:44px;font-size:18px;cursor:pointer;color:#e8e8e0a6",title:L("Edit events","Редактировать события"),onclick:events},"✎"))}
-function placeBtn(o,save,en,ru){ // the text of a country / marker is its own archive page (content/places/<slug>/), edited like any other page
-return h("div",{cls:"row"},btn(o.pg?"📄 "+L("Edit its page","Редактировать страницу"):"📄 "+L("Create its page","Создать страницу"),async()=>{
-if(!o.pg){let s=(en()||"place").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"place",b=s,j=2;while(await read(`content/places/${s}/_index.md`)!=null||(window.PL||[]).includes(s))s=b+"-"+j++;
-await WJ(`content/places/${s}/_index.md`,{title:en()||ru(),title_ru:ru()||en(),description:"",description_ru:"",blocks:[{t:"head"},{t:"p"}]});o.pg=s;save();await new Promise(r=>setTimeout(r,300))}
-location.href=U+"places/"+o.pg+"/"}))}
 function mkForm(i){const q=MK[i];if(!q)return;const pt=D.getElementById("pt"),px=D.getElementById("px"),
 ch=(k,v)=>{if(v===""||v==null)delete q[k];else q[k]=v;saveMK();pt.textContent=(ru()?q.r||q.n:q.n||q.r)||""},
 num=(k,ph)=>inp(q[k],v=>ch(k,v===""?"":+v),{type:"number",ph}),
 f=h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(q.n,v=>ch("n",v))),lab(L("Name","Название")+" · RU",inp(q.r,v=>ch("r",v)))),
-placeBtn(q,saveMK,()=>q.n||q.r,()=>q.r||q.n),
 h("div",{cls:"row"},lab(L("Icon","Значок"),sel(q.k==1||q.k==2?q.k:0,KINDS().map(([s,t],j)=>[j,s+" "+t]),v=>ch("k",+v||""))),
 lab(L("Font","Шрифт"),sel(q.f=="cap"?"cap":"",[["","Play"],["cap",L("Play, large, underlined (capital)","Play, крупный с подчёркиванием (столица)")]],v=>ch("f",v)))),
 h("div",{cls:"row"},lab(L("Shown from year","Видна с года"),num("y0","—")),lab(L("to year","по год"),num("y1","—"))),
 h("div",{cls:"row"},lab(L("Latitude","Широта"),num("a")),lab(L("Longitude","Долгота"),num("o"))),
-h("div",{cls:"row"},btn(L("Done","Готово"),()=>D.getElementById("pc").click()),btn("🗑 "+L("Delete","Удалить"),()=>{MK.splice(i,1);saveMK();PF?.remove();PF=null;D.getElementById("pc").click()})));
-if(pform(f,"m"+i)&&!q.n&&!q.r)setTimeout(()=>f.querySelector("input").focus())}
+h("div",{cls:"row"},btn(L("Done","Готово"),()=>{PF?.remove();PF=null}),btn("🗑 "+L("Delete","Удалить"),()=>{MK.splice(i,1);saveMK();PF?.remove();PF=null;D.getElementById("pc").click()})));
+if(pform(f,"m"+i)&&!q.n&&!q.r)setTimeout(()=>f.querySelector("input").focus());if(!(q.pg&&MP.pageOK(q.pg)))placeNew(q,saveMK,()=>q.n||q.r,()=>q.r||q.n)}
 function mkList(){const box=h("div",{cls:"ml"}),q0=inp("",v=>rows(v),{ph:L("Search","Поиск")}),
 rows=(s="")=>box.replaceChildren(...MK.map((q,i)=>[q,i]).filter(([q])=>((q.n||"")+" "+(q.r||"")).toLowerCase().includes(s.toLowerCase())).map(([q,i])=>
 h("button",{type:"button",onclick:()=>{w.remove();MP.focus(q.o,q.a);MP.pickM(i)}},(ru()?q.r||q.n:q.n||q.r)||"—",h("small",{},q.y0!=null||q.y1!=null?`${q.y0??"…"}–${q.y1??"…"}`:""))));
@@ -433,10 +436,10 @@ const ch=(k,v,t=250)=>{o[k]=v;COU[r.c]=o;t0();clearTimeout(tm);tm=setTimeout(()=
 rng=(k,a,b,st,f,d=1,u=v=>Math.round(v*100)+"%")=>{const i=h("input",{type:"range",min:a,max:b,step:st,cls:"ei"}),n=h("span",{style:"text-transform:none"});i.value=o[k]??d;const sh=()=>n.textContent=" "+u(i.value);sh();
 i.oninput=()=>{sh();ch(k,+i.value,60)};return lab(h("span",{},f,n),i)};
 pform(h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(o.en,v=>ch("en",v),{ph:r.n0})),lab(L("Name","Название")+" · RU",inp(o.ru,v=>ch("ru",v),{ph:r.r0}))),
-placeBtn(o,()=>{COU[r.c]=o;WJ(F.co,COU)},()=>o.en||r.n0||r.name,()=>o.ru||r.r0||r.ru),
+
 h("div",{cls:"row"},rng("lz",4,150,1,L("Name size","Размер названия"),Math.round(((ru()?r.sr:r.s)||16)*.75),v=>v+" pt"),rng("lo",0,1,.05,L("Name opacity","Прозрачность названия"))),
 h("div",{cls:"row"},rng("lk",-.2,1.5,.02,L("Letter spacing","Расстояние между буквами"),0),h("div",{})),
-h("div",{cls:"row"},btn(L("Name back to its place","Вернуть название на место"),()=>{delete o.lx;delete o.ly;ch("lx",0,0)}))),"c"+r.c)}
+h("div",{cls:"row"},btn(L("Name back to its place","Вернуть название на место"),()=>{delete o.lx;delete o.ly;ch("lx",0,0)}))),"c"+r.c);if(!(o.pg&&MP.pageOK(o.pg)))placeNew(o,()=>{COU[r.c]=o;WJ(F.co,COU)},()=>o.en||r.n0||r.name,()=>o.ru||r.r0||r.ru)}
 // country names: drag in the "names" mode (the shift is stored in countries.json as lx / ly, map pixels)
 function lbInit(){const sl=D.getElementById("sl");let dg=null;
 sl.addEventListener("pointerdown",e=>{const t=e.target.closest("text[data-i]");if(!t||!LBon)return;e.stopPropagation();e.preventDefault();sl.setPointerCapture(e.pointerId);dg={t,id:+t.dataset.i,a:MP.toMap(e),mv:0}});
@@ -450,19 +453,19 @@ async function start(){on=1;TX=await J(F.text,{});
 if(PV){ED=0;HT.classList.add("pv");BT.hidden=true}else{LS.ascwEditOn=1;HT.classList.add("ed");BT.classList.add("on");
 const ib=(i,t,f,ti)=>{const b=btn(i,f,ti||t);if(t){const s=h("span",{cls:"lb"},""+t);if(t.e){s.dataset.te=t.e;s.dataset.tr=t.r}b.append(s)}return b};
 pb=h("span",{style:"display:contents"},btn("",publish,Lp("Send all changes to GitHub","Отправить все изменения на GitHub")),btn("↺",discard,Lp("Discard all unpublished changes","Отменить все неопубликованные изменения")));
-eb=h("div",{id:"eb"},pb);et=h("div",{id:"et",hidden:""});D.body.append(eb,et);if(draft[F.text])showText();
+eb=h("div",{id:"eb"},...EMB?[]:[pb]);et=h("div",{id:"et",hidden:""});D.body.append(eb,et);if(draft[F.text])showText();
 if(PAGE&&!/^map\//.test(SRC)&&(PG=await pageObj(PAGE))){
 if(NEWP)D.title=(PG.title||"")+" · ASCW";
 eb.append(ubn=ib("↶","",()=>undo(1),Lp("Undo","Отменить")+" (Ctrl+Z)"),rbn=ib("↷","",()=>undo(0),Lp("Redo","Повторить")+" (Ctrl+Shift+Z)"),
-ib("📄",Lp("Page","Страница"),settings,Lp("Title, description, background, subpages","Название, описание, фон, подстраницы")),ib("📱",Lp("Phone","Телефон"),preview,Lp("Preview on a phone screen","Как на экране телефона")),
+...EMB?[]:[ib("📄",Lp("Page","Страница"),settings,Lp("Title, description, background, subpages","Название, описание, фон, подстраницы")),ib("📱",Lp("Phone","Телефон"),preview,Lp("Preview on a phone screen","Как на экране телефона"))],
 stb=h("span",{cls:"st"}))}
 if(MP)eb.append(ib("📍",Lp("Add markers","Новые метки"),e=>{MKon^=1;e.currentTarget.classList.toggle("on",!!MKon);HT.classList.toggle("mke",!!MKon);if(MKon&&LBon)D.getElementById("lbb").click();
 if(MKon)toast(L("Click the map to place a marker. Drag markers to move them; click one to edit it.","Клик по карте ставит метку. Метки можно перетаскивать, клик по метке — редактировать."))},Lp("Place markers by clicking the map","Ставить метки кликом по карте")),
 ib("☰",Lp("Markers","Метки"),mkList,Lp("All markers","Все метки")),
 (b=>(b.id="lbb",b))(ib("🏷",Lp("Country names","Названия стран"),e=>{LBon^=1;e.currentTarget.classList.toggle("on",!!LBon);HT.classList.toggle("lbe",!!LBon);if(LBon&&MKon)eb.querySelector(".eb.on:not(#lbb)")?.click();
 if(LBon)toast(L("Drag country names to move them; click a name to change its size, letter spacing and opacity.","Названия стран можно перетаскивать; клик по названию — размер, расстояние между буквами и прозрачность."))},Lp("Move and adjust country names","Двигать и настраивать названия стран"))),ib("⏱",Lp("Events","События"),events,Lp("Timeline events","События хронологии")));
-eb.append(ib("⚙","",token,Lp("GitHub access","Доступ к GitHub")),ib("Aa","",texts,Lp("Interface texts","Тексты интерфейса")));
-editable();bar();if(!tok)toast(L("Edit mode. Changes stay in this browser until you publish them (⚙ — GitHub access).","Режим редактирования. Изменения хранятся в браузере, пока вы их не опубликуете (⚙ — доступ к GitHub)."))}
+if(!EMB)eb.append(ib("⚙","",token,Lp("GitHub access","Доступ к GitHub")),ib("Aa","",texts,Lp("Interface texts","Тексты интерфейса")));
+if(!EMB)editable();bar();if(!tok&&!EMB)toast(L("Edit mode. Changes stay in this browser until you publish them (⚙ — GitHub access).","Режим редактирования. Изменения хранятся в браузере, пока вы их не опубликуете (⚙ — доступ к GitHub)."))}
 if(PV&&PAGE&&!/^map\//.test(SRC))PG=draft[PAGE]&&await pageObj(PAGE);
 if(PG){if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
 if(!Array.isArray(PG.blocks)){PG.blocks=[{t:"head"},...(D.getElementById("kids")?[{t:"links"}]:[])];delete PG.items;delete PG.body_en;delete PG.body_ru;delete PG.width}

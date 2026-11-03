@@ -1,5 +1,13 @@
 
 @font-face{font-family:A;src:url(fonts/a.woff2);font-display:swap}
+/* Exo 2, Inter, Play (SIL Open Font License, see fonts/OFL-*.txt): served by the site itself, Latin + Cyrillic only; a browser loads a file only when text uses it */
+@font-face{font-family:"Exo 2";src:url(fonts/exo2-300.woff2) format("woff2");font-weight:300;font-display:swap}
+@font-face{font-family:"Exo 2";src:url(fonts/exo2-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:Inter;src:url(fonts/inter-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:Inter;src:url(fonts/inter-600.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:Inter;src:url(fonts/inter-300i.woff2) format("woff2");font-weight:300;font-style:italic;font-display:swap}
+@font-face{font-family:Inter;src:url(fonts/inter-400i.woff2) format("woff2");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:Play;src:url(fonts/play-400.woff2) format("woff2");font-weight:400;font-display:swap}
 *{margin:0;box-sizing:border-box}
 body{background:#04040a;color:#e8e8e0;min-height:100dvh;display:flex;flex-direction:column;font:300 11px "Exo 2",sans-serif;text-transform:uppercase}
 nav{position:sticky;top:0;z-index:20;height:48px;flex-shrink:0;background:#020206;border-bottom:1px solid #6665c040;display:flex;align-items:center;justify-content:space-between;padding:0 40px;letter-spacing:2px;color:#e8e8e059}
@@ -14,6 +22,7 @@ section{width:min(1000px,100%);padding:0 clamp(16px,4vw,40px);background:#020206
 h1{font:min(45px,5vw)/1.2 A,"Exo 2",sans-serif;letter-spacing:.1em;margin:20px 0 24px}
 h1 b,hr{color:#6665c0;font-weight:inherit}
 html[lang=ru] [lang=en],html[lang=en] [lang=ru]{display:none}
+.emb body{background:transparent}.emb nav,.emb main::before{display:none}.emb main{min-height:100dvh}.emb section{border-left:0} /* page inside the map's side strip */
 hr{width:48px;margin:0 auto 24px;border:0;border-top:1px solid;opacity:.4}
 i{font:italic 300 13px Inter,sans-serif;letter-spacing:1px;text-transform:none;color:#e8e8e066}
 /* page document: text, images, cards and columns share the full width of the strip */

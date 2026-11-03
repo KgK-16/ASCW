@@ -12,7 +12,7 @@ P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d"),
 cq=Object.assign(c.cloneNode(false),{id:"",hidden:true}), // the world repeats east and west: a second copy of the map layers, shown only where the seam is in view
 wx=v=>(v%W+W)%W; // map x wrapped into the world
 c.after(cq);cq.setAttribute("aria-hidden","true");
-let FG=null,cqd=1,MR,GR,VW=0,VH=0,ZW=0,GW=0,GH=0,GX=[],ovK,cdr=0,MG=null,MON=0,MS=[],MP=[],MD=[0],sbK,fv=null,fdc=8,fa=0,fl0=0,HS=[],vD=0,vT=0,fan=null,ffl=null,k=1,kk,mvT,raf,an,ms=null,x=0,y=0,lv=-1,sel=null,yr=420,cv,RG=[],R={},CO=1,CP,CT="—",fl=0,lx,ly,mv=0,tap=0,PY=0,G=0;
+let FG=null,cqd=1,MR,GR,VW=0,VH=0,ZW=0,GW=0,GH=0,GX=[],ovK,MG=null,MON=0,MS=[],MP=[],MD=[0],sbK,fv=null,fdc=8,fa=0,fl0=0,HS=[],vD=0,vT=0,fan=null,ffl=null,k=1,kk,mvT,raf,ms=null,x=0,y=0,sel=null,yr=420,cv,RG=[],R={},CO=1,mv=0,tap=0,PY=0,G=0;
 try{CO=localStorage.ascwColors!="0"}catch{}
 const ru=()=>HT.lang=="ru",
 L=(e,r)=>ru()?r:e,
@@ -33,23 +33,19 @@ let ws=[...t].map(ch=>hc.measureText(ch).width),nat=ws.reduce((a,v)=>a+v,0),z=q;
 if(nat>w&&w){const s=w/nat;ws=ws.map(v=>v*s);nat=w;z=q*s} // a renamed country longer than its box: smaller letters, same proportions
 const ls=n>1?Math.max(-.2*z,Math.max(0,(w-nat)/(n-1))+(c.lk||0)*z):0;let X=(ru()?r.xr:r.x)+(c.lx||0)-(nat+ls*(n-1))/2;
 return{t,s:+z.toFixed(1),y:(ru()?r.yr:r.y)+(c.ly||0),o:c.lo,xs:ws.map(v=>{const o=X;X+=v+ls;return o})}}
-function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>{if(el._s==src){el.src=src;cqd=1;set()}},()=>{})} // decode off the main thread, then swap
 
 // ---- flat map ----
 const fit=()=>Math.max(VH/H,VW/W), // the world fills the height and at least the width, so each place is on screen at most once
 kmax=()=>Math.max(3.75,fit()); // closest zoom: 3.75 screen px per map px
-function set(anim){
+function set(){
 if(!isFinite(k+x+y)){k=fit();x=y=0} // never keep a broken view
 k=Math.min(Math.max(k,fit()),kmax());
 const w=W*k,h=H*k,ch=VH;
 x-=w*Math.ceil(x/w); // no east / west edge: x stays in (-w, 0], the copy covers the rest
 y=h<ch?(ch-h)/2:Math.min(0,Math.max(ch-h,y));
-an=anim;if(!raf)raf=requestAnimationFrame(apply); // at most one DOM update per frame
-const n=W*k*devicePixelRatio,l=n>4500?3:n>2200?2:n>1100?1:0; // image levels 1024/2048/4096/8192 px
-if(!FG&&l>lv){if(lv<0&&l)im.src=U+"map/g0.webp"; // light preview while the sharp level loads
-lv=l;load(im,U+`map/g${l}.webp`);lvB()}}
-function lvB(){if(FG)return fgB();if(lv<0)return;bi.hidden=!cv.b;cqd=1;if(cv.b)load(bi,bsrc(lv))}
-function apply(){raf=0;fdr();posM();c.classList.toggle("t",!!an);mw.classList.toggle("t",!!an);c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
+if(!raf)raf=requestAnimationFrame(apply)} // at most one DOM update per frame
+function lvB(){if(FG)return fgB();bi.hidden=!cv.b;if(cv.b)bi.src=bsrc(2);cqd=1} // borders of the version (WebGL draws them; the picture is only the fallback)
+function apply(){raf=0;fdr();posM();c.style.transform=`translate(${x}px,${y}px) scale(${k})`;
 const sq=x+W*k<VW;if(sq){if(cqd)cqS();cq.className=c.className;cq.style.transform=`translate(${x+W*k}px,${y}px) scale(${k})`}if(cq.hidden==sq)cq.hidden=!sq;
 c.classList.add("mv");clearTimeout(mvT);mvT=setTimeout(rest,250)} // while moving: GPU layer only, no restyle/repaint
 function rest(){c.classList.remove("mv");cq.classList.remove("mv");if(k!=kk){c.style.setProperty("--k",kk=k);cq.style.setProperty("--k",k)}}
@@ -66,7 +62,7 @@ function fmo(t){ // one frame of flat-map motion (as the globe's mo): eased zoom
 const dt=Math.min(fl0&&t>fl0?(t-fl0)/1e3:1/60,.05);fl0=t;fa=0;let on=0;
 if(Math.abs(vT-vD)>1e-3){vD+=(vT-vD)*Math.min(1,dt*8);const k2=kOf(vD),a=ffl?{mx:ffl.mx,my:ffl.my,sx:x+ffl.mx*k,sy:y+ffl.my*k}:fan||{mx:(VW/2-x)/k,my:(VH/2-y)/k,sx:VW/2,sy:VH/2};
 k=k2;x=a.sx-a.mx*k;y=a.sy-a.my*k;set();on=1}else{vD=vT;fan=null} // the anchor point stays under the cursor
-if(ffl){const f=Math.min(1,dt*5),w=W*k,e0=VW/2-x-ffl.mx*k,ex=e0-w*Math.round(e0/w),ey=VH/2-y-ffl.my*k,x0=x,y0=y;x+=ex*f;y+=ey*f;set();if(Math.hypot(ex,ey)<.5||(!on&&Math.abs(x-x0)+Math.abs(y-y0)<.01))ffl=null;else on=1} // at the map's edge it stops where it can
+if(ffl){const f=Math.min(1,dt*5),w=W*k,e0=(ffl.tx??VW/2)-x-ffl.mx*k,ex=e0-w*Math.round(e0/w),ey=(ffl.ty??VH/2)-y-ffl.my*k,x0=x,y0=y;x+=ex*f;y+=ey*f;set();if(Math.hypot(ex,ey)<.5||(!on&&Math.abs(x-x0)+Math.abs(y-y0)<.01))ffl=null;else on=1} // at the map's edge it stops where it can
 if(fv){x+=fv[0]*dt;y+=fv[1]*dt;set();const d=Math.exp(-dt*fdc);fv=[fv[0]*d,fv[1]*d];if(Math.hypot(...fv)<12)fv=null;else on=1}
 if(on)fa=requestAnimationFrame(fmo);else fl0=0}
 function fz(f,cx,cy){zst();vT=vcl(vT*f);fv=null;ffl=null;fan=cx==null?null:{mx:(cx-x)/k,my:(cy-y)/k,sx:cx,sy:cy};fgo()} // zoom by a distance factor, towards a screen point or the centre
@@ -87,7 +83,7 @@ if(A)f.texParameterf(f.TEXTURE_2D,A.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,f.getP
 f.texImage2D(f.TEXTURE_2D,0,fm,1,1,0,fm,f.UNSIGNED_BYTE,new Uint8Array(px));f.generateMipmap(f.TEXTURE_2D);f.uniform1i(f.getUniformLocation(q,"TBO"[u]),u);return t};
 FG={f,e,V:f.getUniformLocation(q,"V"),S:f.getUniformLocation(q,"S"),co:f.getUniformLocation(q,"co"),T:nt(0,f.RGB,[21,33,57,0]),B:nt(1,f.ALPHA,[0,0,0,0]),O:nt(2,f.RGBA,[0,0,0,0]),
 lv:MX>=8192&&!(matchMedia("(pointer:coarse)").matches&&(navigator.deviceMemory||4)<6)?3:2}; // 8192 px where the device can hold it
-e.addEventListener("webglcontextlost",()=>{FG=null;m.classList.remove("fg");lv=-1;cqd=1;set();lvB();drawOv()}); // GPU reset: back to the picture layers
+e.addEventListener("webglcontextlost",()=>{FG=null;m.classList.remove("fg");im.src=U+"map/g2.webp";lvB();drawOv();set()}); // GPU reset: back to the picture layers
 m.classList.add("fg");
 const bm=src=>fetch(src).then(r=>r.blob()).then(b=>createImageBitmap(b)); // decoded off the main thread
 bm(U+"map/g1.webp").then(i=>{fgT(i);return FG&&bm(U+`map/g${FG.lv}.webp`)}).then(i=>i&&idle(()=>fgT(i)),()=>{})} // quick level first, then the sharp one
@@ -105,7 +101,7 @@ if(!im.length){f.texImage2D(T2,0,A,1,1,0,A,UB,new Uint8Array(1));f.generateMipma
 else{let l=0,pv;for(const i of im)f.texImage2D(T2,l++,A,A,UB,pv=i);let w=pv.width,h=pv.height;
 while(w>1||h>1){w=Math.max(1,w>>1);h=Math.max(1,h>>1);const e=D.createElement("canvas");e.width=w;e.height=h;e.getContext("2d").drawImage(pv,0,0,w,h);f.texImage2D(T2,l++,A,A,UB,pv=e)}}
 f.activeTexture(f.TEXTURE0)}
-function zoom(f,px,py,anim){const k2=Math.min(Math.max(k*f,fit()),kmax());x=px-(px-x)*k2/k;y=py-(py-y)*k2/k;k=k2;set(anim)}
+function zoom(f,px,py){const k2=Math.min(Math.max(k*f,fit()),kmax());x=px-(px-x)*k2/k;y=py-(py-y)*k2/k;k=k2;set()}
 
 function rs(){ // (re)build the SVG overlays: country shapes, graticule, labels
 let s="",q="",l="",t="";
@@ -123,7 +119,7 @@ cqd=1;if(CO){const o=ox;o.clearRect(0,0,W,H);o.lineJoin="round";
 RG.forEach(r=>{const q=path(r);o.globalAlpha=r==R[sel]?0:.28;o.fillStyle=r.c;o.fill(q,"evenodd");o.save();o.clip(q,"evenodd");o.globalAlpha=.85;o.strokeStyle=r.c;o.lineWidth=14;o.stroke(q);o.restore()});o.globalAlpha=1;fgO()}
 if(G)tq()}
 // markers live outside the zoomed layer and are re-positioned each frame, so icons and names stay crisp vectors at any zoom
-// marker: {o lon, a lat, n / r name EN / RU, k kind, f font, ten / tru text, y0 / y1 years shown, z importance: 0 always, 1 from medium zoom, 2 close-up only}
+// marker: {o lon, a lat, n / r name EN / RU, k kind (0 circle, 1 capital, 2 triangle), f font, y0 / y1 years shown, pg its page in content/places/}
 const mOn=q=>!(q.y0!=null&&yr<q.y0)&&!(q.y1!=null&&yr>q.y1),
 zp=(zl,zx)=>Math.min(100,Math.max(1,1+99*Math.log(Math.max(zl,1))/Math.log(zx))), // zoom in % (1 = whole world, 100 = closest), log scale
 fZ=()=>zp(k/fit(),kmax()/fit()),gZ=()=>zp(Math.PI/(2*SC*(gD-1)),Math.PI/(2*SC*(cl(0)-1))),
@@ -176,14 +172,17 @@ if(ver()!=cv)setVer();drawM();if(G)tq()}
 const hit=(mx,my)=>RG.find(r=>hc.isPointInPath(path(r),mx,my,"evenodd"))?.id; // country under a map point
 function pick(id){
 id=id&&R[id]?+id:null;if(id!=null)ms=null;
-sel=id;if(sel)panel();
+sel=id;rvl();if(sel)panel();
 p.classList.toggle("o",!!(sel||ms!=null));hi();drawM()}
-function pickM(i){ms=i;sel=null;hi();panel();p.classList.add("o");drawM()} // marker selected: its name and text in the side panel
-function panel(){if(ms!=null&&MK[ms]){const q=MK[ms];pt.textContent=mn(q);pbd(q.pg,"");MAP.onMarker?.(ms);return}
-if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);pbd(o.pg,`<p class="ph" lang="en">Placeholder text</p><p class="ph" lang="ru">Текст-заглушка</p>`);MAP.onPanel?.(r)}}
-const PC={};let pq=0; // place pages: the side panel shows the page's blocks (archive page layout) without its header
-function pbd(s,ph){const t=++pq;if(!s||!(window.PL||[]).includes(s)){px.innerHTML=ph;return}if(PC[s]!=null){px.innerHTML=PC[s];return}px.innerHTML="";
-fetch(U+"places/"+s+"/").then(r=>r.ok?r.text():"").then(h=>{const d=new DOMParser().parseFromString(h,"text/html").querySelector("article.doc");d?.querySelector(".b-head")?.remove();PC[s]=d?d.innerHTML:"";if(t==pq)px.innerHTML=PC[s]},()=>{})}
+function pickM(i){ms=i;sel=null;rvl();hi();panel();p.classList.add("o");drawM()} // marker selected: its name and text in the side panel
+function panel(){let pg,ph="",it;if(ms!=null&&MK[ms]){const q=MK[ms];pt.textContent=mn(q);pg=q.pg;it=()=>MAP.onMarker?.(ms)}
+else if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);pg=o.pg;ph=`<p class="ph" lang="en">Placeholder text</p><p class="ph" lang="ru">Текст-заглушка</p>`;it=()=>MAP.onPanel?.(r)}else return;
+const ok=pg&&((window.PL||[]).includes(pg)||MAP.pageOK?.(pg)),f=$("pf"),src=ok&&U+"places/"+pg+"/?embed"; // the place's archive page, embedded as it is (draft pages too, while editing)
+f.hidden=!ok;$("pe").hidden=!!ok;if(ok){if(f.dataset.s!=src){f.dataset.s=src;f.src=src}}else px.innerHTML=ph;it()} // the editor's hook comes last: it may add to the empty strip
+let lp=[0,0,0];D.addEventListener("pointerdown",e=>{lp=[e.clientX,e.clientY,Date.now()]},true); // where (and when) the map was last touched
+function rvl(){MAP.rdx=0;if(G||!sel&&ms==null||Date.now()-lp[2]>1500)return; // only right after a click on the map
+const aw=p.offsetWidth,cx=lp[0]-MR.left,cy=lp[1]-MR.top;if(aw>=VW-80||cx>aw+40)return; // the strip would cover what was picked: move the map right of it
+const tx=aw+(VW-aw)/2;MAP.rdx=tx-cx;ffl={mx:(cx-x)/k,my:(cy-y)/k,tx,ty:cy};fan=fv=null;fgo()}
 function col(on){CO=on;fdr();c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}hi()}
 zc.onclick=()=>col(!CO);
 function mode(n){MON=n;zm.classList.toggle("on",n==1);zk.classList.toggle("on",n==2);D.body.classList.toggle("msr",!!n);MS=[];msU()} // measuring: 0 off, 1 route (ruler), 2 circle
@@ -239,11 +238,11 @@ const MAP=window.MAP={ // editor hooks
 redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
 markers(){drawM();if(G)tq()},pickM,yr:()=>yr,focus(o,a){if(G){fly={y:-o*Math.PI/180,p:Math.min(1.4,Math.max(-1.4,a*Math.PI/180))};gT=cl(Math.min(gT,2.2));return rq()}zst();vT=vcl(Math.min(vT,vOf(fit()*5)));ffl={mx:(o+180)/360*W,my:(90-a)/180*H};fan=fv=null;fgo()},timeline(){if(tlOpen())tlB()},
 toMap(e){const r=m.getBoundingClientRect();return{mx:wx((e.clientX-r.left-x)/k),my:(e.clientY-r.top-y)/k}},
-sel:()=>sel&&R[sel],pick,W,H};
+sel:()=>sel&&R[sel],pick,panel,W,H,lp:()=>lp};
 function sz(){VW=m.clientWidth;VH=m.clientHeight;ZW=zc.parentNode.offsetWidth;GW=g.clientWidth||VW;GH=g.clientHeight||VH;MR=m.getBoundingClientRect();GR=G?g.getBoundingClientRect():MR}
 addEventListener("scroll",sz,{passive:true}); // positions on screen are cached too // view sizes, read only when they change
 new ResizeObserver(()=>{sz();set();if(G)rq()}).observe(m);
-sz();fgI();upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
+sz();fgI();if(!FG)im.src=U+"map/g2.webp"; /* without WebGL: one picture level */upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
@@ -397,7 +396,7 @@ if(sg!=gsig){gsig=sg;GI=it;
 gw.innerHTML=it.map(e=>e.c?`<div class="gh"><span class="cn" style="letter-spacing:${(.08+e.k).toFixed(3)}em">${esc(e.t)}</span></div>`
 :`<div class="gh" data-m="${e.m}"><i><svg viewBox="-11 -11 22 22"><path fill-rule="evenodd" d="${SH[e.q.k|0]||SH[0]}"/></svg><b${e.q.k==1?' class="d"':""}${e.q.f=="cap"?' data-c':""}>${esc(e.t)}</b></i></div>`).join("");
 [...gw.children].forEach((d,j)=>{const e=it[j],la=e.la*Math.PI/180,lo=e.lo*Math.PI/180;e.d=d;e.w=d.firstChild.offsetWidth;e.h=d.firstChild.offsetHeight;e.p=[Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo)]});
-GO=[...it].sort((a,b)=>(b.c?1e3+b.s:-(b.q.z|0))-(a.c?1e3+a.s:-(a.q.z|0)))} // big country names first, then markers by importance
+GO=[...it].sort((a,b)=>(b.c?1e3+b.s:b.q.k==1)-(a.c?1e3+a.s:a.q.k==1))} // big country names first, then capitals, then other markers
 GI.forEach(e=>e.m!=null&&e.d.classList.toggle("s",e.m===ms))}
 function gpt(r){ // country outline as points on the unit sphere (cached per shape); long edges split so they follow the curve
 if(r.g)return r.g;const t=r.d.match(/[a-zA-Z]|-?[\d.]+/g),G=r.g=[],u=(X,Y)=>{const lo=X/W*6.2832-3.1416,la=1.5708-Y/H*3.1416;q.push(Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo))},
