@@ -4,13 +4,13 @@
  "blocks": [
   {
    "t": "head",
-   "k_en": "work-in-progress",
+   "k_en": "",
    "t_en": "Archive of the",
    "acc": true,
    "a_en": "SECOND CONTINENTAL WAR",
    "t_ru": "архив",
    "a_ru": "второй континентальной войны",
-   "k_ru": "work-in-progress"
+   "k_ru": ""
   },
   {
    "t": "p",
@@ -27,5 +27,5 @@
   }
  ],
  "title_ru": null,
- "description_ru": null
+ "description_ru": ""
 }
