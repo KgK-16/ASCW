@@ -83,7 +83,8 @@ D.head.append(h("style",{},`
 .ed .doc [data-i]{position:relative;outline:1px dashed transparent;outline-offset:6px;transition:outline-color .12s}.ed .doc [data-i]:hover{outline-color:#6665c04d}.ed .doc [data-i].cur{outline:1px solid #6665c080;background:#6665c00d} /* each block is a visible box: hovered dashed, current solid */
 #eb .st{align-self:center;padding:0 6px;font:400 12px "Exo 2",sans-serif;color:#e8e8e099}@media(max-width:700px){#eb .st{display:none}}.ed .doc :is(.b-card,.al-left,.al-right){z-index:1} /* floats stay above the text that wraps them */
 .ed .doc .b-img img,.ed .doc .b-card img{cursor:pointer}
-.ed .doc .rz{display:none;position:absolute;z-index:2;width:14px;height:14px;margin:-7px 0 0 -7px;background:#020206;border:1px solid #8d8cf0;cursor:ew-resize;touch-action:none}
+.ed .doc .rz{display:none;position:absolute;z-index:2;width:16px;height:16px;margin:-8px 0 0 -8px;background:#e8e8e0;border:2px solid #6665c0;box-shadow:0 0 0 1px #020206,0 2px 6px #000c;cursor:ew-resize;touch-action:none}
+.ed .doc .al-left .rz[data-s=l],.ed .doc .al-right .rz[data-s=r]{visibility:hidden} /* a float grows from its free side */
 @media(min-width:760px){.ed .doc .b-img:is(:hover,.cur,.rzg) .rz{display:block}} /* image size handle (sizes apply where images are not stacked full width) */
 .ed .doc .rzg .rz::after{content:attr(data-v);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);font:400 12px "Exo 2",sans-serif;color:#e8e8e0;background:#020206f2;border:1px solid #6665c04d;padding:3px 6px;white-space:nowrap}
 .ed .doc .rzg img{outline:1px solid #8d8cf0}.ed .doc .pi{display:block;width:100%;padding:36px 12px;border:1px dashed #6665c0;color:#e8e8e080;font:400 13px "Exo 2",sans-serif;cursor:pointer;text-align:center}
@@ -214,7 +215,7 @@ case"h":return E("h"+(b.lv||2),b,b,"","plain",ta+di);
 case"p":return E("p",b,b,"","inline",ta+di,L("Write, or press / for blocks","Пишите или нажмите / — меню блоков"));
 case"quote":return`<blockquote${ta}${di}>${E("p",b,b,"","inline")}${E("cite",b,b,"cite_","plain")}</blockquote>`;
 case"list":{const t=b.ord?"ol":"ul",e=E(t,b,b,"","li",ta+di);return ED?e.replace(/data-ph="([^"]*)"([^>]*)><\/(ul|ol)>$/,'data-ph="$1"$2><li data-ph="$1"></li></$3>'):e}
-case"img":return`<figure class="b-img al-${b.al||"center"}"${b.w?` style="--w:${b.w}%"`:""}${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>${ED?'<i class="rz" title="'+L("Drag to resize","Потяните, чтобы изменить размер")+'"></i>':""}`:ED?`<button type="button" class="pi" data-pick="">🖼 ${L("Choose an image or drop a file here","Выберите изображение или перетащите файл")}</button>`:""}${E("figcaption",b,b,"cap_","plain")}</figure>`;
+case"img":return`<figure class="b-img al-${b.al||"center"}"${b.w?` style="--w:${b.w}%"`:""}${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>${ED?["l","r"].map(z=>`<i class="rz" data-s="${z}" title="${L("Drag to resize","Потяните, чтобы изменить размер")}"></i>`).join(""):""}`:ED?`<button type="button" class="pi" data-pick="">🖼 ${L("Choose an image or drop a file here","Выберите изображение или перетащите файл")}</button>`:""}${E("figcaption",b,b,"cap_","plain")}</figure>`;
 case"card":return`<aside class="b-card"${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>`:""}${E("h4",b,b,"t_","plain")}<dl>${(b.rows||[]).map((r,j)=>
 `<div>${E("dt",b,r,"k_","plain",` data-r="${j}"`,L("Property","Свойство"))}${E("dd",b,r,"v_","inline",` data-r="${j}"`,L("Value","Значение"))}</div>`).join("")}</dl>${ED?`<button type="button" class="add" data-act="row">+ ${L("Row","Строка")}</button>`:""}</aside>`;
 case"cols":return`<div class="b-cols"${di}>${(b.c||[]).map((c,j)=>`<div class="cell">${c.t=="img"?`<figure class="b-img">${c.src?`<img src="${img(c.src)}" alt=""${ED?` data-pick="" data-c="${j}"`:""}>`:ED?`<button type="button" class="pi" data-pick="" data-c="${j}">🖼</button>`:""}${E("figcaption",b,c,"cap_","plain",` data-c="${j}"`)}</figure>`
@@ -229,8 +230,8 @@ function render(){if(!DOC)return;const a=D.activeElement?.closest?.("[data-f]"),
 DOC.innerHTML=B().map(rb).join("")+(ED&&!B().length?`<button type="button" class="eb" data-act="first" style="display:block;margin:0 auto">+ ${L("Add the first block","Добавить первый блок")}</button>`:"");
 if(ED){DOC.append(gut,dln);if(CB!=null&&!DOC.querySelector(`[data-i="${CB}"]`))CB=null;gutAt(CB);status();DOC.querySelectorAll(".b-img").forEach(rzPos)}
 if(ai!=null)focusF(+ai,af)}
-function rzPos(f){const z=f?.querySelector(".rz"),im=f?.querySelector("img");if(!z||!im)return;const a=f.getBoundingClientRect(),r=im.getBoundingClientRect(); // the size handle sits at the picture's lower outer corner
-z.style.left=((f.classList.contains("al-right")?r.left:r.right)-a.left)+"px";z.style.top=(r.bottom-a.top)+"px"}
+function rzPos(f){const im=f?.querySelector("img");if(!im)return;const a=f.getBoundingClientRect(),r=im.getBoundingClientRect(); // the size handles sit at the picture's lower corners
+f.querySelectorAll(".rz").forEach(z=>{z.style.left=((z.dataset.s=="l"?r.left:r.right)-a.left)+"px";z.style.top=(r.bottom-a.top)+"px"})}
 function focusF(i,f,end=1){const k=DOC.querySelector(`[data-i="${i}"]`);if(!k)return;const e=f!=null?(k.matches(`[data-f="${f}"]`)?k:k.querySelector(`[data-f="${f}"]`)):k.matches("[data-f]")?k:k.querySelector("[data-f]");
 if(!e)return;e.focus();const r=D.createRange();r.selectNodeContents(e);r.collapse(!end);const s=getSelection();s.removeAllRanges();s.addRange(r)}
 function insert(b,at,focus=1){B().splice(at,0,b);commit();CB=at;gutAt(at);if(focus){if(b.t=="img"&&!b.src)pickImg(b);else focusF(at,null,0)}}
@@ -240,7 +241,7 @@ for(const x of l){let v=b[x]||"";if(b.t=="list")v=v.replace(/<\/li><li>/g,"<br>"
 if(b.cite_en)n.cite_en=b.cite_en;if(b.cite_ru)n.cite_ru=b.cite_ru;B()[i]=n;store();render();focusF(i)}
 // block gutter: + inserts after the block, ⠿ opens the block menu (click) or moves the block (drag)
 function gutAt(i){if(!gut)return;const k=i!=null&&DOC.querySelector(`[data-i="${i}"]`);gut.hidden=!k;DOC.querySelectorAll(".cur").forEach(e=>e.classList.remove("cur"));if(!k)return;
-k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClientRect(),ng=d.left<44; // narrow screens: the text moves right to make room for the buttons
+k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClientRect(),ng=d.left<38; // narrow screens: the text moves right to make room for the buttons (the page in the map's panel has room for them)
 if(HT.classList.contains("ng")!=ng){HT.classList.toggle("ng",ng);return gutAt(i)}
 gut.style.top=Math.max(0,r.top-d.top-6)+"px";gut.style.left=(ng?2:-36)+"px";gut.dataset.i=i} // always the same column at the left of the text, level with the block's top
 function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],k:t[3],f:()=>{const b=mk(t[0]);if(replace){act(()=>B()[i]=b);b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}),1)}
@@ -284,7 +285,7 @@ clearTimeout(stT);stT=setTimeout(status,400)});let stT;
 DOC.addEventListener("pointerover",e=>{const f=e.target.closest?.(".b-img");if(f)rzPos(f)}); // image frame size: the handle at the picture's corner
 DOC.addEventListener("load",e=>{if(e.target.tagName=="IMG")rzPos(e.target.closest(".b-img"))},true);
 DOC.addEventListener("pointerdown",e=>{const z=e.target.closest(".rz");if(!z)return;e.preventDefault();e.stopPropagation();const f=z.parentNode,i=+f.dataset.i,b=B()[i],im=f.querySelector("img"),
-W=DOC.getBoundingClientRect().width,r=im.getBoundingClientRect(),al=b.al||"center",sg=al=="right"?-1:1,k=al=="center"||al=="full"?2:1,x0=e.clientX,w0=r.width;let w=null;
+W=DOC.getBoundingClientRect().width,r=im.getBoundingClientRect(),al=b.al||"center",sg=z.dataset.s=="l"?-1:1,k=al=="center"||al=="full"?2:1,x0=e.clientX,w0=r.width;let w=null;
 z.setPointerCapture(e.pointerId);f.classList.add("rzg");if(al=="full")f.classList.replace("al-full","al-center");
 z.onpointermove=ev=>{w=Math.round(Math.min(100,Math.max(10,(w0+sg*k*(ev.clientX-x0))/W*100)));f.style.setProperty("--w",w+"%");z.dataset.v=w+"%";rzPos(f)};
 z.onpointerup=z.onpointercancel=()=>{z.onpointermove=z.onpointerup=z.onpointercancel=null;f.classList.remove("rzg");if(w!=null)act(()=>{b.w=w;if(al=="full")delete b.al});else rzPos(f)}},true);
