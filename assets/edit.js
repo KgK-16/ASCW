@@ -106,7 +106,7 @@ D.head.append(h("style",{},`
 .ef .row>label{min-width:0}.ef textarea{min-height:80px}
 .lbe #sl .lb text{pointer-events:auto;cursor:move}.lbe #sl .lb text:hover{fill:#e8b04a}.ef input[type=range]{padding:0;accent-color:#8d8cf0}
 .ed #mw g{cursor:grab}.mke #m{cursor:crosshair}
-.cx{position:fixed;z-index:45;width:min(340px,calc(100vw - 16px));max-height:calc(100vh - 72px);padding:12px 14px;gap:8px;box-shadow:0 8px 30px #000a}.cx h3{font-size:13px}.cx .ef{display:flex;flex-direction:column;gap:8px} /* marker / country properties next to it */
+.cx{position:fixed;z-index:45;width:min(340px,calc(100vw - 16px));max-height:calc(100vh - 72px);padding:12px 14px;gap:8px;box-shadow:0 8px 30px #000a}.cx h3{font-size:13px;margin:-12px -14px 0;padding:12px 14px 4px;cursor:move;touch-action:none;-webkit-user-select:none;user-select:none}.cx h3::before{content:"⠿";margin-right:-4px;color:#e8e8e066;letter-spacing:0}.cx h3>span{flex:1}.cx.mv{opacity:.92}.cx .ef{display:flex;flex-direction:column;gap:8px} /* marker / country properties next to it */
 
 .ml{display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow:auto}.ml button{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:6px 8px;color:#e8e8e0;cursor:pointer;font:400 14px Inter,sans-serif}.ml button:hover{background:#6665c040}.ml small{color:#e8e8e080}
 `));
@@ -414,6 +414,9 @@ ll=(my,mx)=>({a:+(90-my/MP.H*180).toFixed(3),o:+(mx/MP.W*360-180).toFixed(3)}),
 saveMK=()=>{WJ(F.mk,MK);MP.markers()};
 function pform(el,key){if(PF?.key==key&&PF.isConnected)return 0;PF?.remove(); // properties of a marker / country: a small window next to it on the map
 PF=h("div",{cls:"dlb cx",tabindex:-1},h("h3",{},h("span",{},D.getElementById("pt").textContent),h("button",{type:"button",cls:"x",title:L("Close","Закрыть"),"aria-label":L("Close","Закрыть"),onclick:()=>{PF?.remove();PF=null}},"×")),el);PF.key=key;D.body.append(PF);
+const hd=PF.firstChild;hd.onpointerdown=e=>{if(e.target.closest("button"))return;e.preventDefault();hd.setPointerCapture(e.pointerId);const f=PF,r=f.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top;f.classList.add("mv"); // the title row moves the window
+hd.onpointermove=v=>{f.style.left=Math.max(8,Math.min(innerWidth-f.offsetWidth-8,v.clientX-dx))+"px";f.style.top=Math.max(8,Math.min(innerHeight-f.offsetHeight-8,v.clientY-dy))+"px"};
+hd.onpointerup=hd.onpointercancel=()=>{hd.onpointermove=hd.onpointerup=hd.onpointercancel=null;f.classList.remove("mv")}};
 const [lx,ly]=MP.lp(),w=PF.offsetWidth,hh=PF.offsetHeight,X=lx+18+w<innerWidth?lx+18:lx-18-w;PF.style.left=Math.max(8,Math.min(innerWidth-w-8,X))+"px";PF.style.top=Math.max(56,Math.min(innerHeight-hh-8,ly-30))+"px";return 1}
 function placeNew(o,save,en,ru){const px=D.getElementById("px"); // no page yet: the empty strip offers to create it
 px.append(h("div",{cls:"row",style:"justify-content:center;margin-top:24px"},btn("📄 "+L("Create its page","Создать страницу"),async()=>{
