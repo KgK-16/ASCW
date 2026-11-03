@@ -1,6 +1,7 @@
-{{- /* one text field of a block in both languages: b = block, f = field prefix ("" → en / ru, "cap_" → cap_en / cap_ru), tag = element, cls = optional class,
-   d = default {en, ru} when the block has no text of its own. A missing language falls back to the other one. The editor cleans stored HTML. */ -}}
+{{- /* one text field of a block in the page's language: b = block, f = field prefix ("" → en / ru, "cap_" → cap_en / cap_ru), tag = element, cls = optional class,
+   d = default {en, ru} when the block has no text of its own. A missing language falls back to the other one (marked with its lang). The editor cleans stored HTML. */ -}}
 {{- $e := index .b (print .f "en") }}{{ $r := index .b (print .f "ru") -}}
 {{- if and (not (isset .b (print .f "en"))) (not (isset .b (print .f "ru"))) .d }}{{ $e = .d.en }}{{ $r = .d.ru }}{{ end -}}
-{{- if or $e $r }}{{ $c := cond (and (isset . "cls") .cls) (printf ` class="%s"` .cls) "" -}}
-{{- range $l, $v := dict "en" ($e | default $r) "ru" ($r | default $e) }}{{ printf `<%s lang="%s"%s>%s</%s>` $.tag $l $c $v $.tag | safeHTML }}{{ end }}{{ end -}}
+{{- $ru := eq site.Language.Name "ru" }}{{ $v := cond $ru ($r | default $e) ($e | default $r) -}}
+{{- if $v }}{{ $c := cond (and (isset . "cls") .cls) (printf ` class="%s"` .cls) "" }}{{ $o := cond (cond $ru $r $e) "" (printf ` lang="%s"` (cond $ru "en" "ru")) -}}
+{{- printf `<%s%s%s>%s</%s>` $.tag $o $c $v $.tag | safeHTML }}{{ end -}}

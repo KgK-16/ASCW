@@ -1,9 +1,25 @@
 baseURL = "https://kgk-16.github.io/ASCW/"
 title = "ASCW"
 disableKinds = ["taxonomy", "term", "RSS", "sitemap"]
+defaultContentLanguage = "en"
+disableDefaultLanguageRedirect = true  # no /en/ copy of the home page
 
 [minify]
 disableJS = true  # scripts are minified by esbuild (layouts/partials/js.html); the HTML minifier re-minifying them breaks them
 
 [params]
 repo = "KgK-16/ASCW"  # the site editor commits here
+
+# two languages: English at /ASCW/…, Russian at /ASCW/ru/…; every content file holds both (title / title_ru, en / ru fields)
+# and is built once per language (the mount below); a page shows only its own language
+[languages.en]
+weight = 1
+[languages.ru]
+weight = 2
+disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]  # one 404 page for every address (GitHub Pages serves only /404.html)
+
+[[module.mounts]]
+source = "content"
+target = "content"
+[module.mounts.sites.matrix]
+languages = ["**"]

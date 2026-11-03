@@ -176,13 +176,13 @@ sel=id;rvl();if(sel)panel();
 p.classList.toggle("o",!!(sel||ms!=null));hi();drawM()}
 function pickM(i){ms=i;sel=null;rvl();hi();panel();p.classList.add("o");drawM()} // marker selected: its name and text in the side panel
 function panel(){let pg,ph="",it;if(ms!=null&&MK[ms]){const q=MK[ms];pt.textContent=mn(q);pg=q.pg;it=()=>MAP.onMarker?.(ms)}
-else if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);pg=o.pg;ph=`<p class="ph" lang="en">Placeholder text</p><p class="ph" lang="ru">Текст-заглушка</p>`;it=()=>MAP.onPanel?.(r)}else return;
-const ok=pg&&((window.PL||[]).includes(pg)||MAP.pageOK?.(pg)),f=$("pf"),src=ok&&U+"places/"+pg+"/?embed"; // the place's archive page, embedded as it is (draft pages too, while editing)
+else if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);pg=o.pg;ph=`<p class="ph">${L("Placeholder text","Текст-заглушка")}</p>`;it=()=>MAP.onPanel?.(r)}else return;
+const ok=pg&&((window.PL||[]).includes(pg)||MAP.pageOK?.(pg)),f=$("pf"),src=ok&&UL+"places/"+pg+"/?embed"; // the place's archive page, embedded as it is (draft pages too, while editing)
 f.hidden=!ok;$("pe").hidden=!!ok;if(ok){if(f.dataset.s!=src){f.dataset.s=src;f.src=src}}else px.innerHTML=ph;it()} // the editor's hook comes last: it may add to the empty strip
 let lp=[0,0,0];D.addEventListener("pointerdown",e=>{lp=[e.clientX,e.clientY,Date.now()]},true); // where (and when) the map was last touched
 function rvl(){MAP.rdx=0;if(G||!sel&&ms==null||Date.now()-lp[2]>1500)return; // only right after a click on the map
-const aw=p.offsetWidth,cx=lp[0]-MR.left,cy=lp[1]-MR.top;if(aw>=VW-80||cx>aw+40)return; // the strip would cover what was picked: move the map right of it
-const tx=aw+(VW-aw)/2;MAP.rdx=tx-cx;ffl={mx:(cx-x)/k,my:(cy-y)/k,tx,ty:cy};fan=fv=null;fgo()}
+const aw=$("pw").offsetWidth,sd=(VW-aw)/2,cx=lp[0]-MR.left,cy=lp[1]-MR.top;if(sd<100||cx<sd-40||cx>sd+aw+40)return; // the page in the middle would cover what was picked: move it to the middle of the nearer dimmed side
+const tx=cx<VW/2?sd/2:VW-sd/2;MAP.rdx=tx-cx;ffl={mx:(cx-x)/k,my:(cy-y)/k,tx,ty:cy};fan=fv=null;fgo()}
 function col(on){CO=on;fdr();c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}hi()}
 zc.onclick=()=>col(!CO);
 function mode(n){MON=n;zm.classList.toggle("on",n==1);zk.classList.toggle("on",n==2);D.body.classList.toggle("msr",!!n);MS=[];msU()} // measuring: 0 off, 1 route (ruler), 2 circle
@@ -205,7 +205,7 @@ m.onlostpointercapture=e=>{delete P[e.pointerId];if(!Object.keys(P).length)m.cla
 m.onwheel=e=>{e.preventDefault();fz(Math.exp(wd(e)*.0015),e.clientX-MR.left,e.clientY-MR.top)}; // the globe's wheel sensitivity and easing
 zi.onclick=()=>G?(gT=cl(gT/1.5),anc=null,rq()):fz(1/1.5);
 zo.onclick=()=>G?(gT=cl(gT*1.5),anc=null,rq()):fz(1.5);
-pc.onclick=()=>{ms=null;pick()};
+pc.onclick=()=>{ms=null;pick()};p.onclick=e=>{if(e.target==p)pc.click()}; // a click on the dimmed map beside the page goes back to the map
 
 // ---- cursor coordinates (2D) ----
 
@@ -234,6 +234,9 @@ xt.onclick=tlClose;
 if(matchMedia("(hover:none)").matches){const z=D.querySelector(".z");z.classList.add("hint");setTimeout(()=>z.classList.remove("hint"),3500);z.addEventListener("pointerdown",()=>z.classList.remove("hint"),{once:true})}
 D.addEventListener("lang",()=>{sbK=0;rs();drawM();panel();if(tlOpen())tlB();if(G)tq()});
 addEventListener("resize",()=>{if(tlOpen())tlB()});
+D.addEventListener("langgo",()=>{let mx=(VW/2-x)/k,my=(VH/2-y)/k,z=k; // the page is about to open in the other language: keep the view for it
+if(G&&SC){const r=g.getBoundingClientRect(),q=gll({clientX:r.left+r.width/2,clientY:r.top+r.height/2});if(q&&isFinite(q.mx+q.my)){mx=q.mx;my=q.my;z=Math.min(Math.max(Math.PI/(2*SC*(gD-1))*fit(),fit()),kmax())}}
+try{sessionStorage.ascwMap=JSON.stringify({mx:wx(mx),my,k:z/fit(),yr,sel,ms,G:!!G})}catch{}});
 const MAP=window.MAP={ // editor hooks
 redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
 markers(){drawM();if(G)tq()},pickM,yr:()=>yr,focus(o,a){if(G){fly={y:-o*Math.PI/180,p:Math.min(1.4,Math.max(-1.4,a*Math.PI/180))};gT=cl(Math.min(gT,2.2));return rq()}zst();vT=vcl(Math.min(vT,vOf(fit()*5)));ffl={mx:(o+180)/360*W,my:(90-a)/180*H};fan=fv=null;fgo()},timeline(){if(tlOpen())tlB()},
@@ -242,7 +245,10 @@ sel:()=>sel&&R[sel],pick,panel,W,H,lp:()=>lp};
 function sz(){VW=m.clientWidth;VH=m.clientHeight;ZW=zc.parentNode.offsetWidth;GW=g.clientWidth||VW;GH=g.clientHeight||VH;MR=m.getBoundingClientRect();GR=G?g.getBoundingClientRect():MR}
 addEventListener("scroll",sz,{passive:true}); // positions on screen are cached too // view sizes, read only when they change
 new ResizeObserver(()=>{sz();set();if(G)rq()}).observe(m);
-sz();fgI();if(!FG)im.src=U+"map/g2.webp"; /* without WebGL: one picture level */upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
+sz();fgI();if(!FG)im.src=U+"map/g2.webp"; /* without WebGL: one picture level */upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();
+try{const v=JSON.parse(sessionStorage.ascwMap||"null");delete sessionStorage.ascwMap;if(v){if(v.yr!=yr){yr=tr.value=v.yr;upd()}k=Math.min(Math.max(v.k*fit(),fit()),kmax());x=VW/2-v.mx*k;y=VH/2-v.my*k;vD=vT=vOf(k);set();rest();drawM(); // the same view after switching the language
+if(v.ms!=null&&MK[v.ms])pickM(v.ms);else if(v.sel)pick(v.sel);if(v.G)setTimeout(()=>zg.click())}}catch{}
+D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).

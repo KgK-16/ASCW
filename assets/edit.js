@@ -1,12 +1,12 @@
-// ASCW site editor. Loaded only when edit mode is on (✎ in the nav; unlocked once per browser by opening any page with ?edit).
+// ASCW site editor (pages: U = the site, UL = its pages in this language, U or U+"ru/"). Loaded only when edit mode is on (✎ in the nav; unlocked once per browser by opening any page with ?edit).
 // Every change goes into a local draft (localStorage) and is published to GitHub as one commit with the editor's own access token;
 // GitHub Actions then rebuilds the site. Source files: content/**/_index.md (JSON front matter), data/text.json (interface texts),
 // assets/markers.json, assets/events.json, assets/countries.json (map), static/img/* (uploaded images).
 // Built by layouts/partials/js.html (esbuild: minified, wrapped in its own scope).
-const D=document,HT=D.documentElement,BT=D.getElementById("ed"),U=BT.dataset.u,REPO=BT.dataset.repo,BR="main",
+const D=document,HT=D.documentElement,BT=D.getElementById("ed"),U=BT.dataset.u,UL=decodeURI(location.pathname).startsWith(U+"ru/")?U+"ru/":U,REPO=BT.dataset.repo,BR="main",
 LS=(()=>{try{return localStorage}catch{return{}}})(),
 NEWP=!D.querySelector("meta[name=src]")?.content, // a page that exists only in the draft opens on the 404 page at its future address
-SRC=D.querySelector("meta[name=src]")?.content||(p=>p&&p+"/_index.md")(decodeURI(location.pathname).slice(U.length).replace(/\/?(index\.html)?$/,"")),PAGE=SRC&&"content/"+SRC,
+SRC=D.querySelector("meta[name=src]")?.content||(p=>p&&p+"/_index.md")(decodeURI(location.pathname).slice(U.length).replace(/^ru\//,"").replace(/\/?(index\.html)?$/,"")),PAGE=SRC&&"content/"+SRC,
 F={text:"data/text.json",mk:"assets/markers.json",ev:"assets/events.json",co:"assets/countries.json"},
 ru=()=>HT.lang=="ru",L=(e,r)=>ru()?r:e,
 h=(t,a={},...c)=>{const e=D.createElement(t);for(const k in a)k.startsWith("on")?e[k]=a[k]:k=="cls"?e.className=a[k]:e.setAttribute(k,a[k]);e.append(...c.flat().filter(v=>v!=null));return e},
@@ -36,17 +36,25 @@ const n=()=>Object.keys(draft).length;
 async function publish(){
 if(!tok)return token();await flush();if(!n())return;
 const b=pb.firstChild;b.disabled=1;toast(L("Publishing…","Публикация…"));
-try{const ref=await gh(`git/ref/heads/${BR}`),head=ref.object.sha,c=await gh(`git/commits/${head}`),tree=[];
+try{const ref=await gh(`git/ref/heads/${BR}`),head=ref.object.sha,c=await gh(`git/commits/${head}`),tree=[],
+T=await gh(`git/trees/${c.tree.sha}?recursive=1`),all=T.tree.filter(e=>e.type=="blob").map(e=>e.path),un=T.truncated?new Set():await unused(all);
 for(const [p,v] of Object.entries(draft)){
+if(un.has(p))continue; // an image uploaded and no longer used before publishing is not published at all
 if(v.del){if(await src(p)!=null)tree.push({path:p,mode:"100644",type:"blob",sha:null});continue}
 const bl=await gh("git/blobs",{method:"POST",body:JSON.stringify(v.b?{content:v.b,encoding:"base64"}:{content:v.t,encoding:"utf-8"})});
 tree.push({path:p,mode:"100644",type:"blob",sha:bl.sha})}
+const gone=[...un].filter(p=>all.includes(p));gone.forEach(p=>tree.push({path:p,mode:"100644",type:"blob",sha:null}));
 const t=await gh("git/trees",{method:"POST",body:JSON.stringify({base_tree:c.tree.sha,tree})}),
-nc=await gh("git/commits",{method:"POST",body:JSON.stringify({message:"Edit via site editor",tree:t.sha,parents:[head]})});
+nc=await gh("git/commits",{method:"POST",body:JSON.stringify({message:"Edit via site editor"+(gone.length?`; unused images removed: ${gone.map(p=>p.slice(11)).join(", ")}`:""),tree:t.sha,parents:[head]})});
 await gh(`git/refs/heads/${BR}`,{method:"PATCH",body:JSON.stringify({sha:nc.sha})});
-for(const [p,v] of Object.entries(draft))base[p]=v.del?null:v.t??base[p];
+for(const [p,v] of Object.entries(draft))base[p]=v.del?null:v.t??base[p];gone.forEach(p=>base[p]=null);
 draft={};save();deploy(nc.sha)}
 catch(e){toast(L("Publish failed: ","Ошибка публикации: ")+e.message,1)}b.disabled=0}
+async function unused(all){ // images in static/img that no page or data file mentions any more (after this publish): removed in the same commit
+const fs=[...new Set([...all,...Object.keys(draft)])],im=new Set(fs.filter(p=>p.startsWith("static/img/")&&!draft[p]?.del)),
+tx=fs.filter(p=>!draft[p]?.del&&/^(content\/.*\.md|data\/.*\.json|assets\/(markers|events|countries)\.json|assets\/.*\.css|layouts\/.*\.html)$/.test(p));if(!im.size)return im;
+const v=await Promise.all(tx.map(read));if(v.some(t=>t==null))return new Set(); // a file could not be read: nothing is removed this time
+const t=v.join("\n");for(const p of im)if(t.includes("img/"+p.slice(11)))im.delete(p);return im}
 async function deploy(sha){ // follow the GitHub Actions build of this commit (needs Actions: read; otherwise just a hint)
 toast(L("Published. The site rebuilds in about a minute.","Опубликовано. Сайт обновится примерно через минуту."));
 for(let i=0;i<40;i++){await new Promise(r=>setTimeout(r,6e3));
@@ -95,7 +103,7 @@ D.head.append(h("style",{},`
 .lbe #sl .lb text{pointer-events:auto;cursor:move}.lbe #sl .lb text:hover{fill:#e8b04a}.ef input[type=range]{padding:0;accent-color:#8d8cf0}
 .ed #mw g{cursor:grab}.mke #m{cursor:crosshair}
 .cx{position:fixed;z-index:45;width:min(340px,calc(100vw - 16px));max-height:calc(100vh - 72px);padding:12px 14px;gap:8px;box-shadow:0 8px 30px #000a}.cx h3{font-size:13px}.cx .ef{display:flex;flex-direction:column;gap:8px} /* marker / country properties next to it */
-body:has(#p.o) :is(#eb,#et){left:calc(min(1000px,100%) + 12px)}@media(max-width:1100px){body:has(#p.o) :is(#eb,#et){left:12px}}
+
 .ml{display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow:auto}.ml button{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:6px 8px;color:#e8e8e0;cursor:pointer;font:400 14px Inter,sans-serif}.ml button:hover{background:#6665c040}.ml small{color:#e8e8e080}
 `));
 let pb,eb,et,ubn,rbn;
@@ -208,7 +216,7 @@ case"card":return`<aside class="b-card"${di}>${b.src?`<img src="${img(b.src)}" a
 case"cols":return`<div class="b-cols"${di}>${(b.c||[]).map((c,j)=>`<div class="cell">${c.t=="img"?`<figure class="b-img">${c.src?`<img src="${img(c.src)}" alt=""${ED?` data-pick="" data-c="${j}"`:""}>`:ED?`<button type="button" class="pi" data-pick="" data-c="${j}">🖼</button>`:""}${E("figcaption",b,c,"cap_","plain",` data-c="${j}"`)}</figure>`
 :E("div",b,c,"","block",` data-c="${j}"`)}</div>`).join("")}</div>`;
 case"hr":return`<hr class="b-hr"${di}>`;
-case"links":return`<ul class="b-links"${di}>${shown(b).map(q=>`<li${q.nw?' class="nw"':""}><a href="${U+q.src.replace(/_index\.md$/,"")}">${esc(l=="ru"?q.ru||q.en:q.en)}</a></li>`).join("")||(ED?`<li>${L("No subpages yet — add one in the block menu ⠿","Подстраниц пока нет — добавьте в меню блока ⠿")}</li>`:"")}</ul>`}
+case"links":return`<ul class="b-links"${di}>${shown(b).map(q=>`<li${q.nw?' class="nw"':""}><a href="${UL+q.src.replace(/_index\.md$/,"")}">${esc(l=="ru"?q.ru||q.en:q.en)}</a></li>`).join("")||(ED?`<li>${L("No subpages yet — add one in the block menu ⠿","Подстраниц пока нет — добавьте в меню блока ⠿")}</li>`:"")}</ul>`}
 return""}
 let stb;
 function status(){if(!stb)return;const l=HT.lang,w=B().flatMap(b=>fields(b).map(([o,f])=>plain(gv(b,o,f,l)))).join(" ").split(/\s+/).filter(Boolean).length; // words on the page in the shown language
@@ -355,22 +363,22 @@ KIDS.sort((a,b)=>(a.nw?1:0)-(b.nw?1:0))}
 const pageObj=async p=>{const t=await read(p);if(t==null)return null;try{return JSON.parse(t)}catch{return null}};
 function newPage(){let en,ruI,sl;const slug=v=>v.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 dialog(L("New subpage","Новая подстраница"),lab(L("Title","Название")+" · EN",en=inp("",v=>{if(!sl.dataset.t)sl.value=slug(v)})),
-lab(L("Title","Название")+" · RU",ruI=inp("",()=>{})),lab(L("Address","Адрес")+" ("+U+dir+"…)",sl=inp("",(v,e)=>{e.dataset.t=1})),
+lab(L("Title","Название")+" · RU",ruI=inp("",()=>{})),lab(L("Address","Адрес")+" ("+UL+dir+"…)",sl=inp("",(v,e)=>{e.dataset.t=1})),
 h("div",{cls:"row"},btn(L("Create and open","Создать и открыть"),async()=>{const s=slug(sl.value);if(!s||!en.value.trim())return toast(L("Title (EN) and address are required","Нужны название (EN) и адрес"),1);
 const p=`content/${dir}${s}/_index.md`;if(await read(p)!=null)return toast(L("This address is taken","Такой адрес уже занят"),1);
 if(!B().some(b=>b.t=="links")){B().push({t:"links"});await WJ(PAGE,PG)} // so the new page can be reached from this one
 await WJ(p,{title:en.value.trim(),title_ru:ruI.value.trim(),description:"",description_ru:"",weight:(KIDS.length+1)*10,blocks:[{t:"head"},{t:"p"}]});
-await new Promise(r=>setTimeout(r,300));location.href=U+dir+s+"/"})));en.focus()}
+await new Promise(r=>setTimeout(r,300));location.href=UL+dir+s+"/"})));en.focus()}
 async function delPage(){const up=dir.replace(/[^/]+\/$/,"");if(!up)return toast(L("This page cannot be deleted","Эту страницу удалить нельзя"),1);
 if(kids().length)return toast(L("Delete its subpages first","Сначала удалите её подстраницы"),1);
 if(!confirm(L("Delete this page when publishing?","Удалить эту страницу при публикации?")))return;
-await src(PAGE);if(base[PAGE]==null)delete draft[PAGE];else draft[PAGE]={del:1};save();location.href=U+up}
+await src(PAGE);if(base[PAGE]==null)delete draft[PAGE];else draft[PAGE]={del:1};save();location.href=UL+up}
 function settings(){const S=(k,v)=>{snap1();if(v)PG[k]=v;else delete PG[k];store();render()},bgv=()=>D.querySelector("main").style.setProperty("--bg",PG.bg?PG.bg=="none"?"none":`url(${img(PG.bg)})`:"");
 dialog(L("Page","Страница"),h("div",{cls:"row"},lab(L("Title","Название")+" · EN",inp(PG.title,v=>S("title",v))),lab(L("Title","Название")+" · RU",inp(PG.title_ru,v=>S("title_ru",v)))),
 h("div",{cls:"row"},lab(L("Description (also shown in link previews)","Описание (видно и в превью ссылок)")+" · EN",inp(PG.description,v=>S("description",v),{area:1})),lab(L("Description","Описание")+" · RU",inp(PG.description_ru,v=>S("description_ru",v),{area:1}))),
 h("div",{cls:"row"},lab(L("Background","Фон"),h("div",{cls:"row"},btn(L("Image…","Изображение…"),async()=>{const f=await pickFile();if(f){PG.bg=await upload(f);store();bgv()}}),
 btn(L("None","Без фона"),()=>{PG.bg="none";store();bgv()}),btn(L("Default","По умолчанию"),()=>{delete PG.bg;store();bgv()})))),
-h("div",{style:"font-size:12px;color:#e8e8e080"},L("Address: ","Адрес: ")+U+dir),h("div",{cls:"row"},btn("+ "+L("New subpage…","Новая подстраница…"),newPage),btn("🗑 "+L("Delete page","Удалить страницу"),delPage)))}
+h("div",{style:"font-size:12px;color:#e8e8e080"},L("Address: ","Адрес: ")+UL+dir),h("div",{cls:"row"},btn("+ "+L("New subpage…","Новая подстраница…"),newPage),btn("🗑 "+L("Delete page","Удалить страницу"),delPage)))}
 async function reorder(){const K=kids(),os=await Promise.all(K.map(q=>pageObj("content/"+q.src)));os.forEach((o,i)=>{if(o&&o.weight!=(i+1)*10){o.weight=(i+1)*10;WJ("content/"+K[i].src,o)}})}
 // the links block lists the subpages; "hide" (list of page sources) takes pages out of this list without deleting them
 const shown=b=>kids().filter(q=>!(b.hide||[]).includes(q.src));

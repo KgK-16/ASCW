@@ -1,2 +1,2 @@
-{{- /* tooltip / accessible name of a button from data/text.json (key), both languages; the language script in top.html picks one */ -}}
-{{- $a := "" }}{{ with index hugo.Data.text . }}{{ $a = printf `data-ten="%s" data-tru="%s" title="%s" aria-label="%s"` (htmlEscape .en) (htmlEscape .ru) (htmlEscape .en) (htmlEscape .en) }}{{ end }}{{ return ($a | safeHTMLAttr) -}}
+{{- /* tooltip / accessible name of a button from data/text.json (key), in the page's language */ -}}
+{{- $a := "" }}{{ with index hugo.Data.text . }}{{ $v := index . site.Language.Name | default .en }}{{ $a = printf `title="%s" aria-label="%s"` (htmlEscape $v) (htmlEscape $v) }}{{ end }}{{ return ($a | safeHTMLAttr) -}}
