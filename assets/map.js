@@ -172,17 +172,14 @@ if(ver()!=cv)setVer();drawM();if(G)tq()}
 const hit=(mx,my)=>RG.find(r=>hc.isPointInPath(path(r),mx,my,"evenodd"))?.id; // country under a map point
 function pick(id){
 id=id&&R[id]?+id:null;if(id!=null)ms=null;
-sel=id;rvl();if(sel)panel();
+sel=id;if(sel)panel();
 p.classList.toggle("o",!!(sel||ms!=null));hi();drawM()}
-function pickM(i){ms=i;sel=null;rvl();hi();panel();p.classList.add("o");drawM()} // marker selected: its name and text in the side panel
+function pickM(i){ms=i;sel=null;hi();panel();p.classList.add("o");drawM()} // marker selected: its name and text in the side panel
 function panel(){let pg,ph="",it;if(ms!=null&&MK[ms]){const q=MK[ms];pt.textContent=mn(q);pg=q.pg;it=()=>MAP.onMarker?.(ms)}
 else if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);pg=o.pg;ph=`<p class="ph">${L("Placeholder text","Текст-заглушка")}</p>`;it=()=>MAP.onPanel?.(r)}else return;
 const ok=pg&&((window.PL||[]).includes(pg)||MAP.pageOK?.(pg)),f=$("pf"),src=ok&&UL+"places/"+pg+"/?embed"; // the place's archive page, embedded as it is (draft pages too, while editing)
 f.hidden=!ok;$("pe").hidden=!!ok;if(ok){if(f.dataset.s!=src){f.dataset.s=src;f.src=src}}else px.innerHTML=ph;it()} // the editor's hook comes last: it may add to the empty strip
 let lp=[0,0,0];D.addEventListener("pointerdown",e=>{lp=[e.clientX,e.clientY,Date.now()]},true); // where (and when) the map was last touched
-function rvl(){MAP.rdx=0;if(G||!sel&&ms==null||Date.now()-lp[2]>1500)return; // only right after a click on the map
-const aw=$("pw").offsetWidth,sd=(VW-aw)/2,cx=lp[0]-MR.left,cy=lp[1]-MR.top;if(sd<100||cx<sd-40||cx>sd+aw+40)return; // the page in the middle would cover what was picked: move it to the middle of the nearer dimmed side
-const tx=cx<VW/2?sd/2:VW-sd/2;MAP.rdx=tx-cx;ffl={mx:(cx-x)/k,my:(cy-y)/k,tx,ty:cy};fan=fv=null;fgo()}
 function col(on){CO=on;fdr();c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}hi()}
 zc.onclick=()=>col(!CO);
 function mode(n){MON=n;zm.classList.toggle("on",n==1);zk.classList.toggle("on",n==2);D.body.classList.toggle("msr",!!n);MS=[];msU()} // measuring: 0 off, 1 route (ruler), 2 circle

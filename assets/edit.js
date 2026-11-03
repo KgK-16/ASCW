@@ -414,7 +414,7 @@ ll=(my,mx)=>({a:+(90-my/MP.H*180).toFixed(3),o:+(mx/MP.W*360-180).toFixed(3)}),
 saveMK=()=>{WJ(F.mk,MK);MP.markers()};
 function pform(el,key){if(PF?.key==key&&PF.isConnected)return 0;PF?.remove(); // properties of a marker / country: a small window next to it on the map
 PF=h("div",{cls:"dlb cx",tabindex:-1},h("h3",{},h("span",{},D.getElementById("pt").textContent),h("button",{type:"button",cls:"x",title:L("Close","Закрыть"),"aria-label":L("Close","Закрыть"),onclick:()=>{PF?.remove();PF=null}},"×")),el);PF.key=key;D.body.append(PF);
-const [lx,ly]=MP.lp(),dx=MP.rdx||0,w=PF.offsetWidth,hh=PF.offsetHeight,X=lx+dx+18+w<innerWidth?lx+dx+18:lx+dx-18-w;PF.style.left=Math.max(8,Math.min(innerWidth-w-8,X))+"px";PF.style.top=Math.max(56,Math.min(innerHeight-hh-8,ly-30))+"px";return 1}
+const [lx,ly]=MP.lp(),w=PF.offsetWidth,hh=PF.offsetHeight,X=lx+18+w<innerWidth?lx+18:lx-18-w;PF.style.left=Math.max(8,Math.min(innerWidth-w-8,X))+"px";PF.style.top=Math.max(56,Math.min(innerHeight-hh-8,ly-30))+"px";return 1}
 function placeNew(o,save,en,ru){const px=D.getElementById("px"); // no page yet: the empty strip offers to create it
 px.append(h("div",{cls:"row",style:"justify-content:center;margin-top:24px"},btn("📄 "+L("Create its page","Создать страницу"),async()=>{
 let s=(en()||"place").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"place",b=s,j=2;while(await read(`content/places/${s}/_index.md`)!=null||(window.PL||[]).includes(s))s=b+"-"+j++;
