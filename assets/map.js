@@ -6,7 +6,7 @@
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
 [m,c,im,ov,sv,bi,hl,sl,mw,gx,g,p,pt,px,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc,ld,zm,zk,sb,mz]="m c im ov sv bi hl sl mw gx g p pt px tl xt ty tw tz tr zg zt zc zi zo pc ld zm zk sb mz".split(" ").map($),
 W=4096,H=2048,T0=320,T1=420, // visible timeline range
-SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-10L10 0 0 10-10 0zM0-7L7 0 0 7-7 0zM-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0z"], // marker shapes by kind (k): circle, circle in a diamond (capital)
+SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-10L10 0 0 10-10 0zM0-7L7 0 0 7-7 0zM-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0z","M0-6.2L5.8 4H-5.8z"], // marker shapes by kind (k): circle, circle in a diamond (capital), triangle
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
 P={},hc=D.createElement("canvas").getContext("2d"),ox=ov.getContext("2d"),
 cq=Object.assign(c.cloneNode(false),{id:"",hidden:true}), // the world repeats east and west: a second copy of the map layers, shown only where the seam is in view
