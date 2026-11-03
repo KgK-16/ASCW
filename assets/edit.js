@@ -162,10 +162,10 @@ function texts(){dialog(L("Interface texts","Тексты интерфейса")
 // ---------- page document: blocks edited in place (same markup as layouts/partials/blocks.html) ----------
 let PG=null,DOC=null,HI=[],HR=[],burst=0,bt0,svT,PV=/[?&]preview\b/.test(location.search),gut,ift,dln,CB=null;
 const B=()=>PG.blocks??=[],
-TYPES=()=>[["p","¶",L("Text","Текст")],["h2","H",L("Heading","Заголовок"),"##"],["h3","h",L("Subheading","Подзаголовок"),"###"],["quote","❝",L("Quote","Цитата"),">"],
+TYPES=()=>[["p","¶",L("Text","Текст")],["h1","A",L("Large heading","Большой заголовок"),"#"],["h2","H",L("Heading","Заголовок"),"##"],["h3","h",L("Subheading","Подзаголовок"),"###"],["quote","❝",L("Quote","Цитата"),">"],
 ["ul","•",L("List","Список"),"-"],["ol","1.",L("Numbered list","Нумерованный список"),"1."],"-",["img","🖼",L("Image","Изображение")],["cols","◫",L("Two columns","Две колонки")],
 ["card","▤",L("Fact card","Карточка фактов")],["hr","―",L("Divider","Разделитель"),"---"],"-",["links","☰",L("Links to subpages","Ссылки на подстраницы")],["head","▀",L("Page header","Шапка страницы")]],
-mk=k=>({p:{t:"p"},h2:{t:"h",lv:2},h3:{t:"h",lv:3},quote:{t:"quote"},ul:{t:"list"},ol:{t:"list",ord:true},img:{t:"img",al:"center"},cols:{t:"cols",c:[{t:"text"},{t:"text"}]},
+mk=k=>({p:{t:"p"},h1:{t:"h",lv:1},h2:{t:"h",lv:2},h3:{t:"h",lv:3},quote:{t:"quote"},ul:{t:"list"},ol:{t:"list",ord:true},img:{t:"img",al:"center"},cols:{t:"cols",c:[{t:"text"},{t:"text"}]},
 card:{t:"card",rows:[{},{}]},hr:{t:"hr"},links:{t:"links"},head:{t:"head"}})[k],
 TXT=new Set(["p","h","quote","list"]),
 ALG=()=>[["left","⇤",L("Align left","По левому краю")],["center","↔",L("Centre","По центру")],["right","⇥",L("Align right","По правому краю")],["justify","☰",L("Justify","По ширине")]];
@@ -211,7 +211,7 @@ function rb(b,i){const ta=b.ta?` class="ta-${b.ta}"`:"",di=ED?` data-i="${i}"`:"
 switch(b.t){
 case"head":{const own="k_en" in b||"k_ru" in b,kd={k_en:TX.wip?.en||"",k_ru:TX.wip?.ru||TX.wip?.en||""}; // without its own kicker the header shows the shared "work in progress" text
 return`<header class="b-head${b.tall?" tall":""}"${di}>${E("p",b,own?b:kd,"k_","plain",' class="k"',own?null:kd["k_"+l])}<h1>${E("span",b,b,"t_","plain")}${b.a_en||b.a_ru||b.acc?`<b>${E("span",b,b,"a_","plain")}</b>`:""}</h1><hr>${E("p",b,b,"d_","plain",' class="ds"')}</header>`}
-case"h":return E("h"+(b.lv||2),b,b,"","plain",ta+di);
+case"h":return E(b.lv==1?"h2":"h"+(b.lv||2),b,b,"","plain",(b.lv==1?` class="big${b.ta?" ta-"+b.ta:""}"`:ta)+di); // lv 1: large heading, the size and font of the page title
 case"p":return E("p",b,b,"","inline",ta+di,L("Write, or press / for blocks","Пишите или нажмите / — меню блоков"));
 case"quote":return`<blockquote${ta}${di}>${E("p",b,b,"","inline")}${E("cite",b,b,"cite_","plain")}</blockquote>`;
 case"list":{const t=b.ord?"ol":"ul",e=E(t,b,b,"","li",ta+di);return ED?e.replace(/data-ph="([^"]*)"([^>]*)><\/(ul|ol)>$/,'data-ph="$1"$2><li data-ph="$1"></li></$3>'):e}
@@ -246,7 +246,7 @@ if(HT.classList.contains("ng")!=ng){HT.classList.toggle("ng",ng);return gutAt(i)
 gut.style.top=Math.max(0,r.top-d.top-6)+"px";gut.style.left=(ng?2:-36)+"px";gut.dataset.i=i} // always the same column at the left of the text, level with the block's top
 function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],k:t[3],f:()=>{const b=mk(t[0]);if(replace){act(()=>B()[i]=b);b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}),1)}
 function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>act(()=>{if(v==null)delete b[k];else b[k]=v}),items=[];
-if(TXT.has(b.t))items.push(...TYPES().slice(0,6).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h2"&&b.t=="h"&&b.lv!=3)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-",...ALG().map(([a,ic,t])=>({i:ic,t,on:(b.ta||"left")==a,f:()=>set("ta",a=="left"?null:a)})),"-");
+if(TXT.has(b.t))items.push(...TYPES().slice(0,7).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h1"&&b.t=="h"&&b.lv==1)||(t[0]=="h2"&&b.t=="h"&&b.lv!=3&&b.lv!=1)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-",...ALG().map(([a,ic,t])=>({i:ic,t,on:(b.ta||"left")==a,f:()=>set("ta",a=="left"?null:a)})),"-");
 if(b.t=="img")items.push(...[["center","▣",L("Centred, text width","По центру, ширина текста")],["full","▭",L("Full strip width","Во всю ширину ленты")],["left","◧",L("Left, text wraps","Слева, текст обтекает")],["right","◨",L("Right, text wraps","Справа, текст обтекает")]]
 .map(([a,ic,t])=>({i:ic,t,on:(b.al||"center")==a,f:()=>set("al",a)})),...(b.w?[{i:"↺",t:L("Original size","Исходный размер"),f:()=>set("w")}]:[]),{i:"🖼",t:L("Replace image…","Заменить изображение…"),f:()=>pickImg(b)},"-");
 if(b.t=="card")items.push({i:"🖼",t:b.src?L("Replace image…","Заменить изображение…"):L("Add image…","Добавить изображение…"),f:()=>pickImg(b)},...(b.src?[{i:"✕",t:L("Remove image","Убрать изображение"),f:()=>set("src")}]:[]),
@@ -277,8 +277,8 @@ DOC.addEventListener("focusin",e=>{const k=e.target.closest("[data-i]");if(k)gut
 DOC.addEventListener("input",e=>{const el=e.target.closest("[data-f]");if(!el)return;const k=el.closest("[data-i]"),i=+k.dataset.i,b=B()[i],l=HT.lang,f=el.dataset.f,m=el.dataset.m;
 const o=el.dataset.r!=null?b.rows[+el.dataset.r]:el.dataset.c!=null?b.c[+el.dataset.c]:b;
 if(el.innerHTML=="<br>")el.innerHTML="";
-if(b.t=="p"&&f==""){const t=el.textContent,mt=t.match(/^(#{2,3}|[-*]|1\.|>)\s/)||(t=="---"&&[t]); // Markdown-like shortcuts at the start of a paragraph
-if(mt){const k2={"##":"h2","###":"h3","-":"ul","*":"ul","1.":"ol",">":"quote","---":"hr"}[mt[1]||mt[0]];snapN();b[l]=clean(el.innerHTML,"inline").replace(/^(#{2,3}|[-*]|1\.|&gt;|---)\s?/,"");if(!b[l])delete b[l];
+if(b.t=="p"&&f==""){const t=el.textContent,mt=t.match(/^(#{1,3}|[-*]|1\.|>)\s/)||(t=="---"&&[t]); // Markdown-like shortcuts at the start of a paragraph
+if(mt){const k2={"#":"h1","##":"h2","###":"h3","-":"ul","*":"ul","1.":"ol",">":"quote","---":"hr"}[mt[1]||mt[0]];snapN();b[l]=clean(el.innerHTML,"inline").replace(/^(#{1,3}|[-*]|1\.|&gt;|---)\s?/,"");if(!b[l])delete b[l];
 if(k2=="hr"){B()[i]={t:"hr"};B().splice(i+1,0,{t:"p"});store();render();focusF(i+1)}else convert(i,k2);return}}
 snap1();sv(b,o,f,l,m=="plain"?esc(el.textContent):clean(el.innerHTML,m));store();if(bound(b,f)&&f=="t_")D.title=(PG[pf(f,l)]||"")+" · ASCW";
 clearTimeout(stT);stT=setTimeout(status,400)});let stT;

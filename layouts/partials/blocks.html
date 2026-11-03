@@ -1,6 +1,6 @@
 {{- /* page body: a vertical list of blocks (front matter "blocks"). The editor (assets/edit.js) draws the same markup.
    head  — kicker, title (+ accent line), line, description; defaults to the page title and description
-   h     — heading (lv 2 | 3)      p — paragraph      quote — quote (+ cite)      list — list (ord) of <li> items
+   h     — heading (lv 1: large, as the page title | 2 | 3)      p — paragraph      quote — quote (+ cite)      list — list (ord) of <li> items
    img   — image (al: center | full | left | right; w: frame width, % of the text) + caption      card — fact card (title, rows of key / value, image), floats right
    cols  — two columns of text or image      hr — divider      links — links to the subpages (hide: page sources left out) */ -}}
 {{- $P := . }}{{ $T := hugo.Data.text -}}
@@ -9,7 +9,7 @@
 {{- partial "tx" (dict "b" $b "f" "k_" "tag" "p" "cls" "k" "d" $T.wip) }}
 <h1>{{ partial "tx" (dict "b" $b "f" "t_" "tag" "span" "d" (dict "en" $P.Title "ru" ($P.Params.title_ru | default $P.Title))) }}{{ with or $b.a_en $b.a_ru }}<b>{{ partial "tx" (dict "b" $b "f" "a_" "tag" "span") }}</b>{{ end }}</h1><hr>
 {{- partial "tx" (dict "b" $b "f" "d_" "tag" "p" "cls" "ds" "d" (dict "en" $P.Description "ru" ($P.Params.description_ru | default $P.Description))) }}</header>
-{{- else if eq $b.t "h" }}{{ partial "tx" (dict "b" $b "f" "" "tag" (printf "h%v" (default 2 $b.lv)) "cls" $ta) }}
+{{- else if eq $b.t "h" }}{{ if eq (printf "%v" $b.lv) "1" }}{{ partial "tx" (dict "b" $b "f" "" "tag" "h2" "cls" (trim (print "big " $ta) " ")) }}{{ else }}{{ partial "tx" (dict "b" $b "f" "" "tag" (printf "h%v" (default 2 $b.lv)) "cls" $ta) }}{{ end }}
 {{- else if eq $b.t "p" }}{{ partial "tx" (dict "b" $b "f" "" "tag" "p" "cls" $ta) }}
 {{- else if eq $b.t "quote" }}<blockquote{{ with $ta }} class="{{ . }}"{{ end }}>{{ partial "tx" (dict "b" $b "f" "" "tag" "p") }}{{ partial "tx" (dict "b" $b "f" "cite_" "tag" "cite") }}</blockquote>
 {{- else if eq $b.t "list" }}{{ partial "tx" (dict "b" $b "f" "" "tag" (cond (eq $b.ord true) "ol" "ul") "cls" $ta) }}
