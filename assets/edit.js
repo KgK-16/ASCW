@@ -393,18 +393,23 @@ async function mapInit(){if(!MP)return;
 window.MK=await J(F.mk,MK);window.EV=await J(F.ev,EV);window.COU=await J(F.co,COU);MP.redraw();
 MP.onTap=(mx,my,i)=>{if(i!=null){MP.pickM(i);return 1}if(!MKon)return 0;MK.push({...ll(my,mx),n:"",r:""});saveMK();MP.pickM(MK.length-1);return 1};
 MP.onMarker=i=>mkForm(i);lbInit();MP.onPanel=r=>coForm(r);if(MP.sel())coForm(MP.sel());
-D.getElementById("pc").addEventListener("click",()=>{PF?.remove();PF=null;const n=MK.length;window.MK=MK.filter(q=>q.n||q.r||q.ten||q.tru);if(MK.length!=n)saveMK()}); // unnamed new markers are dropped on close
+D.getElementById("pc").addEventListener("click",()=>{PF?.remove();PF=null;const n=MK.length;window.MK=MK.filter(q=>q.n||q.r||q.pg);if(MK.length!=n)saveMK()}); // unnamed new markers are dropped on close
 const mw=D.getElementById("mw");let dg=null;
 mw.addEventListener("pointerdown",e=>{const g=e.target.closest("[data-m]");if(!g)return;e.stopPropagation();mw.setPointerCapture(e.pointerId);dg={i:+g.dataset.m,x:e.clientX,y:e.clientY,mv:0}});
 mw.addEventListener("pointermove",e=>{if(!dg)return;dg.mv+=Math.abs(e.clientX-dg.x)+Math.abs(e.clientY-dg.y);dg.x=e.clientX;dg.y=e.clientY;if(dg.mv<4)return;
 const {mx,my}=MP.toMap(e);Object.assign(MK[dg.i],ll(my,mx));MP.markers()});
 mw.addEventListener("pointerup",()=>{if(!dg)return;const d=dg;dg=null;if(d.mv<4)MP.pickM(d.i);else{saveMK();if(PF?.key=="m"+d.i){PF=null;mkForm(d.i)}}});
 D.getElementById("xt")?.after(h("button",{type:"button",id:"xe",style:"position:absolute;right:56px;top:4px;z-index:2;width:44px;height:44px;font-size:18px;cursor:pointer;color:#e8e8e0a6",title:L("Edit events","Редактировать события"),onclick:events},"✎"))}
+function placeBtn(o,save,en,ru){ // the text of a country / marker is its own archive page (content/places/<slug>/), edited like any other page
+return h("div",{cls:"row"},btn(o.pg?"📄 "+L("Edit its page","Редактировать страницу"):"📄 "+L("Create its page","Создать страницу"),async()=>{
+if(!o.pg){let s=(en()||"place").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"place",b=s,j=2;while(await read(`content/places/${s}/_index.md`)!=null||(window.PL||[]).includes(s))s=b+"-"+j++;
+await WJ(`content/places/${s}/_index.md`,{title:en()||ru(),title_ru:ru()||en(),description:"",description_ru:"",blocks:[{t:"head"},{t:"p"}]});o.pg=s;save();await new Promise(r=>setTimeout(r,300))}
+location.href=U+"places/"+o.pg+"/"}))}
 function mkForm(i){const q=MK[i];if(!q)return;const pt=D.getElementById("pt"),px=D.getElementById("px"),
-ch=(k,v)=>{if(v===""||v==null)delete q[k];else q[k]=v;saveMK();pt.textContent=(ru()?q.r||q.n:q.n||q.r)||"";px.textContent=(ru()?q.tru||q.ten:q.ten||q.tru)||""},
+ch=(k,v)=>{if(v===""||v==null)delete q[k];else q[k]=v;saveMK();pt.textContent=(ru()?q.r||q.n:q.n||q.r)||""},
 num=(k,ph)=>inp(q[k],v=>ch(k,v===""?"":+v),{type:"number",ph}),
 f=h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(q.n,v=>ch("n",v))),lab(L("Name","Название")+" · RU",inp(q.r,v=>ch("r",v)))),
-lab(L("Text","Текст")+" · EN",inp(q.ten,v=>ch("ten",v),{area:1})),lab(L("Text","Текст")+" · RU",inp(q.tru,v=>ch("tru",v),{area:1})),
+placeBtn(q,saveMK,()=>q.n||q.r,()=>q.r||q.n),
 h("div",{cls:"row"},lab(L("Icon","Значок"),sel(q.k==1?1:0,KINDS().map(([s,t],j)=>[j,s+" "+t]),v=>ch("k",+v||""))),
 lab(L("Font","Шрифт"),sel(q.f=="cap"?"cap":"",[["","Play"],["cap",L("Play, large, underlined (capital)","Play, крупный с подчёркиванием (столица)")]],v=>ch("f",v)))),
 h("div",{cls:"row"},lab(L("Shown from year","Видна с года"),num("y0","—")),lab(L("to year","по год"),num("y1","—"))),
@@ -429,7 +434,7 @@ const ch=(k,v,t=250)=>{o[k]=v;COU[r.c]=o;t0();clearTimeout(tm);tm=setTimeout(()=
 rng=(k,a,b,st,f,d=1,u=v=>Math.round(v*100)+"%")=>{const i=h("input",{type:"range",min:a,max:b,step:st,cls:"ei"}),n=h("span",{style:"text-transform:none"});i.value=o[k]??d;const sh=()=>n.textContent=" "+u(i.value);sh();
 i.oninput=()=>{sh();ch(k,+i.value,60)};return lab(h("span",{},f,n),i)};
 pform(h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(o.en,v=>ch("en",v),{ph:r.n0})),lab(L("Name","Название")+" · RU",inp(o.ru,v=>ch("ru",v),{ph:r.r0}))),
-lab(L("Text","Текст")+" · EN",inp(o.ten,v=>ch("ten",v),{area:1})),lab(L("Text","Текст")+" · RU",inp(o.tru,v=>ch("tru",v),{area:1})),
+placeBtn(o,()=>{COU[r.c]=o;WJ(F.co,COU)},()=>o.en||r.n0||r.name,()=>o.ru||r.r0||r.ru),
 h("div",{cls:"row"},rng("lz",4,150,1,L("Name size","Размер названия"),Math.round(((ru()?r.sr:r.s)||16)*.75),v=>v+" pt"),rng("lo",0,1,.05,L("Name opacity","Прозрачность названия"))),
 h("div",{cls:"row"},rng("lk",-.2,1.5,.02,L("Letter spacing","Расстояние между буквами"),0),h("div",{})),
 h("div",{cls:"row"},btn(L("Name back to its place","Вернуть название на место"),()=>{delete o.lx;delete o.ly;ch("lx",0,0)}))),"c"+r.c)}

@@ -4,7 +4,7 @@
 // Layers: geographic base (static/map/g*.webp) < country colours: light tint + inner colour band (canvas, toggleable) < country shapes for clicks/hover (svg) < borders of the version (static/map/<year>/b*.webp)
 // < selection: everything else dimmed, outline on top < graticule, labels, markers.
 const D=document,HT=D.documentElement,$=i=>D.getElementById(i),
-[m,c,im,ov,sv,bi,hl,sl,mw,gx,g,p,pt,px,cd,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc,ld,zm,zk,sb,mz]="m c im ov sv bi hl sl mw gx g p pt px cd tl xt ty tw tz tr zg zt zc zi zo pc ld zm zk sb mz".split(" ").map($),
+[m,c,im,ov,sv,bi,hl,sl,mw,gx,g,p,pt,px,tl,xt,ty,tw,tz,tr,zg,zt,zc,zi,zo,pc,ld,zm,zk,sb,mz]="m c im ov sv bi hl sl mw gx g p pt px tl xt ty tw tz tr zg zt zc zi zo pc ld zm zk sb mz".split(" ").map($),
 W=4096,H=2048,T0=320,T1=420, // visible timeline range
 SH=["M-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0z","M0-10L10 0 0 10-10 0zM0-7L7 0 0 7-7 0zM-3.6 0a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0z"], // marker shapes by kind (k): circle, circle in a diamond (capital)
 HM={en:["N","S","E","W"],ru:[" с. ш."," ю. ш."," в. д."," з. д."]},
@@ -128,7 +128,7 @@ const mOn=q=>!(q.y0!=null&&yr<q.y0)&&!(q.y1!=null&&yr>q.y1),
 far=(q,zl=k/fit())=>(q.z==1&&zl<2.2)||(q.z==2&&zl<4.5),
 drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"} class="${far(q)?"z":""}${i===ms?" s":""}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="${q.k==1?15:12}" y="1"${q.f=="cap"?' class="c"':""}>${esc(mn(q))}</text></g>`).join("");posM();if(G)GI.forEach(e=>e.m!=null&&e.d.classList.toggle("s",e.m===ms))},
 posM=()=>{const zl=k/fit();[...mw.children].forEach((e,i)=>{const q=MK[i];if(!q)return;{const w=W*k,X=x+(q.o+180)/360*w;e.style.transform=`translate(${X-w*Math.floor((X+40)/w)}px,${y+(90-q.a)/180*H*k}px)`}
-e.classList.toggle("z",far(q,zl))});drawMz();if(!G)sbU(k/fit(),2*Math.PI*RE*Math.max(.02,Math.cos(Math.min(1.5,Math.abs(Math.PI/2-(VH/2-y)/k/H*Math.PI))))/(W*k));
+e.classList.toggle("z",far(q,zl))});drawMz();if(!G)sbU(k/fit(),kmax()/fit(),2*Math.PI*RE*Math.max(.02,Math.cos(Math.min(1.5,Math.abs(Math.PI/2-(VH/2-y)/k/H*Math.PI))))/(W*k));
 // graticule labels: light, pinned to the top / left edge of the view, hidden under the button column
 const t0=Math.max(y,0)+6,l0=Math.max(x,0)+6,xr=VW-ZW-82,yb=VH-30; // sizes are cached (sz): no layout reads while the map moves
 for(const q of GX){let X,Y,hd;if(q.o!=null){const w=W*k;X=x+(q.o+180)/360*w+4;X-=w*Math.floor(X/w);Y=t0;hd=X<l0+40||X>xr}else{X=l0;Y=y+(90-q.a)/180*H*k-18;hd=Y<t0+18||Y>yb}
@@ -138,7 +138,8 @@ RE=6371, // the planet is Earth-sized: radius in km
 ll2v=(lo,la)=>{lo*=Math.PI/180;la*=Math.PI/180;return[Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo)]},
 v2ll=v=>[Math.atan2(v[0],v[2])*180/Math.PI,Math.asin(Math.max(-1,Math.min(1,v[1])))*180/Math.PI],
 km=d=>d.toLocaleString(ru()?"ru-RU":"en-US",{maximumFractionDigits:d<10?2:d<100?1:0})+L(" km"," км");
-function sbU(zl,kp){const zp=Math.round(zl*100)+"%";if(sb.children[0].textContent!=zp)sb.children[0].textContent=zp; // zoom: 100% = the whole world in view
+function sbU(zl,zx,kp){const zp=Math.round(Math.min(100,Math.max(1,1+99*Math.log(Math.max(zl,1))/Math.log(zx))))+"%"; // zoom from 1% (whole world) to 100% (closest), on a log scale like the zoom steps
+if(sb.children[0].textContent!=zp)sb.children[0].textContent=zp;
  // scale bar: the longest round length (1, 2, 5 × 10ⁿ km) that fits in 100 px; kp = km per screen px at the view centre
 const L0=kp*100,e=10**Math.floor(Math.log10(L0)),n=[5,2,1].map(v=>v*e).find(v=>v<=L0)||e,key=n+"|"+HT.lang+"|"+(n/kp).toFixed(0);if(key==sbK)return;sbK=key;
 sb.children[1].textContent=n<1?(n*1e3).toLocaleString()+L(" m"," м"):n.toLocaleString(ru()?"ru-RU":"en-US")+L(" km"," км");sb.lastChild.style.width=(n/kp).toFixed(1)+"px"}
@@ -175,15 +176,18 @@ id=id&&R[id]?+id:null;if(id!=null)ms=null;
 sel=id;if(sel)panel();
 p.classList.toggle("o",!!(sel||ms!=null));hi();drawM()}
 function pickM(i){ms=i;sel=null;hi();panel();p.classList.add("o");drawM()} // marker selected: its name and text in the side panel
-function panel(){if(ms!=null&&MK[ms]){const q=MK[ms];pt.textContent=mn(q);px.textContent=(ru()?q.tru||q.ten:q.ten||q.tru)||"";MAP.onMarker?.(ms);return}
-if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);px.textContent=(ru()?o.tru:o.ten)||L("Placeholder text","Текст-заглушка");MAP.onPanel?.(r)}}
+function panel(){if(ms!=null&&MK[ms]){const q=MK[ms];pt.textContent=mn(q);pbd(q.pg,"");MAP.onMarker?.(ms);return}
+if(sel){const r=R[sel],o=COU[r.c]||{};pt.textContent=nm(r);pbd(o.pg,`<p class="ph" lang="en">Placeholder text</p><p class="ph" lang="ru">Текст-заглушка</p>`);MAP.onPanel?.(r)}}
+const PC={};let pq=0; // place pages: the side panel shows the page's blocks (archive page layout) without its header
+function pbd(s,ph){const t=++pq;if(!s||!(window.PL||[]).includes(s)){px.innerHTML=ph;return}if(PC[s]!=null){px.innerHTML=PC[s];return}px.innerHTML="";
+fetch(U+"places/"+s+"/").then(r=>r.ok?r.text():"").then(h=>{const d=new DOMParser().parseFromString(h,"text/html").querySelector("article.doc");d?.querySelector(".b-head")?.remove();PC[s]=d?d.innerHTML:"";if(t==pq)px.innerHTML=PC[s]},()=>{})}
 function col(on){CO=on;fdr();c.classList.toggle("on",on);zc.classList.toggle("on",on);try{localStorage.ascwColors=on?1:0}catch{}hi()}
 zc.onclick=()=>col(!CO);
 function mode(n){MON=n;zm.classList.toggle("on",n==1);zk.classList.toggle("on",n==2);D.body.classList.toggle("msr",!!n);MS=[];msU()} // measuring: 0 off, 1 route (ruler), 2 circle
 zm.onclick=()=>mode(MON==1?0:1);zk.onclick=()=>mode(MON==2?0:2);
 
-m.onpointerdown=e=>{if(e.pointerType=="mouse"&&e.button)return;if(e.pointerType!="mouse")coords(e);m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0;fst();HS=[];m.classList.add("dr");MG=mHit(e.clientX,e.clientY);if(MG<0)MG=null}; // pressing a measuring point drags it
-m.onpointermove=e=>{coords(e);const q=P[e.pointerId];if(!q)return m.classList.toggle("mh",mHit(e.clientX,e.clientY)>=0);
+m.onpointerdown=e=>{if(e.pointerType=="mouse"&&e.button)return;m.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};mv=0;fst();HS=[];m.classList.add("dr");MG=mHit(e.clientX,e.clientY);if(MG<0)MG=null}; // pressing a measuring point drags it
+m.onpointermove=e=>{const q=P[e.pointerId];if(!q)return m.classList.toggle("mh",mHit(e.clientX,e.clientY)>=0);
 if(MG!=null){mv+=Math.abs(e.clientX-q.x)+Math.abs(e.clientY-q.y);q.x=e.clientX;q.y=e.clientY;const r=m.getBoundingClientRect(),mx=wx((e.clientX-r.left-x)/k),my=Math.min(H,Math.max(0,(e.clientY-r.top-y)/k));MS[MG]=ll2v(mx/W*360-180,90-my/H*180);return msU()}
 const o=two(P),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;mv+=Math.abs(dx)+Math.abs(dy);
 if(o){const n=two(P),r=m.getBoundingClientRect();x+=n.x-o.x;y+=n.y-o.y;zoom(n.d/o.d,n.x-r.left,n.y-r.top);vD=vT=vOf(k)}else{const t=performance.now();HS.push([t,e.clientX,e.clientY]);while(t-HS[0][0]>150)HS.shift();x+=dx;y+=dy;set()}};
@@ -202,17 +206,8 @@ zo.onclick=()=>G?(gT=cl(gT*1.5),anc=null,rq()):fz(1.5);
 pc.onclick=()=>{ms=null;pick()};
 
 // ---- cursor coordinates (2D) ----
-function coords(e){const r=MR;lx=wx((e.clientX-r.left-x)/k);ly=(e.clientY-r.top-y)/k;showC()}
-function showC(){if(lx==null||lx<0||ly<0||lx>W||ly>H)return;const lo=lx/W*360-180,la=90-ly/H*180;
-CP=la.toFixed(3)+", "+lo.toFixed(3);
-CT=Math.abs(la).toFixed(3)+"°"+hemi(la,1)+" "+Math.abs(lo).toFixed(3)+"°"+hemi(lo)+"<br>x "+lx.toFixed(1)+" y "+ly.toFixed(1);
-if(!fl&&!cdr)cdr=requestAnimationFrame(()=>{cdr=0;if(!fl)cd.innerHTML=CT})} // at most one write per frame
-function copy(){if(!CP)return;
-const fb=()=>{const t=D.createElement("textarea");t.value=CP;D.body.append(t);t.select();try{D.execCommand("copy")}catch{}t.remove()};
-navigator.clipboard?navigator.clipboard.writeText(CP).catch(fb):fb();
-cd.textContent=L("COPIED: ","СКОПИРОВАНО: ")+CP;clearTimeout(fl);fl=setTimeout(()=>{fl=0;cd.innerHTML=CT},1200)}
-cd.onclick=copy;
-D.addEventListener("keydown",e=>{if(e.target.closest?.("input:not([type=range]),textarea,select,[contenteditable]"))return; /* typing in a field is not a shortcut */if(e.key=="Escape")tlOpen()?tlClose():MON?mode(0):pick();else if(tlOpen()||e.ctrlKey||e.metaKey||e.altKey)return;else if(e.code=="KeyC"&&!getSelection().toString())copy();
+
+D.addEventListener("keydown",e=>{if(e.target.closest?.("input:not([type=range]),textarea,select,[contenteditable]"))return; /* typing in a field is not a shortcut */if(e.key=="Escape")tlOpen()?tlClose():MON?mode(0):pick();else if(tlOpen()||e.ctrlKey||e.metaKey||e.altKey)return;
 else if(e.key=="+"||e.key=="=")zi.click();else if(e.key=="-")zo.click();
 else if(/^Arrow/.test(e.key)){e.preventDefault();const h=e.key=="ArrowLeft"?1:e.key=="ArrowRight"?-1:0,v=e.key=="ArrowUp"?1:e.key=="ArrowDown"?-1:0; // arrows: look west / east / north / south
 if(G){gv=[h*(gD-1)*.9,v*(gD-1)*.9];fly=null;rq()}else{ffl=null;fv=[h*1.235*VH,v*1.235*VH];fdc=3.5;fgo()}}});
@@ -235,7 +230,7 @@ zt.onclick=()=>{tl.classList.add("o");tlB();tw.scrollLeft=60+(yr-T0)*PY-tw.clien
 xt.onclick=tlClose;
 
 if(matchMedia("(hover:none)").matches){const z=D.querySelector(".z");z.classList.add("hint");setTimeout(()=>z.classList.remove("hint"),3500);z.addEventListener("pointerdown",()=>z.classList.remove("hint"),{once:true})}
-D.addEventListener("lang",()=>{sbK=0;rs();drawM();panel();showC();if(tlOpen())tlB();if(G)tq()});
+D.addEventListener("lang",()=>{sbK=0;rs();drawM();panel();if(tlOpen())tlB();if(G)tq()});
 addEventListener("resize",()=>{if(tlOpen())tlB()});
 const MAP=window.MAP={ // editor hooks
 redraw(){names();rs();drawM();panel();if(tlOpen())tlB();if(G)tq()},
@@ -243,9 +238,9 @@ markers(){drawM();if(G)tq()},pickM,yr:()=>yr,focus(o,a){if(G){fly={y:-o*Math.PI/
 toMap(e){const r=m.getBoundingClientRect();return{mx:wx((e.clientX-r.left-x)/k),my:(e.clientY-r.top-y)/k}},
 sel:()=>sel&&R[sel],pick,W,H};
 function sz(){VW=m.clientWidth;VH=m.clientHeight;ZW=zc.parentNode.offsetWidth;GW=g.clientWidth||VW;GH=g.clientHeight||VH;MR=m.getBoundingClientRect();GR=G?g.getBoundingClientRect():MR}
-addEventListener("scroll",sz,{passive:true}); // positions on screen are cached too (cursor coordinates on every pointer move) // view sizes, read only when they change
+addEventListener("scroll",sz,{passive:true}); // positions on screen are cached too // view sizes, read only when they change
 new ResizeObserver(()=>{sz();set();if(G)rq()}).observe(m);
-sz();fgI();upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();lx=(VW/2-x)/k;ly=(VH/2-y)/k;showC(); /* start with the view centre */D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
+sz();fgI();upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();D.fonts.load("20px A").then(rs); // re-layout labels with real glyph widths
 
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
@@ -345,8 +340,8 @@ if(AN)gl.texParameterf(gl.TEXTURE_2D,AN.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl
 tex=nt(0);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,MX<4096?(e=>{e.getContext("2d").drawImage(img,0,0,S,S/2);return e})(mk(S,S/2)):img);gl.generateMipmap(gl.TEXTURE_2D);
 if(LV>2){const i=new Image;i.src=U+"map/g3.webp";i.decode().then(()=>{gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,i);gl.generateMipmap(gl.TEXTURE_2D);rq()},()=>{})} // sharp level after the quick one
 bt=nt(2);upB([]);ot=nt(3);tc=mk(S,S/2);tx2=tc.getContext("2d");gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,tc);gl.activeTexture(gl.TEXTURE0);
-g.onpointerdown=e=>{if(e.pointerType=="mouse"){if(e.button)return;for(const i in GP)delete GP[i]}g.setPointerCapture(e.pointerId);GP[e.pointerId]={x:e.clientX,y:e.clientY};gm=0;gv=[0,0];fly=null;anc=null;g.classList.add("dr");if(e.pointerType!="mouse")gC(e);MG=mHit(e.clientX,e.clientY);if(MG<0)MG=null};
-g.onpointermove=e=>{gC(e);const q=GP[e.pointerId];if(!q)return g.classList.toggle("mh",mHit(e.clientX,e.clientY)>=0);
+g.onpointerdown=e=>{if(e.pointerType=="mouse"){if(e.button)return;for(const i in GP)delete GP[i]}g.setPointerCapture(e.pointerId);GP[e.pointerId]={x:e.clientX,y:e.clientY};gm=0;gv=[0,0];fly=null;anc=null;g.classList.add("dr");MG=mHit(e.clientX,e.clientY);if(MG<0)MG=null};
+g.onpointermove=e=>{const q=GP[e.pointerId];if(!q)return g.classList.toggle("mh",mHit(e.clientX,e.clientY)>=0);
 if(MG!=null){gm+=Math.abs(e.clientX-q.x)+Math.abs(e.clientY-q.y);q.x=e.clientX;q.y=e.clientY;const p=gll(e);if(p){MS[MG]=[p.x,p.y,p.z];msU()}return}const o=two(GP),dx=e.clientX-q.x,dy=e.clientY-q.y;q.x=e.clientX;q.y=e.clientY;gm+=Math.abs(dx)+Math.abs(dy);
 if(o){const n=two(GP);gT=cl(gT*o.d/n.d);gm=99;at(n.x,n.y)}else{const s=2*(gD-1)*SC/GH,t=performance.now(),dt=Math.max(t-gt0,8)/1e3;gt0=t;ya+=dx*s;pa=Math.min(1.4,Math.max(-1.4,pa+dy*s));gv=[gv[0]*.4+dx*s/dt*.6,gv[1]*.4+dy*s/dt*.6]}};
 g.onpointerup=g.onpointercancel=e=>{const one=GP[e.pointerId]&&Object.keys(GP).length==1;delete GP[e.pointerId];if(!Object.keys(GP).length)g.classList.remove("dr");if(MG!=null){MG=null;if(gm>4)return gv=[0,0]}if(performance.now()-gt0>80||gm>=99)gv=[0,0];
@@ -385,7 +380,6 @@ gl.activeTexture(gl.TEXTURE3);gl.bindTexture(gl.TEXTURE_2D,ot);gl.pixelStorei(gl
 gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.generateMipmap(gl.TEXTURE_2D);gl.activeTexture(gl.TEXTURE0)}
 function upB(im){mipA(gl,bt,2,im)} // globe borders: the site's own levels as mipmaps
 function at(cx,cy){const q=gll({clientX:cx,clientY:cy}),r=g.getBoundingClientRect();anc=q&&{p:[q.x,q.y,q.z],x:cx-r.left,y:cy-r.top}} // zoom anchor
-function gC(e){const q=gll(e);if(q){lx=q.mx;ly=q.my;showC()}} // coordinates under the cursor, as on the flat map
 function gll(e){ // screen point -> planet point {x,y,z} and map point {mx,my}; null off the globe
 const r=GR,nx=(e.clientX-r.left)/r.width*2-1,ny=1-(e.clientY-r.top)/r.height*2,dx=nx*SC*AS,dy=ny*SC,a=dx*dx+dy*dy+1,b=-2*gD,cc=gD*gD-1,f=b*b-4*a*cc;
 if(f<0)return null;
@@ -426,7 +420,7 @@ return any&&[P,C]};
 if(CO)for(const rg of RG){if(rg==S0)continue;const a=pr(rg,1);if(!a)continue;const n=rg.cn,d=n[0]*Lo[0]+n[1]*Lo[1]+n[2]*Lo[2];
 o.save();o.clip(a[1],"evenodd");o.globalAlpha=.85*Math.min(1,Math.max(.2,.6+d*2));o.strokeStyle=rg.c;o.lineWidth=7;o.stroke(a[0]);o.restore()} // dimmer on the night side
 const a=S0&&pr(S0);if(a){o.strokeStyle="#e8e8e0";o.globalAlpha=.22;o.lineWidth=7;o.stroke(a[0]);o.globalAlpha=1;o.lineWidth=2;o.stroke(a[0])}
-sbU(Math.PI/(2*SC*(gD-1)),RE*2*SC*(gD-1)/h);if(!MS.length)return; // measured route, as on the flat map
+sbU(Math.PI/(2*SC*(gD-1)),Math.PI/(2*SC*(cl(0)-1)),RE*2*SC*(gD-1)/h);if(!MS.length)return; // measured route, as on the flat map
 const P=new Path2D;for(const q of MP){let on=0;for(const v of q){const p=gp(v);if(!p){on=0;continue}on?P.lineTo(...p):P.moveTo(...p);on=1}}
 o.strokeStyle="#000a";o.lineWidth=5;o.stroke(P);o.strokeStyle="#e8e8e0";o.lineWidth=2;o.stroke(P);o.font='400 13px "Exo 2",sans-serif';o.textBaseline="middle";
 MS.forEach((v,i)=>{const p=gp(v);if(!p)return;o.beginPath();o.arc(p[0],p[1],4.5,0,6.2832);o.fillStyle="#e8e8e0";o.fill();o.lineWidth=1.5;o.strokeStyle="#000";o.stroke();

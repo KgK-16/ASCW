@@ -28,7 +28,7 @@ section{width:100%;padding:0;border:0;position:relative;overflow:hidden}
 #gx{position:absolute;left:0;top:0;pointer-events:none;z-index:2}#gx span{position:absolute;left:0;top:0;white-space:nowrap;font:400 12px "Exo 2",sans-serif;letter-spacing:1px;color:#e8e8e0b3;text-shadow:0 0 3px #000,0 0 2px #000}
 .t #gx span,#mw.t~#gx span{transition:transform .25s}
 #mz{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none;text-transform:none}#mz path{fill:none;stroke:#e8e8e0;stroke-width:2px;stroke-linejoin:round}#mz .u path{stroke:#000a;stroke-width:5px}#mz circle{fill:#e8e8e0;stroke:#000;stroke-width:1.5px}#mz text{font:400 13px "Exo 2",sans-serif;letter-spacing:.5px;fill:#e8e8e0;paint-order:stroke;stroke:#000b;stroke-width:3px;stroke-linejoin:round;dominant-baseline:central}
-#sb{text-transform:none;position:absolute;right:22px;bottom:62px;z-index:9;display:flex;align-items:flex-end;gap:8px;pointer-events:none;color:#e8e8e0;font:400 13px/1 "Exo 2",sans-serif;letter-spacing:.5px;text-shadow:0 0 3px #000,0 0 3px #000}#sb b{font-weight:400;opacity:.75;margin-right:6px}#sb i{display:block;height:6px;border:1.5px solid #e8e8e0;border-top:0;box-shadow:0 1px 2px #000}
+#sb{text-transform:none;position:absolute;right:22px;bottom:16px;z-index:9;display:flex;align-items:flex-end;gap:8px;pointer-events:none;color:#e8e8e0;font:400 13px/1 "Exo 2",sans-serif;letter-spacing:.5px;text-shadow:0 0 3px #000,0 0 3px #000}#sb b{font-weight:400;opacity:.75;margin-right:6px}#sb i{display:block;height:6px;border:1.5px solid #e8e8e0;border-top:0;box-shadow:0 1px 2px #000}
 .z svg{width:15px;height:15px;vertical-align:-2px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linejoin:round}.z .on svg{stroke:#e8b04a}.msr #m,.msr #g{cursor:crosshair}.msr #m.mh,.msr #g.mh{cursor:move}
 #mw{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}#mw g{pointer-events:auto;cursor:pointer;transition:opacity .3s,visibility .3s}#mw g.z{opacity:0;visibility:hidden;pointer-events:none}#mw g[hidden]{display:none}#mw g.s path{fill:#e8b04a}#mw.t g{transition:transform .25s,opacity .3s,visibility .3s}
 #mw path{fill:#e8e8e0;stroke:#000;stroke-width:1.5px;stroke-linejoin:round}
@@ -41,13 +41,12 @@ section{width:100%;padding:0;border:0;position:relative;overflow:hidden}
 .z button::after{content:attr(aria-label);position:absolute;right:calc(100% + 8px);top:50%;transform:translateY(-50%);white-space:nowrap;font:400 12px/1 "Exo 2",sans-serif;letter-spacing:.5px;text-transform:none;color:#e8e8e0;background:#020206f2;border:1px solid #6665c04d;padding:6px 8px;opacity:0;pointer-events:none;transition:opacity .15s}
 .z button:hover::after,.z button:focus-visible::after,.z.hint button::after{opacity:1}
 .z i{display:inline-block;width:12px;height:12px;border:1px solid #e8e8e0a6;vertical-align:-1px}.z .on i{background:linear-gradient(135deg,#5e0a22 33%,#1c4690 33% 66%,#b77d2b 66%)}
-aside{position:absolute;left:0;top:0;bottom:0;width:min(560px,100%);padding:24px 20px;background:#020206f2;border-right:1px solid #6665c04d;z-index:9;display:flex;flex-direction:column;justify-content:center;transform:translateX(-101%);transition:transform .25s}
+aside{position:absolute;left:0;top:0;bottom:0;width:min(560px,100%);padding:24px 20px;background:#020206f2;border-right:1px solid #6665c04d;z-index:9;display:flex;flex-direction:column;justify-content:safe center;overflow-y:auto;transform:translateX(-101%);transition:transform .25s}
 aside.o{transform:none}
-aside h1{font-size:32px}#px{white-space:pre-line;max-height:45vh;overflow:auto}
+aside h1{font-size:32px}#px{padding:0;overflow:visible}#px:empty{display:none}#px .ph{font-style:italic;text-align:center;color:#e8e8e099}
 aside>button{position:absolute;right:6px;top:2px;font-size:20px;width:40px;height:40px;cursor:pointer;color:#e8e8e0a6}
-#cd{position:absolute;right:12px;bottom:12px;z-index:9;padding:6px 10px;color:#e8e8e0;text-shadow:0 0 3px #000,0 0 3px #000;font:400 14px/1.35 "Exo 2",sans-serif;letter-spacing:1px;text-align:right;cursor:pointer;-webkit-user-select:text;user-select:text}
 #tl{position:absolute;inset:0;z-index:12;background:#020206f2;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:none;flex-direction:column;text-shadow:0 0 3px #000}
-#tl.o{display:flex}#tl.o~.z,#tl.o~#cd,#tl.o~#sb{visibility:hidden}
+#tl.o{display:flex}#tl.o~.z,#tl.o~#sb{visibility:hidden}
 #xt{position:absolute;right:8px;top:4px;font-size:28px;z-index:2;width:44px;height:44px;cursor:pointer;color:#e8e8e0a6}
 #ty{font:min(72px,14vw)/1 A;letter-spacing:.05em;text-align:center;padding-top:22px}
 #tw{flex:1;overflow:auto hidden}
@@ -61,18 +60,18 @@ aside>button{position:absolute;right:6px;top:2px;font-size:20px;width:40px;heigh
 #tr{position:absolute;top:50%;transform:translateY(-50%);height:24px;background:none;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:none}
 #tr::-webkit-slider-runnable-track{height:1px;background:#e8e8e0b3}#tr::-moz-range-track{height:1px;background:#e8e8e0b3}
 #tr::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:#e8e8e0;border:1px solid #000}#tr::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#e8e8e0;border:1px solid #000}
-@media(max-width:700px){aside{top:auto;width:auto;right:0;height:38%;border:0;border-top:1px solid #6665c04d;transform:translateY(101%)}aside.o~#cd{bottom:calc(38% + 12px)}aside.o~#sb{bottom:calc(38% + 62px)}}
+@media(max-width:700px){aside{top:auto;width:auto;right:0;height:38%;border:0;border-top:1px solid #6665c04d;transform:translateY(101%)}aside.o~#sb{bottom:calc(38% + 12px)}}
 #ld{position:absolute;inset:0;z-index:11;display:flex;align-items:center;justify-content:center;background:#04040a99;pointer-events:none}#ld[hidden]{display:none}
 #ld i{width:44px;height:44px;border-radius:50%;border:2px solid #6665c04d;border-top-color:#e8e8e0;animation:sp 0.9s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
 </style>
 <div id="tl" role="dialog" aria-modal="true"><button type="button" id="xt" {{ partial "tip" "tip_close" }}>×</button><div id="ty"></div><div id="tw"><div id="tz"><input id="tr" type="range"></div></div></div>
 <div class="z"><button type="button" id="zg" {{ partial "tip" "tip_3d" }}>3D</button><button type="button" id="zt" {{ partial "tip" "tip_tl" }}></button><button type="button" id="zc" {{ partial "tip" "tip_col" }}><i></i></button><button type="button" id="zm" {{ partial "tip" "tip_ruler" }}><svg viewBox="0 0 16 16"><path d="M1.5 11.5l10-10 3 3-10 10z M4.5 8.5l1.6 1.6M6.5 6.5l1 1M8.5 4.5l1.6 1.6M10.5 2.5l1 1"/></svg></button><button type="button" id="zk" {{ partial "tip" "tip_circle" }}><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 8h6"/><circle cx="8" cy="8" r=".6"/></svg></button><button type="button" id="zi" {{ partial "tip" "tip_in" }}>+</button><button type="button" id="zo" {{ partial "tip" "tip_out" }}>−</button></div>
-<aside id="p"><button type="button" id="pc" {{ partial "tip" "tip_close" }}>×</button><h1 id="pt"></h1><hr><i id="px"></i></aside>
-<button type="button" id="cd" {{ partial "tip" "tip_copy" }}>—</button><div id="sb" aria-hidden="true"><b></b><span></span><i></i></div>
+<aside id="p"><button type="button" id="pc" {{ partial "tip" "tip_close" }}>×</button><h1 id="pt"></h1><hr><div id="px" class="doc"></div></aside>
+<div id="sb" aria-hidden="true"><b></b><span></span><i></i></div>
 <div id="ld" hidden role="status"><i></i></div>
 <div id="g"></div>
 <div id="m"><canvas id="fcv"></canvas><div id="c" class="mc"><img id="im" alt="" decoding="async"><canvas id="ov" class="ov" width="4096" height="2048"></canvas><svg id="sv" class="sv" viewBox="0 0 4096 2048"></svg><img id="bi" alt="" decoding="async"><svg id="hl" class="hl" viewBox="0 0 4096 2048"></svg><svg id="sl" viewBox="0 0 4096 2048"></svg></div><svg id="mw"></svg><svg id="mz"></svg><div id="gx"></div></div>
 </section></main>
 {{ with partial "js" (resources.Get "map.js") -}}
-<script>var U="{{ "" | relURL }}",V={{ (resources.Get "map.json").Content | safeJS }},MK={{ (resources.Get "markers.json").Content | safeJS }},EV={{ (resources.Get "events.json").Content | safeJS }},COU={{ (resources.Get "countries.json").Content | safeJS }};{{ .Content | safeJS }}</script>
+<script>var U="{{ "" | relURL }}",V={{ (resources.Get "map.json").Content | safeJS }},MK={{ (resources.Get "markers.json").Content | safeJS }},EV={{ (resources.Get "events.json").Content | safeJS }},COU={{ (resources.Get "countries.json").Content | safeJS }},PL={{ $pl := slice }}{{ range site.Pages }}{{ if and (eq .Section "places") .File (ne .File.Dir "places/") }}{{ $pl = $pl | append (path.Base .File.Dir) }}{{ end }}{{ end }}{{ $pl | jsonify | safeJS }};{{ .Content | safeJS }}</script>
 {{- end }}
