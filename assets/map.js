@@ -37,7 +37,7 @@ function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>
 
 // ---- flat map ----
 const fit=()=>Math.max(VH/H,VW/W), // the world fills the height and at least the width, so each place is on screen at most once
-kmax=()=>Math.max(3.125,fit()); // closest zoom: 3.125 screen px per map px
+kmax=()=>Math.max(4.6875,fit()); // closest zoom: 4.6875 screen px per map px
 function set(anim){
 if(!isFinite(k+x+y)){k=fit();x=y=0} // never keep a broken view
 k=Math.min(Math.max(k,fit()),kmax());
@@ -245,7 +245,7 @@ sz();fgI();upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();D.fonts.load(
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
 let gl,gc,go,gw,tc,tx2,tex,bt,ot,LV=2,AN,bp,pp,sp,fp,tb,pb,eb,gD=3,gT=3,gv=[0,0],gt0=0,fly=null,gtap=0,anc=null,GI=[],GO=[],gsig="",ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0,FD;
-const GP={},cl=v=>Math.min(4.5,Math.max(1.384,v)), // camera distance; closest 1.384
+const GP={},cl=v=>Math.min(4.5,Math.max(1.256,v)), // camera distance; closest 1.256
 SW=(v=>{const l=Math.hypot(...v);return v.map(a=>a/l)})([.62,.32,.72]),
 SPIN=6.2832/573,CLOUD=[1/1200,1/1900], // one turn in ~9.5 min; cloud layers drift (uv/s)
 ry=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[c*v[0]+s*v[2],v[1],-s*v[0]+c*v[2]]},
