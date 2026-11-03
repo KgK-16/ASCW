@@ -37,7 +37,7 @@ function load(el,src){el._s=src;const i=new Image;i.src=src;i.decode().then(()=>
 
 // ---- flat map ----
 const fit=()=>Math.max(VH/H,VW/W), // the world fills the height and at least the width, so each place is on screen at most once
-kmax=()=>Math.max(2,fit());
+kmax=()=>Math.max(2.5,fit()); // closest zoom: 2.5 screen px per map px
 function set(anim){
 if(!isFinite(k+x+y)){k=fit();x=y=0} // never keep a broken view
 k=Math.min(Math.max(k,fit()),kmax());
@@ -128,7 +128,7 @@ const mOn=q=>!(q.y0!=null&&yr<q.y0)&&!(q.y1!=null&&yr>q.y1),
 far=(q,zl=k/fit())=>(q.z==1&&zl<2.2)||(q.z==2&&zl<4.5),
 drawM=()=>{mw.innerHTML=MK.map((q,i)=>`<g data-m="${i}"${mOn(q)?"":" hidden"} class="${far(q)?"z":""}${i===ms?" s":""}"><path fill-rule="evenodd" d="${SH[q.k|0]||SH[0]}"/><text x="${q.k==1?15:12}" y="1"${q.f=="cap"?' class="c"':""}>${esc(mn(q))}</text></g>`).join("");posM();if(G)GI.forEach(e=>e.m!=null&&e.d.classList.toggle("s",e.m===ms))},
 posM=()=>{const zl=k/fit();[...mw.children].forEach((e,i)=>{const q=MK[i];if(!q)return;{const w=W*k,X=x+(q.o+180)/360*w;e.style.transform=`translate(${X-w*Math.floor((X+40)/w)}px,${y+(90-q.a)/180*H*k}px)`}
-e.classList.toggle("z",far(q,zl))});drawMz();if(!G)sbU(2*Math.PI*RE*Math.max(.02,Math.cos(Math.min(1.5,Math.abs(Math.PI/2-(VH/2-y)/k/H*Math.PI))))/(W*k));
+e.classList.toggle("z",far(q,zl))});drawMz();if(!G)sbU(k/fit(),2*Math.PI*RE*Math.max(.02,Math.cos(Math.min(1.5,Math.abs(Math.PI/2-(VH/2-y)/k/H*Math.PI))))/(W*k));
 // graticule labels: light, pinned to the top / left edge of the view, hidden under the button column
 const t0=Math.max(y,0)+6,l0=Math.max(x,0)+6,xr=VW-ZW-82,yb=VH-30; // sizes are cached (sz): no layout reads while the map moves
 for(const q of GX){let X,Y,hd;if(q.o!=null){const w=W*k;X=x+(q.o+180)/360*w+4;X-=w*Math.floor(X/w);Y=t0;hd=X<l0+40||X>xr}else{X=l0;Y=y+(90-q.a)/180*H*k-18;hd=Y<t0+18||Y>yb}
@@ -138,9 +138,10 @@ RE=6371, // the planet is Earth-sized: radius in km
 ll2v=(lo,la)=>{lo*=Math.PI/180;la*=Math.PI/180;return[Math.cos(la)*Math.sin(lo),Math.sin(la),Math.cos(la)*Math.cos(lo)]},
 v2ll=v=>[Math.atan2(v[0],v[2])*180/Math.PI,Math.asin(Math.max(-1,Math.min(1,v[1])))*180/Math.PI],
 km=d=>d.toLocaleString(ru()?"ru-RU":"en-US",{maximumFractionDigits:d<10?2:d<100?1:0})+L(" km"," км");
-function sbU(kp){ // scale bar: the longest round length (1, 2, 5 × 10ⁿ km) that fits in 100 px; kp = km per screen px at the view centre
+function sbU(zl,kp){const zp=Math.round(zl*100)+"%";if(sb.children[0].textContent!=zp)sb.children[0].textContent=zp; // zoom: 100% = the whole world in view
+ // scale bar: the longest round length (1, 2, 5 × 10ⁿ km) that fits in 100 px; kp = km per screen px at the view centre
 const L0=kp*100,e=10**Math.floor(Math.log10(L0)),n=[5,2,1].map(v=>v*e).find(v=>v<=L0)||e,key=n+"|"+HT.lang+"|"+(n/kp).toFixed(0);if(key==sbK)return;sbK=key;
-sb.firstChild.textContent=n<1?(n*1e3).toLocaleString()+L(" m"," м"):n.toLocaleString(ru()?"ru-RU":"en-US")+L(" km"," км");sb.lastChild.style.width=(n/kp).toFixed(1)+"px"}
+sb.children[1].textContent=n<1?(n*1e3).toLocaleString()+L(" m"," м"):n.toLocaleString(ru()?"ru-RU":"en-US")+L(" km"," км");sb.lastChild.style.width=(n/kp).toFixed(1)+"px"}
 function msU(){ // measured route: great-circle arcs between the points, sampled every degree; cumulative distances
 MP=[];MD=[0];for(let i=1;i<MS.length;i++){const a=MS[i-1],b=MS[i],an=Math.acos(Math.max(-1,Math.min(1,a[0]*b[0]+a[1]*b[1]+a[2]*b[2]))),n=Math.max(1,Math.ceil(an*180/Math.PI)),q=[];
 MD.push(MD[i-1]+an*RE);for(let j=0;j<=n;j++){const t=j/n,sa=Math.sin(an),f=an<1e-9?1-t:Math.sin((1-t)*an)/sa,g2=an<1e-9?t:Math.sin(t*an)/sa;q.push([a[0]*f+b[0]*g2,a[1]*f+b[1]*g2,a[2]*f+b[2]*g2])}MP.push(q)}
@@ -249,7 +250,7 @@ sz();fgI();upd();col(CO);k=fit();x=(VW-W*k)/2;set();rest();drawM();lx=(VW/2-x)/k
 // ---- globe ----
 // World space: the sun stays at a fixed direction SW, the planet spins slowly around its axis (sa), the camera orbits it (ya, pa; dragging moves the camera).
 let gl,gc,go,gw,tc,tx2,tex,bt,ot,LV=2,AN,bp,pp,sp,fp,tb,pb,eb,gD=3,gT=3,gv=[0,0],gt0=0,fly=null,gtap=0,anc=null,GI=[],GO=[],gsig="",ya=0,pa=.15,sa=0,tm=0,SC,AS,tdirty,gm=0,busy,loop,last=0,FD;
-const GP={},cl=v=>Math.min(4.5,Math.max(1.6,v)),
+const GP={},cl=v=>Math.min(4.5,Math.max(1.48,v)), // camera distance; closest 1.48 = 25% more zoom than before
 SW=(v=>{const l=Math.hypot(...v);return v.map(a=>a/l)})([.62,.32,.72]),
 SPIN=6.2832/573,CLOUD=[1/1200,1/1900], // one turn in ~9.5 min; cloud layers drift (uv/s)
 ry=(v,t)=>{const c=Math.cos(t),s=Math.sin(t);return[c*v[0]+s*v[2],v[1],-s*v[0]+c*v[2]]},
@@ -425,7 +426,7 @@ return any&&[P,C]};
 if(CO)for(const rg of RG){if(rg==S0)continue;const a=pr(rg,1);if(!a)continue;const n=rg.cn,d=n[0]*Lo[0]+n[1]*Lo[1]+n[2]*Lo[2];
 o.save();o.clip(a[1],"evenodd");o.globalAlpha=.85*Math.min(1,Math.max(.2,.6+d*2));o.strokeStyle=rg.c;o.lineWidth=7;o.stroke(a[0]);o.restore()} // dimmer on the night side
 const a=S0&&pr(S0);if(a){o.strokeStyle="#e8e8e0";o.globalAlpha=.22;o.lineWidth=7;o.stroke(a[0]);o.globalAlpha=1;o.lineWidth=2;o.stroke(a[0])}
-sbU(RE*2*SC*(gD-1)/h);if(!MS.length)return; // measured route, as on the flat map
+sbU(Math.PI/(2*SC*(gD-1)),RE*2*SC*(gD-1)/h);if(!MS.length)return; // measured route, as on the flat map
 const P=new Path2D;for(const q of MP){let on=0;for(const v of q){const p=gp(v);if(!p){on=0;continue}on?P.lineTo(...p):P.moveTo(...p);on=1}}
 o.strokeStyle="#000a";o.lineWidth=5;o.stroke(P);o.strokeStyle="#e8e8e0";o.lineWidth=2;o.stroke(P);o.font='400 13px "Exo 2",sans-serif';o.textBaseline="middle";
 MS.forEach((v,i)=>{const p=gp(v);if(!p)return;o.beginPath();o.arc(p[0],p[1],4.5,0,6.2832);o.fillStyle="#e8e8e0";o.fill();o.lineWidth=1.5;o.strokeStyle="#000";o.stroke();
