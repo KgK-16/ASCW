@@ -142,33 +142,37 @@ function zoomAt(f, px, py) { // instant zoom by a factor around a screen point (
 }
 
 // ---------- flat map: smooth motion ----------
-// The zoom eases towards a target scale every frame, on a log scale (each step feels the same at any zoom), and the point under the
-// cursor stays under it. A double click also flies its point to the middle of the screen; a flicked map glides on.
-const ZOOM_PER_PX = .0026,  // wheel: 100 px (one notch) zoom ×1.3 — about 9 notches from the whole world to the closest view
-  DOUBLE_CLICK_ZOOM = 2,
-  clampScale = s => Math.min(maxScale(), Math.max(fitScale(), s)),
+// Zoom is kept as a camera distance, as on the globe, and eased towards a target every frame: a wheel notch or a double click
+// zooms smoothly and the point under the cursor stays under it. A double click also flies its point to the middle; a flick glides on.
+const viewConstFor = (w, h) => .364 * Math.max(1, h / w),     // the globe's view constant for a window
+  flatViewConst = () => viewConstFor(viewW, viewH),
+  scaleOfDist = d => Math.PI / (2 * flatViewConst() * (d - 1)) * fitScale(), // camera distance <-> flat scale
+  distOfScale = s => 1 + Math.PI * fitScale() / (2 * flatViewConst() * s),
+  clampDist = d => Math.min(distOfScale(fitScale()), Math.max(distOfScale(maxScale()), d)),
   wheelPx = e => e.deltaY * (e.deltaMode == 1 ? 33 : e.deltaMode == 2 ? viewH : 1); // wheel delta in px whatever the browser reports
-let zoomTarget = null, zoomAnchor = null, flyTo = null, fling = null, motionFrame = 0, lastMotionT = 0;
+let camDist = 0, camTarget = 0, zoomAnchor = null, flyTo = null, fling = null, motionFrame = 0, lastMotionT = 0;
 
-const zoomTowards = f => { zoomTarget = clampScale((zoomTarget ?? scale) * f) }, // a zoom still easing goes on from its target (null: none)
+const startZoom = () => { if (Math.abs(camTarget - camDist) < 1e-4) camDist = camTarget = distOfScale(scale) }, // from the current scale unless a zoom is easing
   startMotion = () => { if (!motionFrame) { lastMotionT = 0; motionFrame = requestAnimationFrame(motionStep) } },
-  stopMotion = () => { cancelAnimationFrame(motionFrame); motionFrame = lastMotionT = 0; fling = zoomAnchor = flyTo = zoomTarget = null };
+  stopMotion = () => { cancelAnimationFrame(motionFrame); motionFrame = lastMotionT = 0; fling = zoomAnchor = flyTo = null; camTarget = camDist };
 
 function motionStep(t) { // one frame of flat-map motion
   const dt = Math.min(lastMotionT && t > lastMotionT ? (t - lastMotionT) / 1e3 : 1 / 60, .05);
   lastMotionT = t;
   motionFrame = 0;
   let moving = false;
-  if (zoomTarget != null) { // the scale moves a part of the way to its target, around an anchor that keeps its place on screen
+  if (Math.abs(camTarget - camDist) > 1e-3) { // eased zoom around an anchor that keeps its place on screen
+    camDist += (camTarget - camDist) * Math.min(1, dt * 8);
     const a = flyTo ? { mx: flyTo.mx, my: flyTo.my, sx: panX + flyTo.mx * scale, sy: panY + flyTo.my * scale }
       : zoomAnchor || { mx: (viewW / 2 - panX) / scale, my: (viewH / 2 - panY) / scale, sx: viewW / 2, sy: viewH / 2 };
-    const before = scale;
-    scale *= (zoomTarget / scale) ** Math.min(1, dt * 8);
+    scale = scaleOfDist(camDist);
     panX = a.sx - a.mx * scale;
     panY = a.sy - a.my * scale;
     setView();
-    if (scale == before || Math.abs(Math.log(zoomTarget / scale)) < 1e-3) zoomTarget = zoomAnchor = null; // there, or at a zoom limit
     moving = true;
+  } else {
+    camDist = camTarget;
+    zoomAnchor = null;
   }
   if (flyTo) { // a map point flies to the middle of the screen; at the map's edge it stops where it can
     const f = Math.min(1, dt * 5), w = MAP_W * scale, ex0 = viewW / 2 - panX - flyTo.mx * scale, ex = ex0 - w * Math.round(ex0 / w),
@@ -192,8 +196,9 @@ function motionStep(t) { // one frame of flat-map motion
   else lastMotionT = 0;
 }
 
-function zoomBy(f, cx, cy) { // zoom by a factor towards a screen point
-  zoomTowards(f);
+function zoomBy(f, cx, cy) { // zoom by a camera distance factor towards a screen point
+  startZoom();
+  camTarget = clampDist(camTarget * f);
   fling = flyTo = null;
   zoomAnchor = { mx: (cx - panX) / scale, my: (cy - panY) / scale, sx: cx, sy: cy };
   startMotion();
@@ -596,7 +601,7 @@ mapEl.onpointermove = e => {
     panX += now.x - before.x;
     panY += now.y - before.y;
     zoomAt(now.d / before.d, now.x - mapRect.left, now.y - mapRect.top);
-    zoomTarget = null;
+    camDist = camTarget = distOfScale(scale);
   } else {
     const t = performance.now();
     dragHistory.push([t, e.clientX, e.clientY]);
@@ -619,7 +624,8 @@ mapEl.onpointerup = mapEl.onpointercancel = e => {
   const mx = (e.clientX - mapRect.left - panX) / scale, my = (e.clientY - mapRect.top - panY) / scale, now = Date.now();
   if (now - lastTap < 300) { // double click: fly there and zoom in
     lastTap = 0;
-    zoomTowards(DOUBLE_CLICK_ZOOM);
+    startZoom();
+    camTarget = clampDist(camTarget / 1.8);
     flyTo = { mx, my };
     zoomAnchor = fling = null;
     startMotion();
@@ -636,7 +642,7 @@ mapEl.onlostpointercapture = e => {
   if (!Object.keys(flatPointers).length) mapEl.classList.remove("dr");
 };
 
-mapEl.onwheel = e => { e.preventDefault(); zoomBy(Math.exp(-wheelPx(e) * ZOOM_PER_PX), e.clientX - mapRect.left, e.clientY - mapRect.top) };
+mapEl.onwheel = e => { e.preventDefault(); zoomBy(Math.exp(wheelPx(e) * .0015), e.clientX - mapRect.left, e.clientY - mapRect.top) };
 
 // ---------- timeline ----------
 let pxPerYear = 0;
@@ -701,7 +707,8 @@ const MAP = window.MAP = { // for the site editor
   timeline() { if (timelineOpen()) buildTimeline() },
   focus(lon, lat) { // show a place (instantly on the globe, flying on the flat map)
     if (globeOn) { yaw = -lon * Math.PI / 180 - spin; pitch = clampPitch(lat * Math.PI / 180); camTargetG = clampDistG(Math.min(camTargetG, 2.2)); return requestFrame() }
-    zoomTarget = clampScale(Math.max(zoomTarget ?? scale, fitScale() * 5));
+    startZoom();
+    camTarget = clampDist(Math.min(camTarget, distOfScale(fitScale() * 5)));
     flyTo = { mx: (lon + 180) / 360 * MAP_W, my: (90 - lat) / 180 * MAP_H };
     zoomAnchor = fling = null;
     startMotion();
@@ -744,7 +751,7 @@ try { // the same view after switching the language
     scale = Math.min(Math.max(v.k * fitScale(), fitScale()), maxScale());
     panX = viewW / 2 - v.mx * scale;
     panY = viewH / 2 - v.my * scale;
-    zoomTarget = null;
+    camDist = camTarget = distOfScale(scale);
     setView();
     settle();
     drawMarkers();
@@ -758,7 +765,6 @@ try { // the same view after switching the language
 // The sun stays at a fixed direction (south-west), the planet spins slowly around its axis (spin), the camera orbits it (yaw, pitch);
 // dragging moves the camera and glides on when let go, the wheel or two fingers zoom towards the pointer.
 const GLOBE_CLOSEST = 1.32, GLOBE_FARTHEST = 4.5;          // camera distance in planet radii
-const viewConstFor = (w, h) => .364 * Math.max(1, h / w);  // how much of the planet a window shows
 const SPIN = 2 * Math.PI / 573;                           // one turn in ~9.5 minutes
 const SUN = (v => { const l = Math.hypot(...v); return v.map(a => a / l) })([.62, .32, .72]);
 const clampDistG = v => Math.min(GLOBE_FARTHEST, Math.max(GLOBE_CLOSEST, v)),
