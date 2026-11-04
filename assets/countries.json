@@ -22,10 +22,11 @@
  },
  "#3f406e": {
   "lx": 34,
-  "ly": 18
+  "ly": 18,
+  "lz": 30
  },
  "#dfdfc7": {
-  "lz": 35,
+  "lz": 31,
   "lx": 185,
   "ly": -19,
   "en": "Central Empire of Exiar"

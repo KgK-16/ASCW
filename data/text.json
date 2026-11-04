@@ -39,24 +39,8 @@
   "en": "Country colours on / off",
   "ru": "Раскраска стран вкл / выкл"
  },
- "tip_in": {
-  "en": "Zoom in",
-  "ru": "Приблизить"
- },
- "tip_out": {
-  "en": "Zoom out",
-  "ru": "Отдалить"
- },
  "tip_close": {
   "en": "Close",
   "ru": "Закрыть"
- },
- "tip_ruler": {
-  "en": "Measure distance",
-  "ru": "Измерить расстояние"
- },
- "tip_circle": {
-  "en": "Circle: centre and radius",
-  "ru": "Окружность: центр и радиус"
  }
 }

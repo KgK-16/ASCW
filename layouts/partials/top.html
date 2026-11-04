@@ -1,37 +1,54 @@
+{{- /* The start of every page: <head> (title, description, link previews, languages, icons, fonts, styles, the head script) and the menu.
+   Each page is built per language; the 404 page (one file for every address) holds both languages and its script picks one. */ -}}
 <!DOCTYPE html>
-{{- $L := site.Language.Name }}{{ $ru := eq $L "ru" }}{{ $nf := eq .Kind "404" }}{{ $t := cond $nf "t2" "t" }}{{ $tp := cond $nf "tip2" "tip" }}
-<html lang="{{ $L }}"{{ if $nf }} class="l2"{{ end }}>
+{{- $lang := site.Language.Name }}{{ $ru := eq $lang "ru" }}{{ $notFound := eq .Kind "404" }}
+{{- $t := cond $notFound "t2" "t" }}{{ $tip := cond $notFound "tip2" "tip" }}{{/* interface texts: both languages on the 404 page */}}
+<html lang="{{ $lang }}" data-b="{{ "" | relURL }}"{{ if $notFound }} class="l2"{{ end }}>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-{{- $en := cond .IsHome "ASCW" (print .Title " · ASCW") }}{{ $rt := cond .IsHome "ASCW" (print (default .Title .Params.title_ru) " · ASCW") }}{{ $tt := cond $ru $rt $en }}
-<title{{ if $nf }} data-en="{{ $en }}" data-ru="{{ $rt }}"{{ end }}>{{ $tt }}</title>
-{{- $desc := cond $ru (.Params.description_ru | default .Description) (.Description | default .Params.description_ru) | default site.Params.description }}{{ $img := cond (and .Params.bg (ne .Params.bg "none")) .Params.bg ("bg.webp" | relURL) }}
-{{ with $desc }}<meta name="description" content="{{ . }}">{{ end }}
-<meta property="og:type" content="website"><meta property="og:site_name" content="ASCW"><meta property="og:title" content="{{ $tt }}"><meta property="og:url" content="{{ .Permalink }}"><meta property="og:locale" content="{{ cond $ru "ru_RU" "en_US" }}">
-{{ with $desc }}<meta property="og:description" content="{{ . }}">{{ end }}<meta property="og:image" content="{{ $img | absURL }}"><meta name="twitter:card" content="summary_large_image">
-{{- if not $nf }}{{ range .AllTranslations }}
-<link rel="alternate" hreflang="{{ .Language.Name }}" href="{{ .Permalink }}" data-u="{{ .RelPermalink }}">{{ if eq .Language.Name "en" }}<link rel="alternate" hreflang="x-default" href="{{ .Permalink }}">{{ end }}{{ end }}{{ end }}
-<link rel="icon" href="{{ "favicon-32.png" | relURL }}" sizes="32x32"><link rel="icon" href="{{ "favicon.svg" | relURL }}" type="image/svg+xml"><link rel="apple-touch-icon" href="{{ "apple-touch-icon.png" | relURL }}">
-{{- /* language: each page is built in English (/ASCW/…) and Russian (/ASCW/ru/…). A saved choice (or, on the first visit, the browser's language) opens
-   the page in that language; the 404 page (one for every address) switches its texts in place. The site editor (assets/edit.js) is unlocked once
-   per browser with ?edit and loaded only in edit mode, after the page is parsed */}}
-<script>{const D=document,d=D.documentElement,P=d.lang,NF={{ $nf }},B="{{ relURL "" }}",t=D.querySelector("title"),alt=l=>D.querySelector(`link[hreflang="${l}"]`)?.dataset.u,
-tp=()=>D.querySelectorAll("[data-ten]").forEach(e=>{const v=e.dataset[d.lang=="ru"?"tru":"ten"];e.title=v;e.setAttribute("aria-label",v)}),
-s=l=>{d.lang=l;if(t.dataset[l])D.title=t.dataset[l];tp()};let l,k={},ss={};try{l=localStorage.ascwLang;if(/[?&]edit\b/.test(location.search))localStorage.ascwEdit=1;k=localStorage;ss=sessionStorage}catch{}
-const bot=navigator.webdriver||/bot|crawl|spider|slurp|yandex|google|bing/i.test(navigator.userAgent),w=(l||(bot?P:navigator.language)||"").slice(0,2)=="ru"?"ru":"en";
-if(NF)s(location.pathname.startsWith(B+"ru/")?"ru":w);else if(w!=P&&alt(w)){d.style.visibility="hidden";location.replace(alt(w)+location.search+location.hash)}
-if(/[?&]embed\b/.test(location.search)){d.classList.add("emb");D.head.append(Object.assign(D.createElement("base"),{target:"_top"}))} // a page shown inside the map's panel: no menu, links open in the whole window
-D.addEventListener("click",e=>{if(!e.target.closest("#lq"))return;const n=d.lang=="ru"?"en":"ru",a=alt(n);try{localStorage.ascwLang=n}catch{}
-if(!a){s(n);return D.dispatchEvent(new Event("lang"))} // a page without its other-language address (the 404 page)
-D.dispatchEvent(new Event("langgo"));ss.ascwScroll=JSON.stringify([a,scrollY/Math.max(1,d.scrollHeight-innerHeight)]);location.href=a+location.search+location.hash}); // the other language opens at the same place of the page
-addEventListener("load",()=>{try{const[a,f]=JSON.parse(ss.ascwScroll||"[]");delete ss.ascwScroll;if(a==location.pathname&&f)scrollTo(0,f*(d.scrollHeight-innerHeight))}catch{}});
-D.addEventListener("DOMContentLoaded",()=>{tp();const e=D.getElementById("ed"),on=()=>D.head.append(Object.assign(D.createElement("script"),{src:e.dataset.js}));
-if(e&&k.ascwEdit){e.hidden=false;e.onclick=()=>{if(window.EDIT)EDIT.toggle();else{k.ascwEditOn=1;on()}};if(k.ascwEditOn)on()}})}</script>
+
+{{- /* title and description, in this language (a missing one falls back to the other) */}}
+{{- $en := cond .IsHome "ASCW" (print .Title " · ASCW") }}
+{{- $ruTitle := cond .IsHome "ASCW" (print (default .Title .Params.title_ru) " · ASCW") }}
+{{- $title := cond $ru $ruTitle $en }}
+<title{{ if $notFound }} data-en="{{ $en }}" data-ru="{{ $ruTitle }}"{{ end }}>{{ $title }}</title>
+{{- $desc := cond $ru (.Params.description_ru | default .Description) (.Description | default .Params.description_ru) | default site.Params.description }}
+{{- with $desc }}
+<meta name="description" content="{{ . }}">{{ end }}
+
+{{- /* link previews */}}
+{{- $img := cond (and .Params.bg (ne .Params.bg "none")) .Params.bg ("bg.webp" | relURL) }}
+<meta property="og:type" content="website"><meta property="og:site_name" content="ASCW"><meta property="og:title" content="{{ $title }}">
+<meta property="og:url" content="{{ .Permalink }}"><meta property="og:locale" content="{{ cond $ru "ru_RU" "en_US" }}">
+{{- with $desc }}<meta property="og:description" content="{{ . }}">{{ end }}
+<meta property="og:image" content="{{ $img | absURL }}"><meta name="twitter:card" content="summary_large_image">
+
+{{- /* the page in each language (data-u: the address the language button opens) */}}
+{{- if not $notFound }}{{ range .AllTranslations }}
+<link rel="alternate" hreflang="{{ .Language.Name }}" href="{{ .Permalink }}" data-u="{{ .RelPermalink }}">
+{{- if eq .Language.Name "en" }}<link rel="alternate" hreflang="x-default" href="{{ .Permalink }}">{{ end }}{{ end }}{{ end }}
+
+<link rel="icon" href="{{ "favicon-32.png" | relURL }}" sizes="32x32"><link rel="icon" href="{{ "favicon.svg" | relURL }}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="{{ "apple-touch-icon.png" | relURL }}">
+<script>{{ (partialCached "js" (resources.Get "head.js") "head").Content | safeJS }}</script>
 <link rel="preload" href="{{ "fonts/a.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
-<meta name="src" content="{{ with .File }}{{ .Path }}{{ end }}">
+<meta name="src" content="{{ with .File }}{{ .Path }}{{ end }}">{{/* the page's file, for the editor */}}
+
+{{- /* the menu: language button and brand line, then the page links and the editor's ✎ (shown once edit mode is unlocked) */}}
 <nav aria-label="ASCW">
-<span class="nl"><button type="button" id="lq" class="bt" {{ partial $tp "tip_lang" }}>{{ if $nf }}<span lang="en">EN</span><span lang="ru">РУ</span>{{ else }}{{ cond $ru "РУ" "EN" }}{{ end }}</button><span class="br">{{ partial $t "brand" }}</span></span>
-<div><a href="{{ "" | relLangURL }}"{{ if .IsHome }} aria-current="page"{{ end }}>{{ partial $t "nav_menu" }}</a><a href="{{ "archive/" | relLangURL }}"{{ if eq .Section "archive" }} aria-current="page"{{ end }}>{{ partial $t "nav_archive" }}</a><a href="{{ "map/" | relLangURL }}"{{ if eq .Section "map" }} aria-current="page"{{ end }}>{{ partial $t "nav_map" }}</a>{{ with partialCached "js" (resources.Get "edit.js") "edit" | fingerprint "md5" }}<button type="button" id="ed" class="bt" hidden data-js="{{ .RelPermalink }}" data-u="{{ "" | relURL }}" data-repo="{{ site.Params.repo }}" {{ partial $tp "tip_edit" }}>✎</button>{{ end }}</div>
+  <span class="nl">
+    <button type="button" id="lq" class="bt" {{ partial $tip "tip_lang" }}>{{ if $notFound }}<span lang="en">EN</span><span lang="ru">РУ</span>{{ else }}{{ cond $ru "РУ" "EN" }}{{ end }}</button>
+    <span class="br">{{ partial $t "brand" }}</span>
+  </span>
+  <div>
+    <a href="{{ "" | relLangURL }}"{{ if .IsHome }} aria-current="page"{{ end }}>{{ partial $t "nav_menu" }}</a>
+    <a href="{{ "archive/" | relLangURL }}"{{ if eq .Section "archive" }} aria-current="page"{{ end }}>{{ partial $t "nav_archive" }}</a>
+    <a href="{{ "map/" | relLangURL }}"{{ if eq .Section "map" }} aria-current="page"{{ end }}>{{ partial $t "nav_map" }}</a>
+    {{- with partialCached "js" (resources.Get "edit.js") "edit" | fingerprint "md5" }}
+    <button type="button" id="ed" class="bt" hidden data-js="{{ .RelPermalink }}"{{ with resources.Get "edit.css" | minify | fingerprint "md5" }} data-css="{{ .RelPermalink }}"{{ end }}
+      data-u="{{ "" | relURL }}" data-repo="{{ site.Params.repo }}" {{ partial $tip "tip_edit" }}>✎</button>
+    {{- end }}
+  </div>
 </nav>
 <main{{ with .Params.bg }} style="--bg:{{ if eq . "none" }}none{{ else }}url({{ . }}){{ end }}"{{ end }}><section>

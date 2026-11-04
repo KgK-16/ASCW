@@ -1,502 +1,1319 @@
-// ASCW site editor (pages: U = the site, UL = its pages in this language, U or U+"ru/"). Loaded only when edit mode is on (✎ in the nav; unlocked once per browser by opening any page with ?edit).
-// Every change goes into a local draft (localStorage) and is published to GitHub as one commit with the editor's own access token;
-// GitHub Actions then rebuilds the site. Source files: content/**/_index.md (JSON front matter), data/text.json (interface texts),
-// assets/markers.json, assets/events.json, assets/countries.json (map), static/img/* (uploaded images).
-// Built by layouts/partials/js.html (esbuild: minified, wrapped in its own scope).
-const D=document,HT=D.documentElement,BT=D.getElementById("ed"),U=BT.dataset.u,UL=decodeURI(location.pathname).startsWith(U+"ru/")?U+"ru/":U,REPO=BT.dataset.repo,BR="main",
-LS=(()=>{try{return localStorage}catch{return{}}})(),
-NEWP=!D.querySelector("meta[name=src]")?.content, // a page that exists only in the draft opens on the 404 page at its future address
-SRC=D.querySelector("meta[name=src]")?.content||(p=>p&&p+"/_index.md")(decodeURI(location.pathname).slice(U.length).replace(/^ru\//,"").replace(/\/?(index\.html)?$/,"")),PAGE=SRC&&"content/"+SRC,
-F={text:"data/text.json",mk:"assets/markers.json",ev:"assets/events.json",co:"assets/countries.json"},
-ru=()=>HT.lang=="ru",L=(e,r)=>ru()?r:e,
-h=(t,a={},...c)=>{const e=D.createElement(t);for(const k in a)k.startsWith("on")?e[k]=a[k]:k=="cls"?e.className=a[k]:e.setAttribute(k,a[k]);e.append(...c.flat().filter(v=>v!=null));return e},
-esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-let draft={},base={},pend={},blobs={},on=0,tok=LS.ascwTok||"";
-try{draft=JSON.parse(LS.ascwDraft||"{}")}catch{}
-const EMB=HT.classList.contains("emb"); // a page inside the map's side strip: only its text is edited here, the map's bar publishes
-addEventListener("storage",e=>{if(e.key=="ascwDraft"){try{draft=JSON.parse(e.newValue||"{}")}catch{draft={}}base={};pend={};bar()}}); // the map and the page in its strip share one draft
+// ASCW site editor. Loaded only in edit mode (✎ in the menu; unlocked once per browser by opening any page with ?edit).
+// Every change goes into a draft kept in this browser (localStorage) and is published to GitHub as one commit with the editor's
+// own access token; GitHub Actions then rebuilds the site.
+// Files it edits: content/**/_index.md (pages: JSON front matter), data/text.json (interface texts),
+// assets/markers.json, assets/events.json, assets/countries.json (the map), static/img/* (uploaded images).
+// Styles: assets/edit.css. Built by layouts/partials/js.html (esbuild: minified, in its own scope).
 
-// ---------- storage: draft, GitHub ----------
-function save(){try{LS.ascwDraft=JSON.stringify(draft)}catch{toast(L("Draft too big to keep after closing the page — publish first","Черновик слишком большой, чтобы пережить закрытие страницы — сначала опубликуйте"),1)}bar()}
-async function gh(p,o={}){const r=await fetch(`https://api.github.com/repos/${REPO}/${p}`,{cache:"no-store",...o,headers:{...(tok?{Authorization:"Bearer "+tok}:{}),Accept:o.raw?"application/vnd.github.raw+json":"application/vnd.github+json",...(o.body?{"Content-Type":"application/json"}:{})}});
-if(!r.ok)throw Error(r.status+" "+(await r.text()).slice(0,200));return o.raw?r.text():r.json()}
-function src(p){ // current published source of a file (null if it does not exist); one request per file, writes stay in call order
-return pend[p]??=(async()=>{if(p in base)return base[p];
-try{base[p]=await gh(`contents/${p}?ref=${BR}`,{raw:1}).catch(e=>/^404/.test(e.message)?Promise.reject(e):fetch(`https://raw.githubusercontent.com/${REPO}/${BR}/${p}?${Date.now()}`,{cache:"no-store"}).then(r=>r.ok?r.text():Promise.reject(r.status)))}
-catch(e){if(!/404/.test(e))console.warn(p,e);base[p]=null}return base[p]})()}
-async function read(p){const d=draft[p];return d?d.del?null:d.t:src(p)}
-async function write(p,t){await src(p);
-if(base[p]==null&&Object.values(F).includes(p))return toast(L("Could not read the file from GitHub, the change is not saved: ","Не удалось прочитать файл с GitHub, изменение не сохранено: ")+p,1); // never replace a data file by a partial one
-if(t===base[p])delete draft[p];else draft[p]={t};save()}
-const J=async(p,def)=>{try{return JSON.parse(await read(p))??def}catch{return def}},
-fmt={[F.mk]:a=>"[\n"+a.map(v=>JSON.stringify(v)).join(",\n")+"\n]\n",[F.ev]:a=>"[\n"+a.map(v=>JSON.stringify(v)).join(",\n")+"\n]\n"},
-WJ=(p,o)=>write(p,(fmt[p]||(v=>JSON.stringify(v,null,1)+"\n"))(o));
-const n=()=>Object.keys(draft).length;
+// ---------- setup ----------
+const doc = document, root = doc.documentElement, byId = id => doc.getElementById(id), editButton = byId("ed");
+const SITE = editButton.dataset.u;                                                      // the site's base address (images)
+const PAGES = decodeURI(location.pathname).startsWith(SITE + "ru/") ? SITE + "ru/" : SITE; // pages in this language
+const REPO = editButton.dataset.repo, BRANCH = "main";
+const FILES = { texts: "data/text.json", markers: "assets/markers.json", events: "assets/events.json", countries: "assets/countries.json" };
+const store = (() => { try { return localStorage } catch { return {} } })();
+const srcMeta = doc.querySelector("meta[name=src]")?.content;
+const NEW_PAGE = !srcMeta; // a page that exists only in the draft opens on the 404 page, at its future address
+const SRC = srcMeta || (p => p && p + "/_index.md")(decodeURI(location.pathname).slice(SITE.length).replace(/^ru\//, "").replace(/\/?(index\.html)?$/, ""));
+const PAGE = SRC && "content/" + SRC;                     // this page's file
+const EMBEDDED = root.classList.contains("emb");          // a page inside the map's panel: only its text is edited here, the map's bar publishes
+const PREVIEW = /[?&]preview\b/.test(location.search);    // the phone preview: the draft shown, nothing editable
+const MAP = window.MAP;                                   // the map page's hooks (assets/map.js)
 
-async function publish(){
-if(!tok)return token();await flush();if(!n())return;
-const b=pb.firstChild;b.disabled=1;toast(L("Publishing…","Публикация…"));
-try{const ref=await gh(`git/ref/heads/${BR}`),head=ref.object.sha,c=await gh(`git/commits/${head}`),tree=[],
-T=await gh(`git/trees/${c.tree.sha}?recursive=1`),all=T.tree.filter(e=>e.type=="blob").map(e=>e.path),un=T.truncated?new Set():await unused(all);
-for(const [p,v] of Object.entries(draft)){
-if(un.has(p))continue; // an image uploaded and no longer used before publishing is not published at all
-if(v.del){if(await src(p)!=null)tree.push({path:p,mode:"100644",type:"blob",sha:null});continue}
-const bl=await gh("git/blobs",{method:"POST",body:JSON.stringify(v.b?{content:v.b,encoding:"base64"}:{content:v.t,encoding:"utf-8"})});
-tree.push({path:p,mode:"100644",type:"blob",sha:bl.sha})}
-const gone=[...un].filter(p=>all.includes(p));gone.forEach(p=>tree.push({path:p,mode:"100644",type:"blob",sha:null}));
-const t=await gh("git/trees",{method:"POST",body:JSON.stringify({base_tree:c.tree.sha,tree})}),
-nc=await gh("git/commits",{method:"POST",body:JSON.stringify({message:"Edit via site editor"+(gone.length?`; unused images removed: ${gone.map(p=>p.slice(11)).join(", ")}`:""),tree:t.sha,parents:[head]})});
-await gh(`git/refs/heads/${BR}`,{method:"PATCH",body:JSON.stringify({sha:nc.sha})});
-for(const [p,v] of Object.entries(draft))base[p]=v.del?null:v.t??base[p];gone.forEach(p=>base[p]=null);
-draft={};save();deploy(nc.sha)}
-catch(e){toast(L("Publish failed: ","Ошибка публикации: ")+e.message,1)}b.disabled=0}
-async function unused(all){ // images in static/img that no page or data file mentions any more (after this publish): removed in the same commit
-const fs=[...new Set([...all,...Object.keys(draft)])],im=new Set(fs.filter(p=>p.startsWith("static/img/")&&!draft[p]?.del)),
-tx=fs.filter(p=>!draft[p]?.del&&/^(content\/.*\.md|data\/.*\.json|assets\/(markers|events|countries)\.json|assets\/.*\.css|layouts\/.*\.html)$/.test(p));if(!im.size)return im;
-const v=await Promise.all(tx.map(read));if(v.some(t=>t==null))return new Set(); // a file could not be read: nothing is removed this time
-const t=v.join("\n");for(const p of im)if(t.includes("img/"+p.slice(11)))im.delete(p);return im}
-async function deploy(sha){ // follow the GitHub Actions build of this commit (needs Actions: read; otherwise just a hint)
-toast(L("Published. The site rebuilds in about a minute.","Опубликовано. Сайт обновится примерно через минуту."));
-for(let i=0;i<40;i++){await new Promise(r=>setTimeout(r,6e3));
-try{const r=(await gh(`actions/runs?head_sha=${sha}`)).workflow_runs[0];if(!r)continue;
-if(r.status=="completed"){toast(r.conclusion=="success"?L("Site updated (refresh in ~30 s).","Сайт обновлён (обновите страницу через ~30 с)."):L("Build failed — see GitHub Actions.","Сборка не удалась — см. GitHub Actions."),r.conclusion!="success");return}}catch{return}}}
-function discard(){if(!n()||!confirm(L("Discard all unpublished changes?","Удалить все неопубликованные изменения?")))return;draft={};save();location.reload()}
+const isRu = () => root.lang == "ru",
+  inLang = (en, ru) => isRu() ? ru : en,
+  esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-// ---------- UI shell ----------
-D.head.append(h("style",{},`
-#eb{position:fixed;left:12px;bottom:12px;z-index:40;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 24px);text-transform:none}
-.eb{font:400 13px "Exo 2",sans-serif;letter-spacing:.5px;color:#e8e8e0;background:#020206f2;border:1px solid #6665c0;padding:6px 10px;cursor:pointer;line-height:1.2;min-height:32px;text-transform:none}
-.eb:hover{background:#6665c040}.eb.on{background:#6665c0;color:#fff}.eb:disabled{opacity:.4;cursor:default}#eb .eb.n{border-color:#e8b04a;color:#e8b04a}
-#et{position:fixed;left:12px;bottom:56px;z-index:41;max-width:min(420px,calc(100% - 24px));font:400 13px "Exo 2",sans-serif;color:#e8e8e0;background:#020206f2;border:1px solid #6665c0;padding:8px 12px;text-transform:none}#et.x{border-color:#e85a4a}
-.dl{position:fixed;inset:0;z-index:50;background:#020206b3;display:flex;align-items:center;justify-content:center;padding:16px;text-transform:none}
-.dlb{background:#05050d;border:1px solid #6665c0;width:min(640px,100%);max-height:100%;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:10px;font:400 14px "Exo 2",sans-serif;color:#e8e8e0;text-align:left}
-.dlb h3{font:400 15px "Exo 2",sans-serif;letter-spacing:2px;text-transform:uppercase;margin:0;display:flex;align-items:center;justify-content:space-between;gap:12px}.dlb:focus{outline:none}
-.dlb .x{font-size:22px;line-height:1;width:32px;height:32px;margin:-8px -8px -8px 0;color:#e8e8e0a6;cursor:pointer}.dlb .x:hover{color:#e8e8e0}
-.dlb label,.ef label{display:flex;flex-direction:column;gap:4px;font:400 11px "Exo 2",sans-serif;letter-spacing:1px;color:#e8e8e099;text-transform:uppercase}
-.ei{font:400 14px Inter,sans-serif;color:#e8e8e0;background:#0b0b18;border:1px solid #6665c066;padding:7px 9px;width:100%;text-transform:none;letter-spacing:0}
-.ei:focus{outline:none;border-color:#8d8cf0}textarea.ei{resize:vertical;min-height:70px;line-height:1.5}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.row>.eb{flex:0 0 auto}
-.dlb a{font-size:13px;letter-spacing:0;color:#8d8cf0;text-decoration:underline;white-space:normal}
-.ed [data-k][contenteditable]{outline:1px dashed #6665c0aa;outline-offset:3px;cursor:text}
-/* document editor */
-.ed .doc [contenteditable]{outline:none;cursor:text}.ed .doc :is([contenteditable],li[data-ph]):empty::before{content:attr(data-ph);color:#e8e8e040;font-style:italic;pointer-events:none}
-.ed .doc [data-i]{position:relative;outline:1px dashed transparent;outline-offset:6px;transition:outline-color .12s}.ed .doc [data-i]:hover{outline-color:#6665c04d}.ed .doc [data-i].cur{outline:1px solid #6665c080;background:#6665c00d} /* each block is a visible box: hovered dashed, current solid */
-#eb .st{align-self:center;padding:0 6px;font:400 12px "Exo 2",sans-serif;color:#e8e8e099}@media(max-width:700px){#eb .st{display:none}}.ed .doc :is(.b-card,.al-left,.al-right){z-index:1} /* floats stay above the text that wraps them */
-.ed .doc .b-img img,.ed .doc .b-card img{cursor:pointer}
-.ed .doc .rz{display:none;position:absolute;z-index:2;width:16px;height:16px;margin:-8px 0 0 -8px;background:#e8e8e0;border:2px solid #6665c0;box-shadow:0 0 0 1px #020206,0 2px 6px #000c;cursor:ew-resize;touch-action:none}
-.ed .doc .al-left .rz[data-s=l],.ed .doc .al-right .rz[data-s=r]{visibility:hidden} /* a float grows from its free side */
-@media(min-width:760px){.ed .doc .b-img:is(:hover,.cur,.rzg) .rz{display:block}} /* image size handle (sizes apply where images are not stacked full width) */
-.ed .doc .rzg .rz::after{content:attr(data-v);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);font:400 12px "Exo 2",sans-serif;color:#e8e8e0;background:#020206f2;border:1px solid #6665c04d;padding:3px 6px;white-space:nowrap}
-.ed .doc .rzg img{outline:1px solid #8d8cf0}.ed .doc .pi{display:block;width:100%;padding:36px 12px;border:1px dashed #6665c0;color:#e8e8e080;font:400 13px "Exo 2",sans-serif;cursor:pointer;text-align:center}
-.ed .doc .b-links .nw a{color:#e8b04a}.ed .doc .b-links a{pointer-events:none}
-.ed .doc .add{display:block;margin:4px 0 0;font:400 12px "Exo 2",sans-serif;color:#8d8cf0;cursor:pointer;text-transform:none;letter-spacing:.5px}
-.ed .doc .b-cols .cell{outline:1px dashed #6665c033;outline-offset:6px;min-height:40px}
-#gut{position:absolute;z-index:30;display:flex;flex-direction:column;gap:2px;transition:top .12s}#gut[hidden]{display:none}.ed.ng .doc{padding-left:40px}
-#gut button{width:26px;height:26px;font:400 15px/24px "Exo 2",sans-serif;color:#8d8cf0;background:#05050df2;border:1px solid #6665c066;cursor:pointer;touch-action:none}#gut button:hover{color:#fff;border-color:#8d8cf0}
-#gut .hd{cursor:grab}.ed .doc{position:relative;padding-bottom:140px}
-#eb .lb{margin-left:5px}@media(max-width:700px){#eb .lb{display:none}#eb{left:8px;bottom:8px;max-width:calc(100% - 16px);gap:3px}#eb .eb{padding:6px 8px;font-size:12px}}
-.mn{position:fixed;z-index:46;background:#05050d;border:1px solid #6665c0;min-width:220px;max-height:min(70vh,520px);overflow:auto;padding:4px;display:flex;flex-direction:column;text-transform:none;font:400 13px "Exo 2",sans-serif;box-shadow:0 8px 30px #000a}
-.mn button{display:flex;gap:10px;align-items:center;text-align:left;padding:7px 10px;color:#e8e8e0;cursor:pointer;letter-spacing:.3px}.mn button:hover,.mn button.f{background:#6665c040}
-.mn button i{width:20px;text-align:center;font-style:normal;color:#8d8cf0}.mn button small{margin-left:auto;padding-left:16px;font:400 11px ui-monospace,monospace;color:#e8e8e066}.mn [hidden]{display:none}.mn .ei{margin-bottom:4px}.mn hr{width:auto;margin:4px 6px;opacity:.25}.mn .on::after{content:"✓";margin-left:auto;padding-left:12px;color:#8d8cf0}
-#ift{position:absolute;z-index:47;display:flex;flex-wrap:wrap;max-width:min(560px,calc(100vw - 16px));gap:2px;background:#05050d;border:1px solid #6665c0;padding:2px;text-transform:none}#ift[hidden],#ift [hidden]{display:none}
-#ift button{min-width:30px;height:28px;padding:0 6px;font:600 13px Inter,sans-serif;color:#e8e8e0;cursor:pointer}#ift button:hover{background:#6665c040}#ift button.on{background:#6665c0;color:#fff}#ift .sep{width:1px;margin:3px 3px;background:#6665c066}
-#dln{position:absolute;z-index:29;height:2px;background:#e8b04a;pointer-events:none}#dln[hidden]{display:none}
-.ed .doc.dropping{outline:1px dashed #e8b04a;outline-offset:-4px}
-#pvw{position:fixed;inset:0;z-index:55;background:#020206e6;display:flex;align-items:center;justify-content:center;gap:16px;flex-direction:column}
-#pvw iframe{width:390px;height:min(844px,calc(100vh - 90px));border:1px solid #6665c0;border-radius:16px;background:#04040a}
-.ef .row>label{min-width:0}.ef textarea{min-height:80px}
-.lbe #sl .lb text{pointer-events:auto;cursor:move}.lbe #sl .lb text:hover{fill:#e8b04a}.ef input[type=range]{padding:0;accent-color:#8d8cf0}
-.ed #mw g{cursor:grab}.mke #m{cursor:crosshair}
-.cx{position:fixed;z-index:45;width:min(340px,calc(100vw - 16px));max-height:calc(100vh - 72px);padding:12px 14px;gap:8px;box-shadow:0 8px 30px #000a}.cx h3{font-size:13px;margin:-12px -14px 0;padding:12px 14px 4px;cursor:move;touch-action:none;-webkit-user-select:none;user-select:none}.cx h3::before{content:"⠿";margin-right:-4px;color:#e8e8e066;letter-spacing:0}.cx h3>span{flex:1}.cx.mv{opacity:.92}.cx .ef{display:flex;flex-direction:column;gap:8px} /* marker / country properties next to it */
+function h(tag, attrs = {}, ...children) { // an element: on* attributes are handlers, cls is the class
+  const e = doc.createElement(tag);
+  for (const k in attrs) {
+    if (k.startsWith("on")) e[k] = attrs[k];
+    else if (k == "cls") e.className = attrs[k];
+    else e.setAttribute(k, attrs[k]);
+  }
+  e.append(...children.flat().filter(c => c != null));
+  return e;
+}
 
-.ml{display:flex;flex-direction:column;gap:2px;max-height:60vh;overflow:auto}.ml button{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:6px 8px;color:#e8e8e0;cursor:pointer;font:400 14px Inter,sans-serif}.ml button:hover{background:#6665c040}.ml small{color:#e8e8e080}
-`));
-let pb,eb,et,ubn,rbn;
-function bar(){if(!on||PV)return;if(ubn){ubn.disabled=!HI.length;rbn.disabled=!HR.length}if(EMB)return;pb.firstChild.textContent=(n()?"● "+n()+" · ":"")+L("Publish","Опубликовать");pb.firstChild.classList.toggle("n",!!n());pb.lastChild.disabled=!n()}
-const Lp=(e,r)=>Object.assign(new String(ru()?r:e),{e,r}); // a label that remembers both languages
-let tt;function toast(t,x){if(!et)return;const up=()=>et.style.bottom=eb.offsetHeight+20+"px";up();requestAnimationFrame(up);D.fonts?.ready.then(up); // always above the bar, also when it wraps to two rows
-et.textContent=t;et.className=x?"x":"";et.hidden=false;clearTimeout(tt);tt=setTimeout(()=>et.hidden=true,x?12e3:6e3)}
-function dialog(title,...c){const b=h("div",{cls:"dlb",role:"dialog","aria-label":title,tabindex:"-1"},h("h3",{},title,h("button",{type:"button",cls:"x",title:L("Close","Закрыть"),"aria-label":L("Close","Закрыть"),onclick:()=>w.remove()},"×")),...c),
-w=h("div",{cls:"dl",onclick:e=>{if(e.target==w)w.remove()}},b);D.body.append(w);
-w.addEventListener("keydown",e=>{if(e.key=="Escape"){e.stopPropagation();w.remove()}});setTimeout(()=>(b.querySelector("input,textarea,select,.dlb>:not(h3) button")||b).focus());return w}
-const btn=(t,f,ti)=>{const b=h("button",{cls:"eb",type:"button",onclick:f,...(ti?{title:""+ti,"aria-label":""+ti}:{})},""+t);if(ti?.e){b.dataset.te=ti.e;b.dataset.tr=ti.r}return b},
-inp=(v,f,a={})=>{const e=h(a.area?"textarea":"input",{cls:"ei",...(a.ph?{placeholder:a.ph}:{}),...(a.type?{type:a.type}:{})});e.value=v??"";e.oninput=()=>f(e.value,e);return e},
-sel=(v,opts,f)=>{const s=h("select",{cls:"ei"},...opts.map(([k,t])=>h("option",{value:k},t)));s.value=v;s.onchange=()=>f(s.value);return s},
-lab=(t,e)=>h("label",{},t,e);
-// menu: items {i icon, t text, k shortcut hint, on checked, f action}; find = a search field on top (typing filters, Enter picks the first)
-function menu(x,y,items,find){D.querySelector(".mn")?.remove();const back=D.activeElement,m=h("div",{cls:"mn",role:"menu"}),
-q=find&&h("input",{cls:"ei",placeholder:L("Find a block…","Найти блок…"),"aria-label":L("Find a block","Найти блок")});if(q)m.append(q);
-for(const it of items){if(it=="-"){m.append(h("hr"));continue}m.append(h("button",{type:"button",role:"menuitem",cls:it.on?"on":"",onclick:()=>{m.remove();it.f()}},h("i",{},it.i||""),it.t,it.k?h("small",{},it.k):null))}
-D.body.append(m);const r=m.getBoundingClientRect();m.style.left=Math.max(8,Math.min(x,innerWidth-r.width-8))+"px";m.style.top=Math.max(56,Math.min(y,innerHeight-r.height-8))+"px";
-let fi=-1;const bs=()=>[...m.querySelectorAll("button:not([hidden])")];(q||bs()[0])?.focus();if(!q)fi=0;
-if(q)q.oninput=()=>{const v=q.value.trim().toLowerCase();m.querySelectorAll("button").forEach(b=>b.hidden=!!v&&!b.textContent.toLowerCase().includes(v));m.querySelectorAll("hr").forEach(e=>e.hidden=!!v);fi=-1};
-m.addEventListener("keydown",e=>{const B2=bs();if(e.key=="Escape"){m.remove();e.stopPropagation();back?.focus?.()}
-else if(/Arrow(Down|Up)/.test(e.key)&&B2.length){e.preventDefault();fi=e.key=="ArrowDown"?(fi+1)%B2.length:fi<=0?B2.length-1:fi-1;B2[fi].focus()}
-else if(e.key=="Enter"&&e.target==q){e.preventDefault();B2[0]?.click()}});
-setTimeout(()=>D.addEventListener("pointerdown",function f(e){if(!m.contains(e.target)){m.remove();D.removeEventListener("pointerdown",f)}}));return m}
+let draft = {}, base = {}, pending = {}, blobs = {}, editing = false, token = store.ascwTok || "";
+try { draft = JSON.parse(store.ascwDraft || "{}") } catch {}
+addEventListener("storage", e => { // the map and the page in its panel share one draft
+  if (e.key != "ascwDraft") return;
+  try { draft = JSON.parse(e.newValue || "{}") } catch { draft = {} }
+  base = {};
+  pending = {};
+  updateBar();
+});
 
-function token(){const i=inp(tok,()=>{},{type:"password",ph:"github_pat_…"});
-const w=dialog(L("GitHub access","Доступ к GitHub"),
-h("div",{},L("A fine-grained personal access token for ","Fine-grained токен для репозитория "),h("b",{},REPO),L(" with permission Contents: read and write (Actions: read — optional, for build status). It is stored only in this browser.",
-" с правом Contents: Read and write (Actions: Read — по желанию, для статуса сборки). Хранится только в этом браузере.")),
-h("a",{href:"https://github.com/settings/personal-access-tokens/new",target:"_blank",rel:"noopener"},L("Create a token on GitHub","Создать токен на GitHub")),
-lab("Token",i),h("div",{cls:"row"},btn(L("Save","Сохранить"),async()=>{tok=i.value.trim();LS.ascwTok=tok;base={};pend={};
-try{const r=await gh("");toast(r.permissions?.push?L("Token OK","Токен работает"):L("Token has no write access","У токена нет права записи"),!r.permissions?.push);w.remove()}catch(e){toast(L("Token rejected: ","Токен не принят: ")+e.message,1)}}),
-btn(L("Forget token","Забыть токен"),()=>{tok="";LS.ascwTok="";w.remove()})))}
-function upload(file){return new Promise(res=>{const r=new FileReader;r.onload=()=>{
-const ext=(file.name.match(/\.(\w+)$/)?.[1]||file.type.split("/")[1]||"png").toLowerCase(),
-nm=(file.name.replace(/\.\w+$/,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"img")+"-"+Date.now().toString(36)+"."+ext,u=U+"img/"+nm;
-draft["static/img/"+nm]={b:r.result.split(",")[1]};blobs[u]=URL.createObjectURL(file);save();res(u)};r.readAsDataURL(file)})}
-const img=u=>{const d=draft["static/"+String(u).slice(U.length)];if(!blobs[u]&&d?.b){const x=atob(d.b),a=new Uint8Array(x.length);for(let i=0;i<x.length;i++)a[i]=x.charCodeAt(i);
-blobs[u]=URL.createObjectURL(new Blob([a],{type:"image/"+(u.match(/\.(\w+)$/)?.[1]||"png").replace("jpg","jpeg").replace("svg","svg+xml")}))}return blobs[u]||u}, // unpublished images come from the draft
-pickFile=()=>new Promise(r=>{const f=h("input",{type:"file",accept:"image/*"});f.onchange=()=>r(f.files[0]);f.click()});
+// ---------- the draft and GitHub ----------
+const changeCount = () => Object.keys(draft).length;
 
-// ---------- interface texts (data/text.json): nav, brand, button labels ----------
-let TX={};
-function showText(){D.querySelectorAll("[data-k]").forEach(e=>{const v=TX[e.dataset.k]?.[e.lang];if(v!=null&&e!=D.activeElement)e.textContent=v})}
-const setText=(k,l,v)=>{(TX[k]=TX[k]||{})[l]=v;showText();WJ(F.text,TX)};
-function editable(){D.querySelectorAll("nav [data-k]").forEach(e=>{if(e.closest("a"))return;e.contentEditable="plaintext-only";e.oninput=()=>setText(e.dataset.k,e.lang,e.textContent)})}
-D.addEventListener("keydown",e=>{if(e.key=="Enter"&&e.target.closest?.("nav [contenteditable]"))e.preventDefault()},true);
-function texts(){dialog(L("Interface texts","Тексты интерфейса"),...Object.keys(TX).map(k=>h("div",{cls:"row"},...["en","ru"].map(l=>lab(k+" · "+l.toUpperCase(),inp(TX[k][l],v=>setText(k,l,v)))))))}
+function saveDraft() {
+  try { store.ascwDraft = JSON.stringify(draft) }
+  catch { toast(inLang("Draft too big to keep after closing the page — publish first", "Черновик слишком большой, чтобы пережить закрытие страницы — сначала опубликуйте"), 1) }
+  updateBar();
+}
 
-// ---------- page document: blocks edited in place (same markup as layouts/partials/blocks.html) ----------
-let PG=null,DOC=null,HI=[],HR=[],burst=0,bt0,svT,PV=/[?&]preview\b/.test(location.search),gut,ift,dln,CB=null;
-const B=()=>PG.blocks??=[],
-TYPES=()=>[["p","¶",L("Text","Текст")],["h1","A",L("Large heading","Большой заголовок"),"#"],["h2","H",L("Heading","Заголовок"),"##"],["h3","h",L("Subheading","Подзаголовок"),"###"],["quote","❝",L("Quote","Цитата"),">"],
-["ul","•",L("List","Список"),"-"],["ol","1.",L("Numbered list","Нумерованный список"),"1."],"-",["img","🖼",L("Image","Изображение")],["cols","◫",L("Two columns","Две колонки")],
-["card","▤",L("Fact card","Карточка фактов")],["hr","―",L("Divider","Разделитель"),"---"],"-",["links","☰",L("Links to subpages","Ссылки на подстраницы")],["head","▀",L("Page header","Шапка страницы")]],
-mk=k=>({p:{t:"p"},h1:{t:"h",lv:1},h2:{t:"h",lv:2},h3:{t:"h",lv:3},quote:{t:"quote"},ul:{t:"list"},ol:{t:"list",ord:true},img:{t:"img",al:"center"},cols:{t:"cols",c:[{t:"text"},{t:"text"}]},
-card:{t:"card",rows:[{},{}]},hr:{t:"hr"},links:{t:"links"},head:{t:"head"}})[k],
-TXT=new Set(["p","h","quote","list"]),
-ALG=()=>[["left","⇤",L("Align left","По левому краю")],["center","↔",L("Centre","По центру")],["right","⇥",L("Align right","По правому краю")],["justify","☰",L("Justify","По ширине")]];
-// stored HTML is limited to a few tags: inline (b, i, s, a, code, br), list items, and for columns also paragraphs, subheadings and lists
-function clean(html,mode){const t=D.createElement("template");t.innerHTML=html;
-const INL={B:"b",STRONG:"b",I:"i",EM:"i",S:"s",STRIKE:"s",DEL:"s",U:"u",INS:"u",A:"a",BR:"br",CODE:"code",MARK:"mark",SUP:"sup",SUB:"sub"},BLK={P:"p",DIV:"p",H1:"h3",H2:"h3",H3:"h3",H4:"h3",UL:"ul",OL:"ol",LI:"li",BLOCKQUOTE:"p"},
-walk=n=>[...n.childNodes].map(c=>{if(c.nodeType==3)return esc(c.data.replace(/\u00a0/g," "));if(c.nodeType!=1)return"";
-const st=c.style||{},fw=st.fontWeight,bo=fw=="bold"||+fw>=600;let g=INL[c.tagName]||(mode=="block"&&BLK[c.tagName])||(mode=="li"&&c.tagName=="LI"&&"li"),in_=walk(c);
-if(g=="b"&&fw&&!bo)g=null; // Google Docs wraps everything in <b style="font-weight:normal">
-if(!g){if(c.tagName=="SPAN"&&in_){if(bo)in_=`<b>${in_}</b>`;if(st.fontStyle=="italic")in_=`<i>${in_}</i>`;if(/line-through/.test(st.textDecoration))in_=`<s>${in_}</s>`;if(/underline/.test(st.textDecoration))in_=`<u>${in_}</u>`}
-return in_+(mode!="inline"&&/^(P|DIV)$/.test(c.tagName)?"<br>":"")}
-if(g=="br")return"<br>";if(g=="a"){const u=c.getAttribute("href")||"";return/^(https?:|\/|#|mailto:)/i.test(u)?`<a href="${esc(u)}">${in_}</a>`:in_}return`<${g}>${in_}</${g}>`}).join("");
-let r=walk(t.content).replace(/(<br>)+(<\/(p|li|h3)>|$)/g,"$2").replace(/<(p|li|h3|b|i|s|u|mark|sup|sub|code)><\/\1>/g,"").trim();
-if(mode=="li"&&r&&!/^<li>/.test(r))r="<li>"+r.replace(/<\/?li>/g,"")+"</li>";
-if(mode=="block"&&r&&!/^<(p|h3|ul|ol)>/.test(r))r="<p>"+r+"</p>";return r}
-const plain=h=>{const t=D.createElement("template");t.innerHTML=(h||"").replace(/<\/(li|p)>|<br>/g," $&");return t.content.textContent.trim()};
-// text fields of a block as [object, prefix]; a field written in one language only still needs a translation
-function fields(b){const r=[];if(TXT.has(b.t))r.push([b,""]);if(b.t=="quote")r.push([b,"cite_"]);if(b.t=="img")r.push([b,"cap_"]);
-if(b.t=="head")["k_","t_","a_","d_"].forEach(f=>r.push([b,f]));if(b.t=="card"){r.push([b,"t_"]);(b.rows||[]).forEach(o=>r.push([o,"k_"],[o,"v_"]))}
-if(b.t=="cols")(b.c||[]).forEach(o=>r.push([o,o.t=="img"?"cap_":""]));return r}
-function miss(b){const s=new Set;for(const [o,f] of fields(b)){const e=!!plain(gv(b,o,f,"en")),r=!!plain(gv(b,o,f,"ru"));if(e!=r)s.add(e?"ru":"en")}return[...s]}
-// header title / description belong to the page itself unless the header has its own text (the home page)
-const bound=(b,f)=>b.t=="head"&&(f=="t_"||f=="d_")&&!(f+"en" in b)&&!(f+"ru" in b), // header title / description without own text show (and edit) the page's
-pf=(f,l)=>(f=="t_"?"title":"description")+(l=="ru"?"_ru":""),
-gv=(b,o,f,l)=>bound(b,f)?PG[pf(f,l)]||"":o[f+l]||"",
-sv=(b,o,f,l,v)=>{if(bound(b,f))PG[pf(f,l)]=v;else if(v)o[f+l]=v;else if(b.t=="head"&&o==b&&/^[ktd]_$/.test(f))o[f+l]="";else delete o[f+l]}, // a header field the author empties stays empty (no default fills it)
-other=l=>l=="ru"?"en":"ru";
-function state(){return JSON.stringify({b:B(),t:[PG.title,PG.title_ru,PG.description,PG.description_ru]})}
-function snap1(){if(!burst){HI.push(state());HR=[];if(HI.length>200)HI.shift()}burst=1;clearTimeout(bt0);bt0=setTimeout(()=>burst=0,1200)}
-function snapN(){HI.push(state());HR=[];burst=0}
-function store(){clearTimeout(svT);svT=setTimeout(flush,250)}
-function flush(){clearTimeout(svT);if(svT){svT=0;return WJ(PAGE,PG)}} // the page is saved 250 ms after the last change, at once before publishing or leaving
-addEventListener("pagehide",flush);
-function undo(back){const a=back?HI:HR,o=back?HR:HI;if(!a.length)return;o.push(state());const s=JSON.parse(a.pop());PG.blocks=s.b;[PG.title,PG.title_ru,PG.description,PG.description_ru]=s.t;store();render()}
-const act=f=>{snapN();f?.();store();render()},commit=act; // one undo step: change, save, redraw
-// one editable text field: data-f = field prefix, data-m = cleaning mode (plain | inline | li | block); empty fields show the other language as a hint
-function E(tag,b,o,f,m,a="",def){const l=HT.lang,v=gv(b,o,f,l),w=gv(b,o,f,other(l)),ph=w?other(l).toUpperCase()+" · "+plain(w).slice(0,90):def||({k_:L("Kicker","Надзаголовок"),t_:L("Title","Название"),a_:L("Second line","Вторая строка"),
-d_:L("Description","Описание"),cap_:L("Caption","Подпись"),cite_:L("Source","Источник")}[f]||L("Write…","Пишите…"));
-if(!ED)return v||w?`<${tag}${a}>${v||w}</${tag}>`:"";
-return`<${tag}${a} data-f="${f}" data-m="${m}" contenteditable="${m=="plain"?"plaintext-only":"true"}" data-ph="${esc(ph)}" spellcheck="true">${v}</${tag}>`}
-let ED=1;
-function rb(b,i){const ta=b.ta?` class="ta-${b.ta}"`:"",di=ED?` data-i="${i}"`:"",l=HT.lang;
-switch(b.t){
-case"head":{const own="k_en" in b||"k_ru" in b,kd={k_en:TX.wip?.en||"",k_ru:TX.wip?.ru||TX.wip?.en||""}; // without its own kicker the header shows the shared "work in progress" text
-return`<header class="b-head${b.tall?" tall":""}"${di}>${E("p",b,own?b:kd,"k_","plain",' class="k"',own?null:kd["k_"+l])}<h1>${E("span",b,b,"t_","plain")}${b.a_en||b.a_ru||b.acc?`<b>${E("span",b,b,"a_","plain")}</b>`:""}</h1><hr>${E("p",b,b,"d_","plain",' class="ds"')}</header>`}
-case"h":return E(b.lv==1?"h2":"h"+(b.lv||2),b,b,"","plain",(b.lv==1?` class="big${b.ta?" ta-"+b.ta:""}"`:ta)+di); // lv 1: large heading, the size and font of the page title
-case"p":return E("p",b,b,"","inline",ta+di,L("Write, or press / for blocks","Пишите или нажмите / — меню блоков"));
-case"quote":return`<blockquote${ta}${di}>${E("p",b,b,"","inline")}${E("cite",b,b,"cite_","plain")}</blockquote>`;
-case"list":{const t=b.ord?"ol":"ul",e=E(t,b,b,"","li",ta+di);return ED?e.replace(/data-ph="([^"]*)"([^>]*)><\/(ul|ol)>$/,'data-ph="$1"$2><li data-ph="$1"></li></$3>'):e}
-case"img":return`<figure class="b-img al-${b.al||"center"}"${b.w?` style="--w:${b.w}%"`:""}${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>${ED?["l","r"].map(z=>`<i class="rz" data-s="${z}" title="${L("Drag to resize","Потяните, чтобы изменить размер")}"></i>`).join(""):""}`:ED?`<button type="button" class="pi" data-pick="">🖼 ${L("Choose an image or drop a file here","Выберите изображение или перетащите файл")}</button>`:""}${E("figcaption",b,b,"cap_","plain")}</figure>`;
-case"card":return`<aside class="b-card"${di}>${b.src?`<img src="${img(b.src)}" alt=""${ED?' data-pick=""':""}>`:""}${E("h4",b,b,"t_","plain")}<dl>${(b.rows||[]).map((r,j)=>
-`<div>${E("dt",b,r,"k_","plain",` data-r="${j}"`,L("Property","Свойство"))}${E("dd",b,r,"v_","inline",` data-r="${j}"`,L("Value","Значение"))}</div>`).join("")}</dl>${ED?`<button type="button" class="add" data-act="row">+ ${L("Row","Строка")}</button>`:""}</aside>`;
-case"cols":return`<div class="b-cols"${di}>${(b.c||[]).map((c,j)=>`<div class="cell">${c.t=="img"?`<figure class="b-img">${c.src?`<img src="${img(c.src)}" alt=""${ED?` data-pick="" data-c="${j}"`:""}>`:ED?`<button type="button" class="pi" data-pick="" data-c="${j}">🖼</button>`:""}${E("figcaption",b,c,"cap_","plain",` data-c="${j}"`)}</figure>`
-:E("div",b,c,"","block",` data-c="${j}"`)}</div>`).join("")}</div>`;
-case"hr":return`<hr class="b-hr"${di}>`;
-case"links":return`<ul class="b-links"${di}>${shown(b).map(q=>`<li${q.nw?' class="nw"':""}><a href="${UL+q.src.replace(/_index\.md$/,"")}">${esc(l=="ru"?q.ru||q.en:q.en)}</a></li>`).join("")||(ED?`<li>${L("No subpages yet — add one in the block menu ⠿","Подстраниц пока нет — добавьте в меню блока ⠿")}</li>`:"")}</ul>`}
-return""}
-let stb;
-function status(){if(!stb)return;const l=HT.lang,w=B().flatMap(b=>fields(b).map(([o,f])=>plain(gv(b,o,f,l)))).join(" ").split(/\s+/).filter(Boolean).length; // words on the page in the shown language
-stb.textContent=ru()?w+" "+(w%10==1&&w%100!=11?"слово":w%10>1&&w%10<5&&(w%100<12||w%100>14)?"слова":"слов"):w+(w==1?" word":" words")}
-function render(){if(!DOC)return;const a=D.activeElement?.closest?.("[data-f]"),ai=a?.closest("[data-i]")?.dataset.i,af=a?.dataset.f;
-DOC.innerHTML=B().map(rb).join("")+(ED&&!B().length?`<button type="button" class="eb" data-act="first" style="display:block;margin:0 auto">+ ${L("Add the first block","Добавить первый блок")}</button>`:"");
-if(ED){DOC.append(gut,dln);if(CB!=null&&!DOC.querySelector(`[data-i="${CB}"]`))CB=null;gutAt(CB);status();DOC.querySelectorAll(".b-img").forEach(rzPos)}
-if(ai!=null)focusF(+ai,af)}
-function rzPos(f){const im=f?.querySelector("img");if(!im)return;const a=f.getBoundingClientRect(),r=im.getBoundingClientRect(); // the size handles sit at the picture's lower corners
-f.querySelectorAll(".rz").forEach(z=>{z.style.left=((z.dataset.s=="l"?r.left:r.right)-a.left)+"px";z.style.top=(r.bottom-a.top)+"px"})}
-function focusF(i,f,end=1){const k=DOC.querySelector(`[data-i="${i}"]`);if(!k)return;const e=f!=null?(k.matches(`[data-f="${f}"]`)?k:k.querySelector(`[data-f="${f}"]`)):k.matches("[data-f]")?k:k.querySelector("[data-f]");
-if(!e)return;e.focus();const r=D.createRange();r.selectNodeContents(e);r.collapse(!end);const s=getSelection();s.removeAllRanges();s.addRange(r)}
-function insert(b,at,focus=1){B().splice(at,0,b);commit();CB=at;gutAt(at);if(focus){if(b.t=="img"&&!b.src)pickImg(b);else focusF(at,null,0)}}
-async function pickImg(o,file){file=file||await pickFile();if(!file)return;snapN();o.src=await upload(file);store();render()}
-function convert(i,k){const b=B()[i],n=mk(k),l=["en","ru"];snapN();
-for(const x of l){let v=b[x]||"";if(b.t=="list")v=v.replace(/<\/li><li>/g,"<br>").replace(/<\/?li>/g,"");if(n.t=="list"&&v)v="<li>"+v.split(/<br>/).join("</li><li>")+"</li>";if(n.t=="h")v=esc(plain(v));if(v)n[x]=v}
-if(b.cite_en)n.cite_en=b.cite_en;if(b.cite_ru)n.cite_ru=b.cite_ru;B()[i]=n;store();render();focusF(i)}
-// block gutter: + inserts after the block, ⠿ opens the block menu (click) or moves the block (drag)
-function gutAt(i){if(!gut)return;const k=i!=null&&DOC.querySelector(`[data-i="${i}"]`);gut.hidden=!k;DOC.querySelectorAll(".cur").forEach(e=>e.classList.remove("cur"));if(!k)return;
-k.classList.add("cur");const d=DOC.getBoundingClientRect(),r=k.getBoundingClientRect(),ng=d.left<38; // narrow screens: the text moves right to make room for the buttons (the page in the map's panel has room for them)
-if(HT.classList.contains("ng")!=ng){HT.classList.toggle("ng",ng);return gutAt(i)}
-gut.style.top=Math.max(0,r.top-d.top-6)+"px";gut.style.left=(ng?2:-36)+"px";gut.dataset.i=i} // always the same column at the left of the text, level with the block's top
-function addMenu(i,x,y,replace){menu(x,y,TYPES().map(t=>t=="-"?t:{i:t[1],t:t[2],k:t[3],f:()=>{const b=mk(t[0]);if(replace){act(()=>B()[i]=b);b.t=="img"?pickImg(b):focusF(i,null,0)}else insert(b,i+1)}}),1)}
-function blockMenu(i,x,y){const b=B()[i],N=B().length,set=(k,v)=>act(()=>{if(v==null)delete b[k];else b[k]=v}),items=[];
-if(TXT.has(b.t))items.push(...TYPES().slice(0,7).map(t=>({i:t[1],t:t[2],on:(t[0]=="p"&&b.t=="p")||(t[0]=="h1"&&b.t=="h"&&b.lv==1)||(t[0]=="h2"&&b.t=="h"&&b.lv!=3&&b.lv!=1)||(t[0]=="h3"&&b.t=="h"&&b.lv==3)||(t[0]=="quote"&&b.t=="quote")||(t[0]=="ul"&&b.t=="list"&&!b.ord)||(t[0]=="ol"&&b.t=="list"&&b.ord),f:()=>convert(i,t[0])})),"-",...ALG().map(([a,ic,t])=>({i:ic,t,on:(b.ta||"left")==a,f:()=>set("ta",a=="left"?null:a)})),"-");
-if(b.t=="img")items.push(...[["center","▣",L("Centred, text width","По центру, ширина текста")],["full","▭",L("Full strip width","Во всю ширину ленты")],["left","◧",L("Left, text wraps","Слева, текст обтекает")],["right","◨",L("Right, text wraps","Справа, текст обтекает")]]
-.map(([a,ic,t])=>({i:ic,t,on:(b.al||"center")==a,f:()=>set("al",a)})),...(b.w?[{i:"↺",t:L("Original size","Исходный размер"),f:()=>set("w")}]:[]),{i:"🖼",t:L("Replace image…","Заменить изображение…"),f:()=>pickImg(b)},"-");
-if(b.t=="card")items.push({i:"🖼",t:b.src?L("Replace image…","Заменить изображение…"):L("Add image…","Добавить изображение…"),f:()=>pickImg(b)},...(b.src?[{i:"✕",t:L("Remove image","Убрать изображение"),f:()=>set("src")}]:[]),
-{i:"+",t:L("Add row","Добавить строку"),f:()=>act(()=>(b.rows??=[]).push({}))},...((b.rows||[]).length?[{i:"−",t:L("Remove last row","Убрать последнюю строку"),f:()=>act(()=>b.rows.pop())}]:[]),"-");
-if(b.t=="cols")b.c.forEach((c,j)=>items.push({i:c.t=="img"?"¶":"🖼",t:(j?L("Right column: ","Правая колонка: "):L("Left column: ","Левая колонка: "))+(c.t=="img"?L("text","текст"):L("image","изображение")),
-f:()=>act(()=>b.c[j]=c.t=="img"?{t:"text"}:{t:"img"})}));if(b.t=="cols")items.push("-");
-if(b.t=="head")items.push({i:"↕",t:L("Centred on the screen","По центру экрана"),on:!!b.tall,f:()=>set("tall",b.tall?null:true)},
-{i:"B",t:L("Second (accent) line","Вторая (акцентная) строка"),on:!!(b.a_en||b.a_ru||b.acc),f:()=>act(()=>{if(b.a_en||b.a_ru||b.acc){delete b.a_en;delete b.a_ru;delete b.acc}else b.acc=true})},
-...(b.t_en||b.t_ru||b.d_en||b.d_ru?[{i:"↺",t:L("Use the page title and description","Взять название и описание страницы"),f:()=>act(()=>["t_en","t_ru","d_en","d_ru"].forEach(k=>delete b[k]))}]:[]),"-");
-if(b.t=="links")items.push({i:"✎",t:L("Edit links…","Ссылки…"),f:()=>links(b)},{i:"+",t:L("New subpage…","Новая подстраница…"),f:()=>newPage()},"-");
-items.push({i:"↑",t:L("Move up","Выше"),k:"Alt+↑",f:()=>move(i,i-1)},{i:"↓",t:L("Move down","Ниже"),k:"Alt+↓",f:()=>move(i,i+1)},
-{i:"⧉",t:L("Duplicate","Дублировать"),k:"Ctrl+D",f:()=>insert(JSON.parse(JSON.stringify(b)),i+1,0)},{i:"🗑",t:L("Delete","Удалить"),f:()=>act(()=>{B().splice(i,1);CB=null})});
-if(!i)items.splice(items.findIndex(x=>x.i=="↑"),1);if(i==N-1)items.splice(items.findIndex(x=>x.i=="↓"),1);menu(x,y,items)}
-function move(i,j){if(j>=0&&j<B().length)act(()=>{const [b]=B().splice(i,1);B().splice(j,0,b);CB=j})}
-const caretAtStart=e=>{const s=getSelection();if(!s.rangeCount||!s.isCollapsed)return 0;const r=D.createRange();r.selectNodeContents(e);r.setEnd(s.anchorNode,s.anchorOffset);return!r.toString().length&&!r.cloneContents().querySelector?.("img")};
-function docInit(){DOC.classList.add("edoc");
-gut=h("div",{id:"gut",hidden:""},h("button",{type:"button",title:L("Add a block","Добавить блок"),"aria-label":L("Add a block","Добавить блок"),
-onclick:e=>{const r=e.currentTarget.getBoundingClientRect();addMenu(+gut.dataset.i,r.left,r.bottom+4)}},"+"),
-h("button",{type:"button",cls:"hd",title:L("Drag to move · click for block options","Перетащите, чтобы переместить · клик — настройки блока"),"aria-label":L("Block options","Настройки блока")},"⠿"));
-dln=h("div",{id:"dln",hidden:""});
-ift=h("div",{id:"ift",hidden:""},...[["B","bold",L("Bold","Жирный")+" (Ctrl+B)"],["I","italic",L("Italic","Курсив")+" (Ctrl+I)"],["U","underline",L("Underline","Подчёркнутый")+" (Ctrl+U)"],["S","strikeThrough",L("Strikethrough","Зачёркнутый")],
-["▮","mark",L("Highlight","Выделить маркером")],["</>","code",L("Code","Код")],["x²","superscript",L("Superscript","Надстрочный")],["x₂","subscript",L("Subscript","Подстрочный")],["🔗","link",L("Link","Ссылка")+" (Ctrl+K)"],["⌫","removeFormat",L("Clear formatting","Убрать оформление")],"|",
-...ALG().map(([a,ic,t])=>[ic,"ta:"+a,t])]
-.map(x=>x=="|"?h("i",{cls:"sep"}):h("button",{type:"button",title:x[2],"aria-label":x[2],"data-c":x[1],onmousedown:e=>{e.preventDefault();fmt2(x[1])}},x[0])));D.body.append(ift);
-let hT;DOC.addEventListener("mouseover",e=>{if(gut.contains(e.target))return clearTimeout(hT);const k=e.target.closest("[data-i]");clearTimeout(hT);if(k&&!DG&&+k.dataset.i!==CB)hT=setTimeout(()=>gutAt(CB=+k.dataset.i),90)});
-DOC.addEventListener("pointerdown",e=>{const k=e.target.closest("[data-i]");if(k)gutAt(CB=+k.dataset.i)});
-DOC.addEventListener("focusin",e=>{const k=e.target.closest("[data-i]");if(k)gutAt(CB=+k.dataset.i)});
-DOC.addEventListener("input",e=>{const el=e.target.closest("[data-f]");if(!el)return;const k=el.closest("[data-i]"),i=+k.dataset.i,b=B()[i],l=HT.lang,f=el.dataset.f,m=el.dataset.m;
-const o=el.dataset.r!=null?b.rows[+el.dataset.r]:el.dataset.c!=null?b.c[+el.dataset.c]:b;
-if(el.innerHTML=="<br>")el.innerHTML="";
-if(b.t=="p"&&f==""){const t=el.textContent,mt=t.match(/^(#{1,3}|[-*]|1\.|>)\s/)||(t=="---"&&[t]); // Markdown-like shortcuts at the start of a paragraph
-if(mt){const k2={"#":"h1","##":"h2","###":"h3","-":"ul","*":"ul","1.":"ol",">":"quote","---":"hr"}[mt[1]||mt[0]];snapN();b[l]=clean(el.innerHTML,"inline").replace(/^(#{1,3}|[-*]|1\.|&gt;|---)\s?/,"");if(!b[l])delete b[l];
-if(k2=="hr"){B()[i]={t:"hr"};B().splice(i+1,0,{t:"p"});store();render();focusF(i+1)}else convert(i,k2);return}}
-snap1();sv(b,o,f,l,m=="plain"?esc(el.textContent):clean(el.innerHTML,m));store();if(bound(b,f)&&f=="t_")D.title=(PG[pf(f,l)]||"")+" · ASCW";
-clearTimeout(stT);stT=setTimeout(status,400)});let stT;
-DOC.addEventListener("pointerover",e=>{const f=e.target.closest?.(".b-img");if(f)rzPos(f)}); // image frame size: the handle at the picture's corner
-DOC.addEventListener("load",e=>{if(e.target.tagName=="IMG")rzPos(e.target.closest(".b-img"))},true);
-DOC.addEventListener("pointerdown",e=>{const z=e.target.closest(".rz");if(!z)return;e.preventDefault();e.stopPropagation();const f=z.parentNode,i=+f.dataset.i,b=B()[i],im=f.querySelector("img"),
-W=DOC.getBoundingClientRect().width,r=im.getBoundingClientRect(),al=b.al||"center",sg=z.dataset.s=="l"?-1:1,k=al=="center"||al=="full"?2:1,x0=e.clientX,w0=r.width;let w=null;
-z.setPointerCapture(e.pointerId);f.classList.add("rzg");if(al=="full")f.classList.replace("al-full","al-center");
-z.onpointermove=ev=>{w=Math.round(Math.min(100,Math.max(10,(w0+sg*k*(ev.clientX-x0))/W*100)));f.style.setProperty("--w",w+"%");z.dataset.v=w+"%";rzPos(f)};
-z.onpointerup=z.onpointercancel=()=>{z.onpointermove=z.onpointerup=z.onpointercancel=null;f.classList.remove("rzg");if(w!=null)act(()=>{b.w=w;if(al=="full")delete b.al});else rzPos(f)}},true);
-DOC.addEventListener("keydown",keys);
-DOC.addEventListener("paste",paste);
-DOC.addEventListener("click",e=>{const p=e.target.closest("[data-pick]");if(p){const k=p.closest("[data-i]"),b=B()[+k.dataset.i];pickImg(p.dataset.c!=null?b.c[+p.dataset.c]:b);return}
-const fb=e.target.closest("[data-act=first]");if(fb){const r=fb.getBoundingClientRect();addMenu(-1,r.left,r.bottom+4);return}
-const a=e.target.closest("[data-act=row]");if(a){const b=B()[+a.closest("[data-i]").dataset.i];act(()=>(b.rows??=[]).push({}))}
-if(e.target.closest("a")&&e.target.closest("[contenteditable]"))e.preventDefault()});
-// drag & drop of image files: a new image block where the file is dropped
-DOC.addEventListener("dragover",e=>{if([...e.dataTransfer.items].some(x=>x.kind=="file")){e.preventDefault();DOC.classList.add("dropping")}});
-DOC.addEventListener("dragleave",()=>DOC.classList.remove("dropping"));
-DOC.addEventListener("drop",e=>{DOC.classList.remove("dropping");const f=[...e.dataTransfer.files].filter(f=>f.type.startsWith("image/"));if(!f.length)return;e.preventDefault();
-let at=dropAt(e.clientY);f.forEach(file=>{const b={t:"img",al:"center"};B().splice(at++,0,b);pickImg(b,file)})});
-gut.querySelector(".hd").addEventListener("pointerdown",gDown);
-D.addEventListener("selectionchange",selTb);D.addEventListener("mouseup",()=>setTimeout(selTb));D.addEventListener("keyup",e=>{if(e.shiftKey)selTb()});addEventListener("scroll",selTb,{passive:true});addEventListener("resize",()=>gutAt(CB));
-D.addEventListener("keydown",e=>{const k=e.key.toLowerCase();if(!(e.ctrlKey||e.metaKey))return;if((k=="z"||k=="y")&&!e.target.closest?.("input,textarea,select,nav,.dl")){e.preventDefault();undo(k=="z"&&!e.shiftKey)}
-if(k=="s"){e.preventDefault();flush();toast(L("The draft is saved in this browser","Черновик сохранён в браузере"))}})}
-function dropAt(y){const ks=[...DOC.querySelectorAll(":scope>[data-i]")];for(const k of ks){const r=k.getBoundingClientRect();if(y<r.top+r.height/2)return+k.dataset.i}return B().length}
-let DG=null;
-function gDown(e){e.preventDefault();const i=+gut.dataset.i;DG={i,y:e.clientY,mv:0,to:i};const t=e.currentTarget;t.setPointerCapture(e.pointerId);
-t.onpointermove=m=>{if(Math.abs(m.clientY-DG.y)>4)DG.mv=1;if(!DG.mv)return;DG.to=dropAt(m.clientY);const ks=[...DOC.querySelectorAll(":scope>[data-i]")],d=DOC.getBoundingClientRect(),
-k=ks.find(x=>+x.dataset.i==DG.to),r=k?k.getBoundingClientRect():ks.at(-1).getBoundingClientRect();dln.hidden=false;dln.style.top=(k?r.top-d.top-8:r.bottom-d.top+6)+"px";dln.style.left=r.left-d.left+"px";dln.style.width=r.width+"px"};
-t.onpointerup=m=>{t.onpointermove=t.onpointerup=null;dln.hidden=true;const g=DG;DG=null;if(!g.mv){const r=t.getBoundingClientRect();return blockMenu(g.i,r.left,r.bottom+4)}
-let to=g.to>g.i?g.to-1:g.to;if(to!=g.i)move(g.i,to)}}
-function keys(e){const el=e.target.closest?.("[data-f]");if(!el)return;const k=el.closest("[data-i]"),i=+k.dataset.i,b=B()[i],l=HT.lang,m=el.dataset.m;
-if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=="k"&&m!="plain"){e.preventDefault();fmt2("link");return}
-if(e.altKey&&/^Arrow(Up|Down)$/.test(e.key)){e.preventDefault();const j=i+(e.key=="ArrowUp"?-1:1);if(j>=0&&j<B().length){move(i,j);focusF(j,el.dataset.f)}return}
-if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=="d"){e.preventDefault();insert(JSON.parse(JSON.stringify(b)),i+1);return}
-if(e.key=="/"&&b.t=="p"&&!el.textContent){e.preventDefault();const r=el.getBoundingClientRect();addMenu(i,r.left,r.bottom+4,1);return}
-if(e.key=="Enter"&&!e.shiftKey){
-if(m=="li"){const s=getSelection(),li=s.anchorNode&&(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement).closest("li");
-if(li&&!li.textContent&&li==el.lastElementChild){e.preventDefault();li.remove();el.dispatchEvent(new Event("input",{bubbles:true}));insert({t:"p"},i+1)}return}
-if(m=="block")return;e.preventDefault();
-if(m=="inline"&&b.t!="h"&&!(e.ctrlKey||e.metaKey)){snapN();const s=getSelection(),r=s.rangeCount&&s.getRangeAt(0);if(!r)return;r.deleteContents();const a=h("br"),z=h("br");r.insertNode(z);r.insertNode(a);let nx=z.nextSibling;while(nx&&nx.nodeType==3&&!nx.data)nx=nx.nextSibling;if(!nx)z.after(h("br")); /* at the end the browser needs one more break to show the new line */r.setStartAfter(z);r.collapse(true);s.removeAllRanges();s.addRange(r);el.dispatchEvent(new Event("input",{bubbles:true}));return} // Enter: a new paragraph inside the same block; Ctrl+Enter starts a new block
-if(!/^(p|h|quote)$/.test(b.t)||el.dataset.f!="")return;
-// split the paragraph / heading at the caret: the rest goes to a new paragraph
-const s=getSelection();if(!s.rangeCount)return;const r=s.getRangeAt(0);r.deleteContents();const tail=D.createRange();tail.selectNodeContents(el);tail.setStart(r.endContainer,r.endOffset);
-const t=h("div");t.append(tail.extractContents());snapN();const rest=b.t=="h"?esc(t.textContent):clean(t.innerHTML,"inline");
-sv(b,b,"",l,b.t=="h"?esc(el.textContent):clean(el.innerHTML,"inline"));
-B().splice(i+1,0,rest?{t:"p",[l]:rest}:{t:"p"});CB=i+1;store();render();focusF(i+1,null,0);return}
-if(e.key=="Backspace"&&TXT.has(b.t)&&el.dataset.f==""&&caretAtStart(el)){const pv=B()[i-1];
-if(!el.textContent&&!el.querySelector("img")&&(m!="li"||el.children.length<=1)){e.preventDefault();act(()=>B().splice(i,1));if(pv)focusF(i-1);return}
-if(b.t=="p"&&pv?.t=="p"){e.preventDefault();snapN();const a=pv[l]||"",mk2=`<span id="cj"></span>`;pv[l]=a+(b[l]||"");B().splice(i,1);store();render();
-const pe=DOC.querySelector(`[data-i="${i-1}"]`);pe.innerHTML=a+mk2+(pv[l].slice(a.length));const j=pe.querySelector("#cj"),r=D.createRange();r.setStartBefore(j);r.collapse(true);j.remove();pe.focus();getSelection().removeAllRanges();getSelection().addRange(r)}}}
-function paste(e){const el=e.target.closest?.("[data-f]");if(!el)return;const cd=e.clipboardData,f=[...cd.files].find(f=>f.type.startsWith("image/")),k=el.closest("[data-i]"),i=+k.dataset.i;
-e.preventDefault();if(f){insert({t:"img",al:"center"},i+1,0);pickImg(B()[i+1],f);return}
-const ht=cd.getData("text/html"),b=B()[i];
-if(ht&&el.dataset.m=="inline"){const bl=b.t=="p"&&el.dataset.f==""?htmlBlocks(ht):[],full=!!el.textContent.trim();
-if(bl.length>1||bl.length==1&&bl[0].t!="p"){act(()=>B().splice(full?i+1:i,full?0:1,...bl));focusF(i+bl.length-(full?0:1));return}
-const v=bl[0]?.[HT.lang]||clean(ht,"inline");if(v){D.execCommand("insertHTML",false,v);return}}
-const t=(cd.getData("text/plain")||"").replace(/\r/g,"");if(el.dataset.m=="plain"||el.dataset.m=="li"||el.dataset.m=="block"){D.execCommand("insertText",false,el.dataset.m=="plain"?t.replace(/\s*\n\s*/g," "):t);return}
-const parts=t.split(/\n\s*\n/).map(x=>x.replace(/\s*\n\s*/g," ").trim()).filter(Boolean);if(!parts.length)return;D.execCommand("insertText",false,parts[0]);
-if(parts.length>1){act(()=>B().splice(i+1,0,...parts.slice(1).map(x=>({t:"p",[HT.lang]:esc(x)}))));focusF(i+parts.length-1)}}
-// pasted HTML (Word, Google Docs, web pages) -> blocks
-function htmlBlocks(html){const t=D.createElement("template"),out=[],l=HT.lang;t.innerHTML=html;const add=o=>{if(o[l]||o.t=="hr")out.push(o)},
-go=n=>{for(const c of n.children){const g=c.tagName;
-if(/^H[1-6]$/.test(g))add({t:"h",lv:g<"H3"?2:3,[l]:esc(c.textContent.replace(/\s+/g," ").trim())});
-else if(g=="UL"||g=="OL")add({t:"list",...(g=="OL"&&{ord:true}),[l]:clean(c.innerHTML,"li")});
-else if(g=="BLOCKQUOTE")add({t:"quote",[l]:clean(c.innerHTML,"inline")});else if(g=="HR")add({t:"hr"});
-else if(c.querySelector("p,h1,h2,h3,h4,h5,h6,ul,ol,blockquote,hr,div,li"))go(c);
-else if(/^(P|PRE|LI|DIV)$/.test(g))add({t:"p",[l]:clean(c.innerHTML,"inline")})}};go(t.content);return out}
-function selTb(){const s=getSelection(),el=s.rangeCount&&!s.isCollapsed&&(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('.doc [contenteditable]:not([contenteditable=false])');
-if(!el||ift.contains(D.activeElement)){if(!ift.contains(D.activeElement))ift.hidden=true;return}const r=s.getRangeAt(0).getBoundingClientRect();ift.hidden=false;
-const tg=(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement),bk=B()[+el.closest("[data-i]")?.dataset.i],pl=el.dataset.m=="plain"; // headings, captions: plain text, only the alignment applies
-if(pl&&!(bk&&TXT.has(bk.t))){ift.hidden=true;return}for(const b of ift.children)b.hidden=pl&&!(b.dataset.c||"").startsWith("ta:"); // which buttons are already applied here
-for(const b of ift.querySelectorAll("button")){const c=b.dataset.c;let on=false;try{on=c.startsWith("ta:")?(bk?.ta||"left")==c.slice(3):c=="mark"||c=="code"?!!tg.closest(c):/^(bold|italic|underline|strikeThrough|superscript|subscript)$/.test(c)&&D.queryCommandState(c)}catch{}b.classList.toggle("on",on)}
-ift.style.left=Math.max(8,Math.min(r.left+scrollX+r.width/2-ift.offsetWidth/2,innerWidth-ift.offsetWidth-8))+"px";ift.style.top=Math.max(scrollY+56,r.top+scrollY-ift.offsetHeight-8)+"px"}
-function fmt2(c){const s=getSelection(),el=(s.anchorNode?.nodeType==1?s.anchorNode:s.anchorNode?.parentElement)?.closest?.('[contenteditable]:not([contenteditable=false])');if(!el)return;
-if(c.startsWith("ta:")){const k=el.closest("[data-i]"),b=k&&B()[+k.dataset.i];if(b&&TXT.has(b.t)){const a=c.slice(3);act(()=>{if(a=="left")delete b.ta;else b.ta=a})}return} // alignment of the whole block
-if(c=="mark"||c=="code"){const r=s.rangeCount&&s.getRangeAt(0),on=(s.anchorNode.nodeType==1?s.anchorNode:s.anchorNode.parentElement).closest(c);if(!r)return; // toggle a wrapping tag
-if(on&&el.contains(on)){on.replaceWith(...on.childNodes)}else if(!r.collapsed){const w=D.createElement(c);w.append(r.extractContents());r.insertNode(w);s.selectAllChildren(w)}
-el.dispatchEvent(new Event("input",{bubbles:true}));return}
-if(c=="link"){const r=s.rangeCount&&s.getRangeAt(0).cloneRange(),cur=(s.anchorNode.parentElement?.closest("a"))?.getAttribute("href")||"https://",i=inp(cur,()=>{}),
-w=dialog(L("Link","Ссылка"),lab(L("Address (empty — remove the link)","Адрес (пусто — убрать ссылку)"),i),h("div",{cls:"row"},btn("OK",ok)));
-i.onkeydown=e=>{if(e.key=="Enter")ok()};function ok(){w.remove();el.focus();getSelection().removeAllRanges();getSelection().addRange(r);const u=i.value.trim();
-D.execCommand(u&&u!="https://"?"createLink":"unlink",false,u);el.dispatchEvent(new Event("input",{bubbles:true}))}return}
-D.execCommand(c);el.dispatchEvent(new Event("input",{bubbles:true}))}
+async function github(path, o = {}) { // GitHub API of the repository
+  const r = await fetch(`https://api.github.com/repos/${REPO}/${path}`, {
+    cache: "no-store", ...o,
+    headers: {
+      ...(token ? { Authorization: "Bearer " + token } : {}),
+      Accept: o.raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
+      ...(o.body ? { "Content-Type": "application/json" } : {}),
+    },
+  });
+  if (!r.ok) throw Error(r.status + " " + (await r.text()).slice(0, 200));
+  return o.raw ? r.text() : r.json();
+}
+
+function published(path) { // the file as it is on GitHub (null if it does not exist); one request per file
+  return pending[path] ??= (async () => {
+    if (path in base) return base[path];
+    try {
+      base[path] = await github(`contents/${path}?ref=${BRANCH}`, { raw: 1 }).catch(e => /^404/.test(e.message) ? Promise.reject(e)
+        : fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${path}?${Date.now()}`, { cache: "no-store" }) // the API refused (e.g. its limit without a token)
+          .then(r => r.ok ? r.text() : Promise.reject(r.status)));
+    } catch (e) {
+      if (!/404/.test(e)) console.warn(path, e);
+      base[path] = null;
+    }
+    return base[path];
+  })();
+}
+
+async function readFile(path) { const d = draft[path]; return d ? d.del ? null : d.t : published(path) }
+
+async function writeFile(path, text) {
+  await published(path);
+  if (base[path] == null && Object.values(FILES).includes(path)) // never replace a data file by a partial one
+    return toast(inLang("Could not read the file from GitHub, the change is not saved: ", "Не удалось прочитать файл с GitHub, изменение не сохранено: ") + path, 1);
+  if (text === base[path]) delete draft[path];
+  else draft[path] = { t: text };
+  saveDraft();
+}
+
+const readJSON = async (path, fallback) => { try { return JSON.parse(await readFile(path)) ?? fallback } catch { return fallback } };
+const oneItemPerLine = a => "[\n" + a.map(v => JSON.stringify(v)).join(",\n") + "\n]\n";
+const FORMATS = { [FILES.markers]: oneItemPerLine, [FILES.events]: oneItemPerLine };
+const writeJSON = (path, o) => writeFile(path, (FORMATS[path] || (v => JSON.stringify(v, null, 1) + "\n"))(o));
+
+async function publish() {
+  if (!token) return tokenDialog();
+  await flushPage();
+  if (!changeCount()) return;
+  const button = publishButtons.firstChild;
+  button.disabled = true;
+  toast(inLang("Publishing…", "Публикация…"));
+  try {
+    const head = (await github(`git/ref/heads/${BRANCH}`)).object.sha, commit = await github(`git/commits/${head}`), tree = [];
+    const listing = await github(`git/trees/${commit.tree.sha}?recursive=1`), all = listing.tree.filter(e => e.type == "blob").map(e => e.path);
+    const unused = listing.truncated ? new Set() : await unusedImages(all);
+    for (const [path, v] of Object.entries(draft)) {
+      if (unused.has(path)) continue; // an image uploaded and no longer used before publishing is not published at all
+      if (v.del) { if (await published(path) != null) tree.push({ path, mode: "100644", type: "blob", sha: null }); continue }
+      const blob = await github("git/blobs", { method: "POST", body: JSON.stringify(v.b ? { content: v.b, encoding: "base64" } : { content: v.t, encoding: "utf-8" }) });
+      tree.push({ path, mode: "100644", type: "blob", sha: blob.sha });
+    }
+    const removed = [...unused].filter(p => all.includes(p));
+    removed.forEach(path => tree.push({ path, mode: "100644", type: "blob", sha: null }));
+    const newTree = await github("git/trees", { method: "POST", body: JSON.stringify({ base_tree: commit.tree.sha, tree }) });
+    const message = "Edit via site editor" + (removed.length ? `; unused images removed: ${removed.map(p => p.slice(11)).join(", ")}` : "");
+    const newCommit = await github("git/commits", { method: "POST", body: JSON.stringify({ message, tree: newTree.sha, parents: [head] }) });
+    await github(`git/refs/heads/${BRANCH}`, { method: "PATCH", body: JSON.stringify({ sha: newCommit.sha }) });
+    for (const [path, v] of Object.entries(draft)) base[path] = v.del ? null : v.t ?? base[path];
+    removed.forEach(path => base[path] = null);
+    draft = {};
+    saveDraft();
+    followBuild(newCommit.sha);
+  } catch (e) {
+    toast(inLang("Publish failed: ", "Ошибка публикации: ") + e.message, 1);
+  }
+  button.disabled = false;
+}
+
+async function unusedImages(all) { // images in static/img that no page or data file mentions any more (after this publish)
+  const paths = [...new Set([...all, ...Object.keys(draft)])];
+  const images = new Set(paths.filter(p => p.startsWith("static/img/") && !draft[p]?.del));
+  if (!images.size) return images;
+  const texts = paths.filter(p => !draft[p]?.del && /^(content\/.*\.md|data\/.*\.json|assets\/(markers|events|countries)\.json|assets\/.*\.css|layouts\/.*\.html)$/.test(p));
+  const contents = await Promise.all(texts.map(readFile));
+  if (contents.some(t => t == null)) return new Set(); // a file could not be read: nothing is removed this time
+  const all_ = contents.join("\n");
+  for (const p of images) if (all_.includes("img/" + p.slice(11))) images.delete(p);
+  return images;
+}
+
+async function followBuild(sha) { // the GitHub Actions build of this commit (needs Actions: read; otherwise just a hint)
+  toast(inLang("Published. The site rebuilds in about a minute.", "Опубликовано. Сайт обновится примерно через минуту."));
+  for (let i = 0; i < 40; i++) {
+    await new Promise(r => setTimeout(r, 6e3));
+    try {
+      const run = (await github(`actions/runs?head_sha=${sha}`)).workflow_runs[0];
+      if (!run) continue;
+      if (run.status == "completed") {
+        const ok = run.conclusion == "success";
+        return toast(ok ? inLang("Site updated (refresh in ~30 s).", "Сайт обновлён (обновите страницу через ~30 с).")
+          : inLang("Build failed — see GitHub Actions.", "Сборка не удалась — см. GitHub Actions."), !ok);
+      }
+    } catch { return }
+  }
+}
+
+function discardAll() {
+  if (!changeCount() || !confirm(inLang("Discard all unpublished changes?", "Удалить все неопубликованные изменения?"))) return;
+  draft = {};
+  saveDraft();
+  location.reload();
+}
+
+// ---------- interface: bar, messages, dialogs, inputs, menus ----------
+let bar, toastEl, publishButtons, undoButton, redoButton, wordCountEl, toastTimer;
+
+function updateBar() {
+  if (!editing || PREVIEW) return;
+  if (undoButton) { undoButton.disabled = !undoStack.length; redoButton.disabled = !redoStack.length }
+  if (EMBEDDED) return;
+  const n = changeCount(), button = publishButtons.firstChild;
+  button.textContent = (n ? "● " + n + " · " : "") + inLang("Publish", "Опубликовать");
+  button.classList.toggle("n", !!n);
+  publishButtons.lastChild.disabled = !n;
+}
+
+function toast(text, isError) {
+  if (!toastEl) return;
+  const above = () => toastEl.style.bottom = bar.offsetHeight + 20 + "px"; // always above the bar, also when it wraps to two rows
+  above();
+  requestAnimationFrame(above);
+  doc.fonts?.ready.then(above);
+  toastEl.textContent = text;
+  toastEl.className = isError ? "x" : "";
+  toastEl.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.hidden = true, isError ? 12e3 : 6e3);
+}
+
+function dialog(title, ...content) { // a modal window; Escape or a click outside closes it
+  const close = h("button", { type: "button", cls: "x", title: inLang("Close", "Закрыть"), "aria-label": inLang("Close", "Закрыть"), onclick: () => w.remove() }, "×");
+  const box = h("div", { cls: "dlb", role: "dialog", "aria-label": title, tabindex: "-1" }, h("h3", {}, title, close), ...content);
+  const w = h("div", { cls: "dl", onclick: e => { if (e.target == w) w.remove() } }, box);
+  doc.body.append(w);
+  w.addEventListener("keydown", e => { if (e.key == "Escape") { e.stopPropagation(); w.remove() } });
+  setTimeout(() => (box.querySelector("input,textarea,select,.dlb>:not(h3) button") || box).focus());
+  return w;
+}
+
+const button = (text, onclick, tip) => h("button", { cls: "eb", type: "button", onclick, ...(tip ? { title: tip, "aria-label": tip } : {}) }, text),
+  input = (value, oninput, o = {}) => {
+    const e = h(o.area ? "textarea" : "input", { cls: "ei", ...(o.ph ? { placeholder: o.ph } : {}), ...(o.type ? { type: o.type } : {}) });
+    e.value = value ?? "";
+    e.oninput = () => oninput(e.value, e);
+    return e;
+  },
+  select = (value, options, onchange) => {
+    const s = h("select", { cls: "ei" }, ...options.map(([k, t]) => h("option", { value: k }, t)));
+    s.value = value;
+    s.onchange = () => onchange(s.value);
+    return s;
+  },
+  label = (text, field) => h("label", {}, text, field);
+
+// a menu: items {i icon, t text, k shortcut hint, on checked, f action}, "-" a separator; find: a search field on top (Enter picks the first)
+function menu(x, y, items, find) {
+  doc.querySelector(".mn")?.remove();
+  const back = doc.activeElement, m = h("div", { cls: "mn", role: "menu" });
+  const search = find && h("input", { cls: "ei", placeholder: inLang("Find a block…", "Найти блок…"), "aria-label": inLang("Find a block", "Найти блок") });
+  if (search) m.append(search);
+  for (const it of items) {
+    if (it == "-") { m.append(h("hr")); continue }
+    m.append(h("button", { type: "button", role: "menuitem", cls: it.on ? "on" : "", onclick: () => { m.remove(); it.f() } }, h("i", {}, it.i || ""), it.t, it.k ? h("small", {}, it.k) : null));
+  }
+  doc.body.append(m);
+  const r = m.getBoundingClientRect();
+  m.style.left = Math.max(8, Math.min(x, innerWidth - r.width - 8)) + "px";
+  m.style.top = Math.max(56, Math.min(y, innerHeight - r.height - 8)) + "px";
+  let focused = -1;
+  const shown = () => [...m.querySelectorAll("button:not([hidden])")];
+  (search || shown()[0])?.focus();
+  if (!search) focused = 0;
+  if (search) search.oninput = () => {
+    const v = search.value.trim().toLowerCase();
+    m.querySelectorAll("button").forEach(b => b.hidden = !!v && !b.textContent.toLowerCase().includes(v));
+    m.querySelectorAll("hr").forEach(e => e.hidden = !!v);
+    focused = -1;
+  };
+  m.addEventListener("keydown", e => {
+    const buttons = shown();
+    if (e.key == "Escape") { m.remove(); e.stopPropagation(); back?.focus?.() }
+    else if (/Arrow(Down|Up)/.test(e.key) && buttons.length) {
+      e.preventDefault();
+      focused = e.key == "ArrowDown" ? (focused + 1) % buttons.length : focused <= 0 ? buttons.length - 1 : focused - 1;
+      buttons[focused].focus();
+    } else if (e.key == "Enter" && e.target == search) { e.preventDefault(); buttons[0]?.click() }
+  });
+  setTimeout(() => doc.addEventListener("pointerdown", function outside(e) {
+    if (!m.contains(e.target)) { m.remove(); doc.removeEventListener("pointerdown", outside) }
+  }));
+  return m;
+}
+
+// ---------- GitHub access, images ----------
+function tokenDialog() {
+  const field = input(token, () => {}, { type: "password", ph: "github_pat_…" });
+  const w = dialog(inLang("GitHub access", "Доступ к GitHub"),
+    h("div", {}, inLang("A fine-grained personal access token for ", "Fine-grained токен для репозитория "), h("b", {}, REPO),
+      inLang(" with permission Contents: read and write (Actions: read — optional, for build status). It is stored only in this browser.",
+        " с правом Contents: Read and write (Actions: Read — по желанию, для статуса сборки). Хранится только в этом браузере.")),
+    h("a", { href: "https://github.com/settings/personal-access-tokens/new", target: "_blank", rel: "noopener" }, inLang("Create a token on GitHub", "Создать токен на GitHub")),
+    label("Token", field),
+    h("div", { cls: "row" },
+      button(inLang("Save", "Сохранить"), async () => {
+        token = field.value.trim();
+        store.ascwTok = token;
+        base = {};
+        pending = {};
+        try {
+          const r = await github("");
+          toast(r.permissions?.push ? inLang("Token OK", "Токен работает") : inLang("Token has no write access", "У токена нет права записи"), !r.permissions?.push);
+          w.remove();
+        } catch (e) { toast(inLang("Token rejected: ", "Токен не принят: ") + e.message, 1) }
+      }),
+      button(inLang("Forget token", "Забыть токен"), () => { token = ""; store.ascwTok = ""; w.remove() })));
+}
+
+function uploadImage(file) { // into the draft as static/img/<name>-<time>.<ext>; returns its future site address
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const ext = (file.name.match(/\.(\w+)$/)?.[1] || file.type.split("/")[1] || "png").toLowerCase();
+      const name = (file.name.replace(/\.\w+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "img") + "-" + Date.now().toString(36) + "." + ext;
+      const url = SITE + "img/" + name;
+      draft["static/img/" + name] = { b: reader.result.split(",")[1] };
+      blobs[url] = URL.createObjectURL(file);
+      saveDraft();
+      resolve(url);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function imageUrl(url) { // an unpublished image is shown from the draft
+  const d = draft["static/" + String(url).slice(SITE.length)];
+  if (!blobs[url] && d?.b) {
+    const bytes = atob(d.b), a = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) a[i] = bytes.charCodeAt(i);
+    const type = "image/" + (url.match(/\.(\w+)$/)?.[1] || "png").replace("jpg", "jpeg").replace("svg", "svg+xml");
+    blobs[url] = URL.createObjectURL(new Blob([a], { type }));
+  }
+  return blobs[url] || url;
+}
+
+const pickFile = () => new Promise(resolve => {
+  const f = h("input", { type: "file", accept: "image/*" });
+  f.onchange = () => resolve(f.files[0]);
+  f.click();
+});
+
+// ---------- interface texts (data/text.json): the menu, the brand line, button labels ----------
+let TEXTS = {};
+function showTexts() {
+  doc.querySelectorAll("[data-k]").forEach(e => {
+    const v = TEXTS[e.dataset.k]?.[e.lang];
+    if (v != null && e != doc.activeElement) e.textContent = v;
+  });
+}
+function setUiText(key, lang, value) { (TEXTS[key] = TEXTS[key] || {})[lang] = value; showTexts(); writeJSON(FILES.texts, TEXTS) }
+function makeMenuEditable() { // the brand line is edited in place (the menu links stay links)
+  doc.querySelectorAll("nav [data-k]").forEach(e => {
+    if (e.closest("a")) return;
+    e.contentEditable = "plaintext-only";
+    e.oninput = () => setUiText(e.dataset.k, e.lang, e.textContent);
+  });
+}
+doc.addEventListener("keydown", e => { if (e.key == "Enter" && e.target.closest?.("nav [contenteditable]")) e.preventDefault() }, true);
+function textsDialog() {
+  dialog(inLang("Interface texts", "Тексты интерфейса"), ...Object.keys(TEXTS).map(k =>
+    h("div", { cls: "row" }, ...["en", "ru"].map(l => label(k + " · " + l.toUpperCase(), input(TEXTS[k][l], v => setUiText(k, l, v)))))));
+}
+
+// ---------- the page: blocks edited in place (the same markup as layouts/partials/blocks.html) ----------
+let page = null, docEl = null, editable = true, undoStack = [], redoStack = [], typing = false, typingTimer, saveTimer;
+let gutter, toolbar, dropLine, curBlock = null;
+const blocks = () => page.blocks ??= [];
+
+const blockTypes = () => [
+  ["p", "¶", inLang("Text", "Текст")],
+  ["h1", "A", inLang("Large heading", "Большой заголовок"), "#"],
+  ["h2", "H", inLang("Heading", "Заголовок"), "##"],
+  ["h3", "h", inLang("Subheading", "Подзаголовок"), "###"],
+  ["quote", "❝", inLang("Quote", "Цитата"), ">"],
+  ["ul", "•", inLang("List", "Список"), "-"],
+  ["ol", "1.", inLang("Numbered list", "Нумерованный список"), "1."],
+  "-",
+  ["img", "🖼", inLang("Image", "Изображение")],
+  ["cols", "◫", inLang("Two columns", "Две колонки")],
+  ["card", "▤", inLang("Fact card", "Карточка фактов")],
+  ["hr", "―", inLang("Divider", "Разделитель"), "---"],
+  "-",
+  ["links", "☰", inLang("Links to subpages", "Ссылки на подстраницы")],
+  ["head", "▀", inLang("Page header", "Шапка страницы")],
+];
+const TEXT_KINDS = 7; // the first types are kinds of text a text block can be turned into
+const newBlock = kind => ({
+  p: { t: "p" }, h1: { t: "h", lv: 1 }, h2: { t: "h", lv: 2 }, h3: { t: "h", lv: 3 }, quote: { t: "quote" }, ul: { t: "list" }, ol: { t: "list", ord: true },
+  img: { t: "img", al: "center" }, cols: { t: "cols", c: [{ t: "text" }, { t: "text" }] }, card: { t: "card", rows: [{}, {}] },
+  hr: { t: "hr" }, links: { t: "links" }, head: { t: "head" },
+})[kind];
+const TEXT_TYPES = new Set(["p", "h", "quote", "list"]);
+const alignments = () => [
+  ["left", "⇤", inLang("Align left", "По левому краю")], ["center", "↔", inLang("Centre", "По центру")],
+  ["right", "⇥", inLang("Align right", "По правому краю")], ["justify", "☰", inLang("Justify", "По ширине")],
+];
+
+// Stored HTML keeps only a few tags: inline (b, i, u, s, a, code, mark, sup, sub, br), list items, and in columns also paragraphs,
+// subheadings and lists. mode: inline | li (list items) | block (column text)
+function cleanHtml(html, mode) {
+  const t = doc.createElement("template");
+  t.innerHTML = html;
+  const INLINE = { B: "b", STRONG: "b", I: "i", EM: "i", S: "s", STRIKE: "s", DEL: "s", U: "u", INS: "u", A: "a", BR: "br", CODE: "code", MARK: "mark", SUP: "sup", SUB: "sub" };
+  const BLOCK = { P: "p", DIV: "p", H1: "h3", H2: "h3", H3: "h3", H4: "h3", UL: "ul", OL: "ol", LI: "li", BLOCKQUOTE: "p" };
+  const walk = n => [...n.childNodes].map(c => {
+    if (c.nodeType == 3) return esc(c.data.replace(/\u00a0/g, " "));
+    if (c.nodeType != 1) return "";
+    const tag = INLINE[c.tagName] || (mode == "block" && BLOCK[c.tagName]) || (mode == "li" && c.tagName == "LI" && "li"), inner = walk(c);
+    if (!tag) return inner + (mode != "block" && /^(P|DIV)$/.test(c.tagName) && inner ? "<br>" : ""); // a line the browser wrapped in its own element
+    if (tag == "br") return "<br>";
+    if (tag == "a") { const u = c.getAttribute("href") || ""; return /^(https?:|\/|#|mailto:)/i.test(u) ? `<a href="${esc(u)}">${inner}</a>` : inner }
+    return `<${tag}>${inner}</${tag}>`;
+  }).join("");
+  let r = walk(t.content).replace(/(<br>)+(<\/(p|li|h3)>|$)/g, "$2").replace(/<(p|li|h3|b|i|s|u|mark|sup|sub|code)><\/\1>/g, "").trim();
+  if (mode == "li" && r && !/^<li>/.test(r)) r = "<li>" + r.replace(/<\/?li>/g, "") + "</li>";
+  if (mode == "block" && r && !/^<(p|h3|ul|ol)>/.test(r)) r = "<p>" + r + "</p>";
+  return r;
+}
+
+function plainValue(el) { // text of a plain field: no formatting, line breaks kept
+  let out = "";
+  const walk = n => {
+    for (const c of n.childNodes) {
+      if (c.nodeType == 3) out += esc(c.data.replace(/\u00a0/g, " ")).replace(/\n/g, "<br>");
+      else if (c.nodeName == "BR") out += "<br>";
+      else if (c.nodeType == 1) { if (/^(DIV|P)$/.test(c.nodeName) && out && !out.endsWith("<br>")) out += "<br>"; walk(c) }
+    }
+  };
+  walk(el);
+  return out.replace(/(<br>)+$/, "");
+}
+
+const plainText = html => { const t = doc.createElement("template"); t.innerHTML = (html || "").replace(/<\/(li|p)>|<br>/g, " $&"); return t.content.textContent.trim() };
+
+function textFields(b) { // a block's text fields as [object, prefix]
+  const r = [];
+  if (TEXT_TYPES.has(b.t)) r.push([b, ""]);
+  if (b.t == "quote") r.push([b, "cite_"]);
+  if (b.t == "img") r.push([b, "cap_"]);
+  if (b.t == "head") ["k_", "t_", "a_", "d_"].forEach(f => r.push([b, f]));
+  if (b.t == "card") { r.push([b, "t_"]); (b.rows || []).forEach(o => r.push([o, "k_"], [o, "v_"])) }
+  if (b.t == "cols") (b.c || []).forEach(o => r.push([o, o.t == "img" ? "cap_" : ""]));
+  return r;
+}
+
+// the header's title and description belong to the page itself unless the header has its own text (the home page)
+const boundToPage = (b, f) => b.t == "head" && (f == "t_" || f == "d_") && !(f + "en" in b) && !(f + "ru" in b),
+  pageField = (f, l) => (f == "t_" ? "title" : "description") + (l == "ru" ? "_ru" : ""),
+  getText = (b, o, f, l) => boundToPage(b, f) ? page[pageField(f, l)] || "" : o[f + l] || "",
+  otherLang = l => l == "ru" ? "en" : "ru";
+function setText(b, o, f, l, v) {
+  if (boundToPage(b, f)) page[pageField(f, l)] = v;
+  else if (v) o[f + l] = v;
+  else if (b.t == "head" && o == b && /^[ktd]_$/.test(f)) o[f + l] = ""; // a header field the author empties stays empty (no default fills it)
+  else delete o[f + l];
+}
+
+// undo / redo: whole-page snapshots; fast typing makes one step
+const snapshotOf = () => JSON.stringify({ b: blocks(), t: [page.title, page.title_ru, page.description, page.description_ru] });
+function snapshot() { undoStack.push(snapshotOf()); redoStack = []; typing = false }
+function snapshotTyping() {
+  if (!typing) { undoStack.push(snapshotOf()); redoStack = []; if (undoStack.length > 200) undoStack.shift() }
+  typing = true;
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => typing = false, 1200);
+}
+function undo(back) {
+  const from = back ? undoStack : redoStack, to = back ? redoStack : undoStack;
+  if (!from.length) return;
+  to.push(snapshotOf());
+  const s = JSON.parse(from.pop());
+  page.blocks = s.b;
+  [page.title, page.title_ru, page.description, page.description_ru] = s.t;
+  scheduleSave();
+  render();
+}
+function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(flushPage, 250) }
+function flushPage() { // the page is saved 250 ms after the last change, at once before publishing or leaving
+  clearTimeout(saveTimer);
+  if (saveTimer) { saveTimer = 0; return writeJSON(PAGE, page) }
+}
+addEventListener("pagehide", flushPage);
+const act = change => { snapshot(); change?.(); scheduleSave(); render() }; // one undo step: change, save, redraw
+
+// one editable text field: data-f = field prefix, data-m = cleaning mode (plain | inline | li | block); an empty field shows the other language as a hint
+function field(tag, b, o, f, mode, attrs = "", hint) {
+  const l = root.lang, v = getText(b, o, f, l), other = getText(b, o, f, otherLang(l));
+  if (!editable) return v || other ? `<${tag}${attrs}>${v || other}</${tag}>` : "";
+  const ph = other ? otherLang(l).toUpperCase() + " · " + plainText(other).slice(0, 90) : hint || ({
+    k_: inLang("Kicker", "Надзаголовок"), t_: inLang("Title", "Название"), a_: inLang("Second line", "Вторая строка"),
+    d_: inLang("Description", "Описание"), cap_: inLang("Caption", "Подпись"), cite_: inLang("Source", "Источник"),
+  }[f] || inLang("Write…", "Пишите…"));
+  return `<${tag}${attrs} data-f="${f}" data-m="${mode}" contenteditable="${mode == "plain" ? "plaintext-only" : "true"}" data-ph="${esc(ph)}" spellcheck="true">${v}</${tag}>`;
+}
+
+function renderBlock(b, i) {
+  const ta = b.ta ? ` class="ta-${b.ta}"` : "", di = editable ? ` data-i="${i}"` : "", l = root.lang;
+  switch (b.t) {
+    case "head": { // without its own kicker the header shows the shared "work in progress" text
+      const own = "k_en" in b || "k_ru" in b, shared = { k_en: TEXTS.wip?.en || "", k_ru: TEXTS.wip?.ru || TEXTS.wip?.en || "" };
+      return `<header class="b-head${b.tall ? " tall" : ""}"${di}>${field("p", b, own ? b : shared, "k_", "plain", ' class="k"', own ? null : shared["k_" + l])}` +
+        `<h1>${field("span", b, b, "t_", "plain")}${b.a_en || b.a_ru || b.acc ? `<b>${field("span", b, b, "a_", "plain")}</b>` : ""}</h1><hr>` +
+        `${field("p", b, b, "d_", "plain", ' class="ds"')}</header>`;
+    }
+    case "h": // lv 1: the large heading, the size and font of the page title
+      return field(b.lv == 1 ? "h2" : "h" + (b.lv || 2), b, b, "", "plain", (b.lv == 1 ? ` class="big${b.ta ? " ta-" + b.ta : ""}"` : ta) + di);
+    case "p":
+      return field("p", b, b, "", "inline", ta + di, inLang("Write, or press / for blocks", "Пишите или нажмите / — меню блоков"));
+    case "quote":
+      return `<blockquote${ta}${di}>${field("p", b, b, "", "inline")}${field("cite", b, b, "cite_", "plain")}</blockquote>`;
+    case "list": { // an empty list shows one empty item to write in
+      const e = field(b.ord ? "ol" : "ul", b, b, "", "li", ta + di);
+      return editable ? e.replace(/data-ph="([^"]*)"([^>]*)><\/(ul|ol)>$/, 'data-ph="$1"$2><li data-ph="$1"></li></$3>') : e;
+    }
+    case "img": {
+      const handles = editable ? ["l", "r"].map(s => `<i class="rz" data-s="${s}" title="${inLang("Drag to resize", "Потяните, чтобы изменить размер")}"></i>`).join("") : "";
+      const picture = b.src ? `<img src="${imageUrl(b.src)}" alt=""${editable ? ' data-pick=""' : ""}>${handles}`
+        : editable ? `<button type="button" class="pi" data-pick="">🖼 ${inLang("Choose an image or drop a file here", "Выберите изображение или перетащите файл")}</button>` : "";
+      return `<figure class="b-img al-${b.al || "center"}"${b.w ? ` style="--w:${b.w}%"` : ""}${di}>${picture}${field("figcaption", b, b, "cap_", "plain")}</figure>`;
+    }
+    case "card": {
+      const rows = (b.rows || []).map((r, j) => `<div>${field("dt", b, r, "k_", "plain", ` data-r="${j}"`, inLang("Property", "Свойство"))}` +
+        `${field("dd", b, r, "v_", "inline", ` data-r="${j}"`, inLang("Value", "Значение"))}</div>`).join("");
+      return `<aside class="b-card"${di}>${b.src ? `<img src="${imageUrl(b.src)}" alt=""${editable ? ' data-pick=""' : ""}>` : ""}${field("h4", b, b, "t_", "plain")}` +
+        `<dl>${rows}</dl>${editable ? `<button type="button" class="add" data-act="row">+ ${inLang("Row", "Строка")}</button>` : ""}</aside>`;
+    }
+    case "cols":
+      return `<div class="b-cols"${di}>${(b.c || []).map((c, j) => `<div class="cell">${c.t == "img"
+        ? `<figure class="b-img">${c.src ? `<img src="${imageUrl(c.src)}" alt=""${editable ? ` data-pick="" data-c="${j}"` : ""}>`
+          : editable ? `<button type="button" class="pi" data-pick="" data-c="${j}">🖼</button>` : ""}${field("figcaption", b, c, "cap_", "plain", ` data-c="${j}"`)}</figure>`
+        : field("div", b, c, "", "block", ` data-c="${j}"`)}</div>`).join("")}</div>`;
+    case "hr":
+      return `<hr class="b-hr"${di}>`;
+    case "links":
+      return `<ul class="b-links"${di}>${listedSubpages(b).map(q => `<li${q.nw ? ' class="nw"' : ""}><a href="${PAGES + q.src.replace(/_index\.md$/, "")}">${esc(l == "ru" ? q.ru || q.en : q.en)}</a></li>`).join("")
+        || (editable ? `<li>${inLang("No subpages yet — add one in the block menu ⠿", "Подстраниц пока нет — добавьте в меню блока ⠿")}</li>` : "")}</ul>`;
+  }
+  return "";
+}
+
+function updateWordCount() { // words on the page in its language
+  if (!wordCountEl) return;
+  const n = blocks().flatMap(b => textFields(b).map(([o, f]) => plainText(getText(b, o, f, root.lang)))).join(" ").split(/\s+/).filter(Boolean).length;
+  wordCountEl.textContent = isRu() ? n + " " + (n % 10 == 1 && n % 100 != 11 ? "слово" : n % 10 > 1 && n % 10 < 5 && (n % 100 < 12 || n % 100 > 14) ? "слова" : "слов") : n + (n == 1 ? " word" : " words");
+}
+
+function render() {
+  if (!docEl) return;
+  const active = doc.activeElement?.closest?.("[data-f]"), activeBlock = active?.closest("[data-i]")?.dataset.i, activeField = active?.dataset.f;
+  docEl.innerHTML = blocks().map(renderBlock).join("") + (editable && !blocks().length
+    ? `<button type="button" class="eb" data-act="first" style="display:block;margin:0 auto">+ ${inLang("Add the first block", "Добавить первый блок")}</button>` : "");
+  if (editable) {
+    docEl.append(gutter, dropLine);
+    if (curBlock != null && !docEl.querySelector(`[data-i="${curBlock}"]`)) curBlock = null;
+    showGutter(curBlock);
+    updateWordCount();
+    docEl.querySelectorAll(".b-img").forEach(placeSizeHandles);
+  }
+  if (activeBlock != null) focusField(+activeBlock, activeField);
+}
+
+function placeSizeHandles(figure) { // at the picture's lower corners
+  const img = figure?.querySelector("img");
+  if (!img) return;
+  const a = figure.getBoundingClientRect(), r = img.getBoundingClientRect();
+  figure.querySelectorAll(".rz").forEach(z => { z.style.left = ((z.dataset.s == "l" ? r.left : r.right) - a.left) + "px"; z.style.top = (r.bottom - a.top) + "px" });
+}
+
+function focusField(i, f, atEnd = true) {
+  const k = docEl.querySelector(`[data-i="${i}"]`);
+  if (!k) return;
+  const e = f != null ? (k.matches(`[data-f="${f}"]`) ? k : k.querySelector(`[data-f="${f}"]`)) : k.matches("[data-f]") ? k : k.querySelector("[data-f]");
+  if (!e) return;
+  e.focus();
+  const r = doc.createRange();
+  r.selectNodeContents(e);
+  r.collapse(!atEnd);
+  const s = getSelection();
+  s.removeAllRanges();
+  s.addRange(r);
+}
+
+function insertBlock(b, at, focus = true) {
+  act(() => blocks().splice(at, 0, b));
+  curBlock = at;
+  showGutter(at);
+  if (focus) { if (b.t == "img" && !b.src) chooseImage(b); else focusField(at, null, false) }
+}
+
+async function chooseImage(o, file) {
+  file = file || await pickFile();
+  if (!file) return;
+  snapshot();
+  o.src = await uploadImage(file);
+  scheduleSave();
+  render();
+}
+
+function convertBlock(i, kind) { // another kind of text, keeping the text
+  const b = blocks()[i], n = newBlock(kind);
+  snapshot();
+  for (const l of ["en", "ru"]) {
+    let v = b[l] || "";
+    if (b.t == "list") v = v.replace(/<\/li><li>/g, "<br>").replace(/<\/?li>/g, "");
+    if (n.t == "list" && v) v = "<li>" + v.split(/<br>/).join("</li><li>") + "</li>";
+    if (n.t == "h") v = esc(plainText(v));
+    if (v) n[l] = v;
+  }
+  if (b.cite_en) n.cite_en = b.cite_en;
+  if (b.cite_ru) n.cite_ru = b.cite_ru;
+  blocks()[i] = n;
+  scheduleSave();
+  render();
+  focusField(i);
+}
+
+// block buttons: + adds a block after this one, ⠿ opens the block's menu (click) or moves the block (drag)
+function showGutter(i) {
+  if (!gutter) return;
+  const k = i != null && docEl.querySelector(`[data-i="${i}"]`);
+  gutter.hidden = !k;
+  docEl.querySelectorAll(".cur").forEach(e => e.classList.remove("cur"));
+  if (!k) return;
+  k.classList.add("cur");
+  const d = docEl.getBoundingClientRect(), r = k.getBoundingClientRect(), narrow = d.left < 38; // narrow screens: the text moves right to make room for the buttons
+  if (root.classList.contains("ng") != narrow) { root.classList.toggle("ng", narrow); return showGutter(i) }
+  gutter.style.top = Math.max(0, r.top - d.top - 6) + "px";
+  gutter.style.left = (narrow ? 2 : -36) + "px";
+  gutter.dataset.i = i;
+}
+
+function addMenu(i, x, y, replace) { // add a block after block i (or turn an empty paragraph into it)
+  menu(x, y, blockTypes().map(t => t == "-" ? t : {
+    i: t[1], t: t[2], k: t[3], f: () => {
+      const b = newBlock(t[0]);
+      if (replace) { act(() => blocks()[i] = b); b.t == "img" ? chooseImage(b) : focusField(i, null, false) }
+      else insertBlock(b, i + 1);
+    },
+  }), true);
+}
+
+function blockMenu(i, x, y) {
+  const b = blocks()[i], count = blocks().length, items = [];
+  const set = (k, v) => act(() => { if (v == null) delete b[k]; else b[k] = v });
+  if (TEXT_TYPES.has(b.t)) {
+    const isKind = kind => ({ p: b.t == "p", h1: b.t == "h" && b.lv == 1, h2: b.t == "h" && b.lv != 3 && b.lv != 1, h3: b.t == "h" && b.lv == 3,
+      quote: b.t == "quote", ul: b.t == "list" && !b.ord, ol: b.t == "list" && b.ord })[kind];
+    items.push(...blockTypes().slice(0, TEXT_KINDS).map(t => ({ i: t[1], t: t[2], on: isKind(t[0]), f: () => convertBlock(i, t[0]) })), "-",
+      ...alignments().map(([a, icon, t]) => ({ i: icon, t, on: (b.ta || "left") == a, f: () => set("ta", a == "left" ? null : a) })), "-");
+  }
+  if (b.t == "img") items.push(...[
+    ["center", "▣", inLang("Centred, text width", "По центру, ширина текста")], ["full", "▭", inLang("Full strip width", "Во всю ширину ленты")],
+    ["left", "◧", inLang("Left, text wraps", "Слева, текст обтекает")], ["right", "◨", inLang("Right, text wraps", "Справа, текст обтекает")],
+  ].map(([a, icon, t]) => ({ i: icon, t, on: (b.al || "center") == a, f: () => set("al", a) })),
+  ...(b.w ? [{ i: "↺", t: inLang("Original size", "Исходный размер"), f: () => set("w") }] : []),
+  { i: "🖼", t: inLang("Replace image…", "Заменить изображение…"), f: () => chooseImage(b) }, "-");
+  if (b.t == "card") items.push(
+    { i: "🖼", t: b.src ? inLang("Replace image…", "Заменить изображение…") : inLang("Add image…", "Добавить изображение…"), f: () => chooseImage(b) },
+    ...(b.src ? [{ i: "✕", t: inLang("Remove image", "Убрать изображение"), f: () => set("src") }] : []),
+    { i: "+", t: inLang("Add row", "Добавить строку"), f: () => act(() => (b.rows ??= []).push({})) },
+    ...((b.rows || []).length ? [{ i: "−", t: inLang("Remove last row", "Убрать последнюю строку"), f: () => act(() => b.rows.pop()) }] : []), "-");
+  if (b.t == "cols") {
+    b.c.forEach((c, j) => items.push({
+      i: c.t == "img" ? "¶" : "🖼",
+      t: (j ? inLang("Right column: ", "Правая колонка: ") : inLang("Left column: ", "Левая колонка: ")) + (c.t == "img" ? inLang("text", "текст") : inLang("image", "изображение")),
+      f: () => act(() => b.c[j] = c.t == "img" ? { t: "text" } : { t: "img" }),
+    }));
+    items.push("-");
+  }
+  if (b.t == "head") items.push(
+    { i: "↕", t: inLang("Centred on the screen", "По центру экрана"), on: !!b.tall, f: () => set("tall", b.tall ? null : true) },
+    { i: "B", t: inLang("Second (accent) line", "Вторая (акцентная) строка"), on: !!(b.a_en || b.a_ru || b.acc),
+      f: () => act(() => { if (b.a_en || b.a_ru || b.acc) { delete b.a_en; delete b.a_ru; delete b.acc } else b.acc = true }) },
+    ...(b.t_en || b.t_ru || b.d_en || b.d_ru ? [{ i: "↺", t: inLang("Use the page title and description", "Взять название и описание страницы"),
+      f: () => act(() => ["t_en", "t_ru", "d_en", "d_ru"].forEach(k => delete b[k])) }] : []), "-");
+  if (b.t == "links") items.push({ i: "✎", t: inLang("Edit links…", "Ссылки…"), f: () => linksDialog(b) }, { i: "+", t: inLang("New subpage…", "Новая подстраница…"), f: () => newSubpageDialog() }, "-");
+  if (i > 0) items.push({ i: "↑", t: inLang("Move up", "Выше"), k: "Alt+↑", f: () => moveBlock(i, i - 1) });
+  if (i < count - 1) items.push({ i: "↓", t: inLang("Move down", "Ниже"), k: "Alt+↓", f: () => moveBlock(i, i + 1) });
+  items.push({ i: "⧉", t: inLang("Duplicate", "Дублировать"), k: "Ctrl+D", f: () => insertBlock(JSON.parse(JSON.stringify(b)), i + 1, false) },
+    { i: "🗑", t: inLang("Delete", "Удалить"), f: () => act(() => { blocks().splice(i, 1); curBlock = null }) });
+  menu(x, y, items);
+}
+
+function moveBlock(i, j) {
+  if (j >= 0 && j < blocks().length) act(() => { const [b] = blocks().splice(i, 1); blocks().splice(j, 0, b); curBlock = j });
+}
+
+function blockIndexAt(y) { // where a block dropped at this screen height goes
+  for (const k of docEl.querySelectorAll(":scope>[data-i]")) { const r = k.getBoundingClientRect(); if (y < r.top + r.height / 2) return +k.dataset.i }
+  return blocks().length;
+}
+
+let draggedBlock = null;
+function startBlockDrag(e) { // ⠿ pressed: a click opens the menu, a drag moves the block (a line shows where it goes)
+  e.preventDefault();
+  const i = +gutter.dataset.i, handle = e.currentTarget;
+  draggedBlock = { i, y: e.clientY, moved: false, to: i };
+  handle.setPointerCapture(e.pointerId);
+  handle.onpointermove = m => {
+    if (Math.abs(m.clientY - draggedBlock.y) > 4) draggedBlock.moved = true;
+    if (!draggedBlock.moved) return;
+    draggedBlock.to = blockIndexAt(m.clientY);
+    const all = [...docEl.querySelectorAll(":scope>[data-i]")], d = docEl.getBoundingClientRect(), k = all.find(x => +x.dataset.i == draggedBlock.to),
+      r = (k || all.at(-1)).getBoundingClientRect();
+    dropLine.hidden = false;
+    dropLine.style.top = (k ? r.top - d.top - 8 : r.bottom - d.top + 6) + "px";
+    dropLine.style.left = r.left - d.left + "px";
+    dropLine.style.width = r.width + "px";
+  };
+  handle.onpointerup = () => {
+    handle.onpointermove = handle.onpointerup = null;
+    dropLine.hidden = true;
+    const g = draggedBlock;
+    draggedBlock = null;
+    if (!g.moved) { const r = handle.getBoundingClientRect(); return blockMenu(g.i, r.left, r.bottom + 4) }
+    const to = g.to > g.i ? g.to - 1 : g.to;
+    if (to != g.i) moveBlock(g.i, to);
+  };
+}
+
+function onKey(e) { // keys in a text field
+  const el = e.target.closest?.("[data-f]");
+  if (!el) return;
+  const k = el.closest("[data-i]"), i = +k.dataset.i, b = blocks()[i], mode = el.dataset.m, ctrl = e.ctrlKey || e.metaKey;
+  if (ctrl && e.key.toLowerCase() == "k" && mode != "plain") { e.preventDefault(); format("link"); return }
+  if (e.altKey && /^Arrow(Up|Down)$/.test(e.key)) {
+    e.preventDefault();
+    const j = i + (e.key == "ArrowUp" ? -1 : 1);
+    if (j >= 0 && j < blocks().length) { moveBlock(i, j); focusField(j, el.dataset.f) }
+    return;
+  }
+  if (ctrl && e.key.toLowerCase() == "d") { e.preventDefault(); insertBlock(JSON.parse(JSON.stringify(b)), i + 1); return }
+  if (e.key == "/" && b.t == "p" && !el.textContent) { e.preventDefault(); const r = el.getBoundingClientRect(); addMenu(i, r.left, r.bottom + 4, true); return }
+  if (e.key == "Enter" && (mode == "plain" || mode == "inline")) { // Enter: a new line inside the same block (lists and columns: the browser's own)
+    e.preventDefault();
+    if (!boundToPage(b, el.dataset.f)) doc.execCommand("insertLineBreak"); // the page's own title / description: one line
+  }
+}
+
+function onPaste(e) { // plain text only
+  const el = e.target.closest?.("[data-f]");
+  if (!el) return;
+  e.preventDefault();
+  const text = (e.clipboardData.getData("text/plain") || "").replace(/\r/g, "");
+  if (!text) return;
+  const mode = el.dataset.m;
+  if (mode == "li" || mode == "block") return doc.execCommand("insertText", false, text);
+  const b = blocks()[+el.closest("[data-i]").dataset.i], lines = boundToPage(b, el.dataset.f) ? [text.replace(/\s*\n\s*/g, " ")] : text.split("\n");
+  lines.forEach((line, j) => { if (j) doc.execCommand("insertLineBreak"); if (line) doc.execCommand("insertText", false, line) });
+}
+
+function initDocument() {
+  docEl.classList.add("edoc");
+  gutter = h("div", { id: "gut", hidden: "" },
+    h("button", { type: "button", title: inLang("Add a block", "Добавить блок"), "aria-label": inLang("Add a block", "Добавить блок"),
+      onclick: e => { const r = e.currentTarget.getBoundingClientRect(); addMenu(+gutter.dataset.i, r.left, r.bottom + 4) } }, "+"),
+    h("button", { type: "button", cls: "hd", title: inLang("Drag to move · click for block options", "Перетащите, чтобы переместить · клик — настройки блока"),
+      "aria-label": inLang("Block options", "Настройки блока") }, "⠿"));
+  dropLine = h("div", { id: "dln", hidden: "" });
+  toolbar = h("div", { id: "ift", hidden: "" }, ...[
+    ["B", "bold", inLang("Bold", "Жирный") + " (Ctrl+B)"], ["I", "italic", inLang("Italic", "Курсив") + " (Ctrl+I)"],
+    ["U", "underline", inLang("Underline", "Подчёркнутый") + " (Ctrl+U)"], ["S", "strikeThrough", inLang("Strikethrough", "Зачёркнутый")],
+    ["▮", "mark", inLang("Highlight", "Выделить маркером")], ["</>", "code", inLang("Code", "Код")],
+    ["x²", "superscript", inLang("Superscript", "Надстрочный")], ["x₂", "subscript", inLang("Subscript", "Подстрочный")],
+    ["🔗", "link", inLang("Link", "Ссылка") + " (Ctrl+K)"], ["⌫", "removeFormat", inLang("Clear formatting", "Убрать оформление")],
+    "|", ...alignments().map(([a, icon, t]) => [icon, "ta:" + a, t]),
+  ].map(x => x == "|" ? h("i", { cls: "sep" })
+    : h("button", { type: "button", title: x[2], "aria-label": x[2], "data-c": x[1], onmousedown: e => { e.preventDefault(); format(x[1]) } }, x[0])));
+  doc.body.append(toolbar);
+
+  let hoverTimer;
+  docEl.addEventListener("mouseover", e => { // the block buttons follow the mouse, a little late
+    if (gutter.contains(e.target)) return clearTimeout(hoverTimer);
+    const k = e.target.closest("[data-i]");
+    clearTimeout(hoverTimer);
+    if (k && !draggedBlock && +k.dataset.i !== curBlock) hoverTimer = setTimeout(() => showGutter(curBlock = +k.dataset.i), 90);
+  });
+  docEl.addEventListener("pointerdown", e => { const k = e.target.closest("[data-i]"); if (k) showGutter(curBlock = +k.dataset.i) });
+  docEl.addEventListener("focusin", e => { const k = e.target.closest("[data-i]"); if (k) showGutter(curBlock = +k.dataset.i) });
+
+  let countTimer;
+  docEl.addEventListener("input", e => { // typing: the text goes into the page (Markdown-like shortcuts at the start of a paragraph)
+    const el = e.target.closest("[data-f]");
+    if (!el) return;
+    const i = +el.closest("[data-i]").dataset.i, b = blocks()[i], l = root.lang, f = el.dataset.f, mode = el.dataset.m;
+    const o = el.dataset.r != null ? b.rows[+el.dataset.r] : el.dataset.c != null ? b.c[+el.dataset.c] : b;
+    if (el.innerHTML == "<br>") el.innerHTML = "";
+    if (b.t == "p" && f == "") {
+      const t = el.textContent, mark = t.match(/^(#{1,3}|[-*]|1\.|>)\s/) || (t == "---" && [t]);
+      if (mark) {
+        const kind = { "#": "h1", "##": "h2", "###": "h3", "-": "ul", "*": "ul", "1.": "ol", ">": "quote", "---": "hr" }[mark[1] || mark[0]];
+        snapshot();
+        b[l] = cleanHtml(el.innerHTML, "inline").replace(/^(#{1,3}|[-*]|1\.|&gt;|---)\s?/, "");
+        if (!b[l]) delete b[l];
+        if (kind == "hr") { blocks()[i] = { t: "hr" }; blocks().splice(i + 1, 0, { t: "p" }); scheduleSave(); render(); focusField(i + 1) }
+        else convertBlock(i, kind);
+        return;
+      }
+    }
+    snapshotTyping();
+    setText(b, o, f, l, mode == "plain" ? plainValue(el) : cleanHtml(el.innerHTML, mode));
+    scheduleSave();
+    if (boundToPage(b, f) && f == "t_") doc.title = (page[pageField(f, l)] || "") + " · ASCW";
+    clearTimeout(countTimer);
+    countTimer = setTimeout(updateWordCount, 400);
+  });
+
+  // image size: drag a handle at the picture's corner (10–100 % of the text width; a centred picture grows on both sides)
+  docEl.addEventListener("pointerover", e => { const f = e.target.closest?.(".b-img"); if (f) placeSizeHandles(f) });
+  docEl.addEventListener("load", e => { if (e.target.tagName == "IMG") placeSizeHandles(e.target.closest(".b-img")) }, true);
+  docEl.addEventListener("pointerdown", e => {
+    const z = e.target.closest(".rz");
+    if (!z) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const figure = z.parentNode, b = blocks()[+figure.dataset.i], img = figure.querySelector("img"), textW = docEl.getBoundingClientRect().width,
+      align = b.al || "center", sign = z.dataset.s == "l" ? -1 : 1, both = align == "center" || align == "full" ? 2 : 1, x0 = e.clientX, w0 = img.getBoundingClientRect().width;
+    let width = null;
+    z.setPointerCapture(e.pointerId);
+    figure.classList.add("rzg");
+    if (align == "full") figure.classList.replace("al-full", "al-center");
+    z.onpointermove = m => {
+      width = Math.round(Math.min(100, Math.max(10, (w0 + sign * both * (m.clientX - x0)) / textW * 100)));
+      figure.style.setProperty("--w", width + "%");
+      z.dataset.v = width + "%";
+      placeSizeHandles(figure);
+    };
+    z.onpointerup = z.onpointercancel = () => {
+      z.onpointermove = z.onpointerup = z.onpointercancel = null;
+      figure.classList.remove("rzg");
+      if (width != null) act(() => { b.w = width; if (align == "full") delete b.al });
+      else placeSizeHandles(figure);
+    };
+  }, true);
+
+  docEl.addEventListener("keydown", onKey);
+  docEl.addEventListener("paste", onPaste);
+  docEl.addEventListener("click", e => {
+    const pick = e.target.closest("[data-pick]");
+    if (pick) { const b = blocks()[+pick.closest("[data-i]").dataset.i]; chooseImage(pick.dataset.c != null ? b.c[+pick.dataset.c] : b); return }
+    const first = e.target.closest("[data-act=first]");
+    if (first) { const r = first.getBoundingClientRect(); addMenu(-1, r.left, r.bottom + 4); return }
+    const row = e.target.closest("[data-act=row]");
+    if (row) { const b = blocks()[+row.closest("[data-i]").dataset.i]; act(() => (b.rows ??= []).push({})) }
+    if (e.target.closest("a") && e.target.closest("[contenteditable]")) e.preventDefault(); // links in the text are edited, not followed
+  });
+  // image files dropped on the page: new image blocks where they are dropped
+  docEl.addEventListener("dragover", e => { if ([...e.dataTransfer.items].some(x => x.kind == "file")) { e.preventDefault(); docEl.classList.add("dropping") } });
+  docEl.addEventListener("dragleave", () => docEl.classList.remove("dropping"));
+  docEl.addEventListener("drop", e => {
+    docEl.classList.remove("dropping");
+    const files = [...e.dataTransfer.files].filter(f => f.type.startsWith("image/"));
+    if (!files.length) return;
+    e.preventDefault();
+    let at = blockIndexAt(e.clientY);
+    files.forEach(file => { const b = { t: "img", al: "center" }; blocks().splice(at++, 0, b); chooseImage(b, file) });
+  });
+  gutter.querySelector(".hd").addEventListener("pointerdown", startBlockDrag);
+  doc.addEventListener("selectionchange", updateToolbar);
+  doc.addEventListener("mouseup", () => setTimeout(updateToolbar));
+  doc.addEventListener("keyup", e => { if (e.shiftKey) updateToolbar() });
+  addEventListener("scroll", updateToolbar, { passive: true });
+  addEventListener("resize", () => showGutter(curBlock));
+  doc.addEventListener("keydown", e => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const k = e.key.toLowerCase();
+    if ((k == "z" || k == "y") && !e.target.closest?.("input,textarea,select,nav,.dl")) { e.preventDefault(); undo(k == "z" && !e.shiftKey) }
+    if (k == "s") { e.preventDefault(); flushPage(); toast(inLang("The draft is saved in this browser", "Черновик сохранён в браузере")) }
+  });
+}
+
+// ---------- formatting toolbar (over selected text) ----------
+const selectionElement = s => s.anchorNode?.nodeType == 1 ? s.anchorNode : s.anchorNode?.parentElement;
+
+function updateToolbar() {
+  const s = getSelection(), el = s.rangeCount && !s.isCollapsed && selectionElement(s)?.closest?.('.doc [contenteditable]:not([contenteditable=false])');
+  if (!el || toolbar.contains(doc.activeElement)) { if (!toolbar.contains(doc.activeElement)) toolbar.hidden = true; return }
+  const r = s.getRangeAt(0).getBoundingClientRect(), target = selectionElement(s), b = blocks()[+el.closest("[data-i]")?.dataset.i];
+  const plain = el.dataset.m == "plain"; // headings, captions: plain text, only the alignment applies
+  if (plain && !(b && TEXT_TYPES.has(b.t))) { toolbar.hidden = true; return }
+  toolbar.hidden = false;
+  for (const x of toolbar.children) x.hidden = plain && !(x.dataset.c || "").startsWith("ta:");
+  for (const x of toolbar.querySelectorAll("button")) { // which buttons are already applied here
+    const c = x.dataset.c;
+    let on = false;
+    try {
+      on = c.startsWith("ta:") ? (b?.ta || "left") == c.slice(3) : c == "mark" || c == "code" ? !!target.closest(c)
+        : /^(bold|italic|underline|strikeThrough|superscript|subscript)$/.test(c) && doc.queryCommandState(c);
+    } catch {}
+    x.classList.toggle("on", on);
+  }
+  toolbar.style.left = Math.max(8, Math.min(r.left + scrollX + r.width / 2 - toolbar.offsetWidth / 2, innerWidth - toolbar.offsetWidth - 8)) + "px";
+  toolbar.style.top = Math.max(scrollY + 56, r.top + scrollY - toolbar.offsetHeight - 8) + "px";
+}
+
+function format(c) {
+  const s = getSelection(), el = selectionElement(s)?.closest?.('[contenteditable]:not([contenteditable=false])');
+  if (!el) return;
+  if (c.startsWith("ta:")) { // alignment of the whole block
+    const k = el.closest("[data-i]"), b = k && blocks()[+k.dataset.i];
+    if (b && TEXT_TYPES.has(b.t)) { const a = c.slice(3); act(() => { if (a == "left") delete b.ta; else b.ta = a }) }
+    return;
+  }
+  if (c == "mark" || c == "code") { // toggle a wrapping tag
+    const r = s.rangeCount && s.getRangeAt(0), on = selectionElement(s).closest(c);
+    if (!r) return;
+    if (on && el.contains(on)) on.replaceWith(...on.childNodes);
+    else if (!r.collapsed) { const w = doc.createElement(c); w.append(r.extractContents()); r.insertNode(w); s.selectAllChildren(w) }
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+  if (c == "link") {
+    const r = s.rangeCount && s.getRangeAt(0).cloneRange(), current = s.anchorNode.parentElement?.closest("a")?.getAttribute("href") || "https://";
+    const address = input(current, () => {});
+    const ok = () => {
+      w.remove();
+      el.focus();
+      getSelection().removeAllRanges();
+      getSelection().addRange(r);
+      const u = address.value.trim();
+      doc.execCommand(u && u != "https://" ? "createLink" : "unlink", false, u);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    const w = dialog(inLang("Link", "Ссылка"), label(inLang("Address (empty — remove the link)", "Адрес (пусто — убрать ссылку)"), address), h("div", { cls: "row" }, button("OK", ok)));
+    address.onkeydown = e => { if (e.key == "Enter") ok() };
+    return;
+  }
+  doc.execCommand(c);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+}
 
 // ---------- page settings, new pages, subpages ----------
-const dir=PAGE.replace(/^content\/|_index\.md$/g,"");
-let KIDS=[];
-const kids=()=>KIDS.filter(q=>!q.del);
-async function initKids(){try{KIDS=JSON.parse(D.getElementById("kids")?.textContent||"[]")}catch{KIDS=[]}
-for(const p in draft){const m=p.match(new RegExp(`^content/${dir.replace(/[/.-]/g,"\\$&")}([^/]+)/_index\\.md$`));if(!m)continue;const q=KIDS.find(k=>"content/"+k.src==p);
-if(draft[p].del){if(q)q.del=1;continue}let o={};try{o=JSON.parse(draft[p].t)}catch{}
-if(q){q.en=o.title||q.en;q.ru=o.title_ru||o.title||q.ru}else KIDS.push({src:p.slice(8),en:o.title||m[1],ru:o.title_ru||o.title||m[1],nw:1,w:o.weight||0})}
-KIDS.sort((a,b)=>(a.nw?1:0)-(b.nw?1:0))}
-const pageObj=async p=>{const t=await read(p);if(t==null)return null;try{return JSON.parse(t)}catch{return null}};
-function newPage(){let en,ruI,sl;const slug=v=>v.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-dialog(L("New subpage","Новая подстраница"),lab(L("Title","Название")+" · EN",en=inp("",v=>{if(!sl.dataset.t)sl.value=slug(v)})),
-lab(L("Title","Название")+" · RU",ruI=inp("",()=>{})),lab(L("Address","Адрес")+" ("+UL+dir+"…)",sl=inp("",(v,e)=>{e.dataset.t=1})),
-h("div",{cls:"row"},btn(L("Create and open","Создать и открыть"),async()=>{const s=slug(sl.value);if(!s||!en.value.trim())return toast(L("Title (EN) and address are required","Нужны название (EN) и адрес"),1);
-const p=`content/${dir}${s}/_index.md`;if(await read(p)!=null)return toast(L("This address is taken","Такой адрес уже занят"),1);
-if(!B().some(b=>b.t=="links")){B().push({t:"links"});await WJ(PAGE,PG)} // so the new page can be reached from this one
-await WJ(p,{title:en.value.trim(),title_ru:ruI.value.trim(),description:"",description_ru:"",weight:(KIDS.length+1)*10,blocks:[{t:"head"},{t:"p"}]});
-await new Promise(r=>setTimeout(r,300));location.href=UL+dir+s+"/"})));en.focus()}
-async function delPage(){const up=dir.replace(/[^/]+\/$/,"");if(!up)return toast(L("This page cannot be deleted","Эту страницу удалить нельзя"),1);
-if(kids().length)return toast(L("Delete its subpages first","Сначала удалите её подстраницы"),1);
-if(!confirm(L("Delete this page when publishing?","Удалить эту страницу при публикации?")))return;
-await src(PAGE);if(base[PAGE]==null)delete draft[PAGE];else draft[PAGE]={del:1};save();location.href=UL+up}
-function settings(){const S=(k,v)=>{snap1();if(v)PG[k]=v;else delete PG[k];store();render()},bgv=()=>D.querySelector("main").style.setProperty("--bg",PG.bg?PG.bg=="none"?"none":`url(${img(PG.bg)})`:"");
-dialog(L("Page","Страница"),h("div",{cls:"row"},lab(L("Title","Название")+" · EN",inp(PG.title,v=>S("title",v))),lab(L("Title","Название")+" · RU",inp(PG.title_ru,v=>S("title_ru",v)))),
-h("div",{cls:"row"},lab(L("Description (also shown in link previews)","Описание (видно и в превью ссылок)")+" · EN",inp(PG.description,v=>S("description",v),{area:1})),lab(L("Description","Описание")+" · RU",inp(PG.description_ru,v=>S("description_ru",v),{area:1}))),
-h("div",{cls:"row"},lab(L("Background","Фон"),h("div",{cls:"row"},btn(L("Image…","Изображение…"),async()=>{const f=await pickFile();if(f){PG.bg=await upload(f);store();bgv()}}),
-btn(L("None","Без фона"),()=>{PG.bg="none";store();bgv()}),btn(L("Default","По умолчанию"),()=>{delete PG.bg;store();bgv()})))),
-h("div",{style:"font-size:12px;color:#e8e8e080"},L("Address: ","Адрес: ")+UL+dir),h("div",{cls:"row"},btn("+ "+L("New subpage…","Новая подстраница…"),newPage),btn("🗑 "+L("Delete page","Удалить страницу"),delPage)))}
-async function reorder(){const K=kids(),os=await Promise.all(K.map(q=>pageObj("content/"+q.src)));os.forEach((o,i)=>{if(o&&o.weight!=(i+1)*10){o.weight=(i+1)*10;WJ("content/"+K[i].src,o)}})}
-// the links block lists the subpages; "hide" (list of page sources) takes pages out of this list without deleting them
-const shown=b=>kids().filter(q=>!(b.hide||[]).includes(q.src));
-function links(b){const box=h("div",{style:"display:flex;flex-direction:column;gap:8px"}),hid=h("div",{style:"display:flex;flex-direction:column;gap:6px"}),
-vis=(q,on)=>{act(()=>{b.hide=(b.hide||[]).filter(x=>x!=q.src);if(!on)b.hide.push(q.src);if(!b.hide.length)delete b.hide});rows()},
-rows=()=>{box.replaceChildren(...shown(b).map((q,i,K)=>{const set=async(l,v)=>{q[l]=v;const p="content/"+q.src,o=await pageObj(p);if(o){o[l=="en"?"title":"title_ru"]=v;await WJ(p,o)}render()},
-sw=async d=>{const j=KIDS.indexOf(K[i+d]),k=KIDS.indexOf(q);if(!K[i+d])return;[KIDS[j],KIDS[k]]=[KIDS[k],KIDS[j]];await reorder();rows();render()};
-return h("div",{cls:"row",style:"align-items:flex-end"},lab("EN",inp(q.en,v=>set("en",v))),lab("RU",inp(q.ru,v=>set("ru",v))),btn("↑",()=>sw(-1),L("Up","Выше")),btn("↓",()=>sw(1),L("Down","Ниже")),
-btn("✕",()=>vis(q,0),L("Remove from this list (the page stays on the site)","Убрать из списка (страница остаётся на сайте)")))}));
-const H=kids().filter(q=>(b.hide||[]).includes(q.src));hid.replaceChildren(...(H.length?[h("div",{style:"font:400 11px 'Exo 2',sans-serif;letter-spacing:1px;color:#e8e8e099;text-transform:uppercase;margin-top:6px"},L("Not in the list","Не в списке"))]:[]),
-...H.map(q=>h("div",{cls:"row"},h("span",{},ru()?q.ru||q.en:q.en),btn("+ "+L("Add to the list","Добавить в список"),()=>vis(q,1)))))};
-rows();dialog(L("Links to subpages","Ссылки на подстраницы"),box,hid,h("div",{cls:"row"},btn("+ "+L("New subpage…","Новая подстраница…"),newPage)))}
-function preview(){const u=new URL(location.href);u.searchParams.set("preview","");const w=h("div",{id:"pvw",onclick:e=>{if(e.target==w)w.remove()}},h("iframe",{src:u.href,title:L("Phone preview","Предпросмотр на телефоне")}),
-btn(L("Close preview","Закрыть предпросмотр"),()=>w.remove()));D.body.append(w)}
+const DIR = (PAGE || "").replace(/^content\/|_index\.md$/g, ""); // this page's folder in content/
+let subpages = [];
+const liveSubpages = () => subpages.filter(q => !q.del);
 
-// ---------- map: markers (form in the side panel), timeline events, countries ----------
-const MP=window.MAP;let MKon=0,PF=null;
-const KINDS=()=>[["●",L("Circle","Круг")],["◈",L("Circle in a diamond","Круг в ромбе")],["▲",L("Triangle","Треугольник")]],
-ll=(my,mx)=>({a:+(90-my/MP.H*180).toFixed(3),o:+(mx/MP.W*360-180).toFixed(3)}),
-saveMK=()=>{WJ(F.mk,MK);MP.markers()};
-function pform(el,key){if(PF?.key==key&&PF.isConnected)return 0;PF?.remove(); // properties of a marker / country: a small window next to it on the map
-PF=h("div",{cls:"dlb cx",tabindex:-1},h("h3",{},h("span",{},D.getElementById("pt").textContent),h("button",{type:"button",cls:"x",title:L("Close","Закрыть"),"aria-label":L("Close","Закрыть"),onclick:()=>{PF?.remove();PF=null}},"×")),el);PF.key=key;D.body.append(PF);
-const hd=PF.firstChild;hd.onpointerdown=e=>{if(e.target.closest("button"))return;e.preventDefault();hd.setPointerCapture(e.pointerId);const f=PF,r=f.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top;f.classList.add("mv"); // the title row moves the window
-hd.onpointermove=v=>{f.style.left=Math.max(8,Math.min(innerWidth-f.offsetWidth-8,v.clientX-dx))+"px";f.style.top=Math.max(8,Math.min(innerHeight-f.offsetHeight-8,v.clientY-dy))+"px"};
-hd.onpointerup=hd.onpointercancel=()=>{hd.onpointermove=hd.onpointerup=hd.onpointercancel=null;f.classList.remove("mv")}};
-const [lx,ly]=MP.lp(),w=PF.offsetWidth,hh=PF.offsetHeight,X=lx+18+w<innerWidth?lx+18:lx-18-w;PF.style.left=Math.max(8,Math.min(innerWidth-w-8,X))+"px";PF.style.top=Math.max(56,Math.min(innerHeight-hh-8,ly-30))+"px";return 1}
-function placeNew(o,save,en,ru){const px=D.getElementById("px"); // no page yet: the empty strip offers to create it
-px.append(h("div",{cls:"row",style:"justify-content:center;margin-top:24px"},btn("📄 "+L("Create its page","Создать страницу"),async()=>{
-let s=(en()||"place").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"place",b=s,j=2;while(await read(`content/places/${s}/_index.md`)!=null||(window.PL||[]).includes(s))s=b+"-"+j++;
-await WJ(`content/places/${s}/_index.md`,{title:en()||ru(),title_ru:ru()||en(),description:"",description_ru:"",blocks:[{t:"head"},{t:"p"}]});o.pg=s;save();MP.panel()})))}
-async function mapInit(){if(!MP)return;
-window.MK=await J(F.mk,MK);window.EV=await J(F.ev,EV);window.COU=await J(F.co,COU);MP.redraw();
-MP.onTap=(mx,my,i)=>{if(i!=null){MP.pickM(i);return 1}if(!MKon)return 0;MK.push({...ll(my,mx),n:"",r:""});saveMK();MP.pickM(MK.length-1);return 1};
-MP.pageOK=g=>(window.PL||[]).includes(g)||!!draft[`content/places/${g}/_index.md`];MP.onMarker=i=>mkForm(i);lbInit();MP.onPanel=r=>coForm(r);if(MP.sel())coForm(MP.sel());
-D.getElementById("pc").addEventListener("click",()=>{PF?.remove();PF=null;const n=MK.length;window.MK=MK.filter(q=>q.n||q.r||q.pg);if(MK.length!=n)saveMK()}); // unnamed new markers are dropped on close
-const mw=D.getElementById("mw");let dg=null;
-mw.addEventListener("pointerdown",e=>{const g=e.target.closest("[data-m]");if(!g)return;e.stopPropagation();mw.setPointerCapture(e.pointerId);dg={i:+g.dataset.m,x:e.clientX,y:e.clientY,mv:0}});
-mw.addEventListener("pointermove",e=>{if(!dg)return;dg.mv+=Math.abs(e.clientX-dg.x)+Math.abs(e.clientY-dg.y);dg.x=e.clientX;dg.y=e.clientY;if(dg.mv<4)return;
-const {mx,my}=MP.toMap(e);Object.assign(MK[dg.i],ll(my,mx));MP.markers()});
-mw.addEventListener("pointerup",()=>{if(!dg)return;const d=dg;dg=null;if(d.mv<4)MP.pickM(d.i);else{saveMK();if(PF?.key=="m"+d.i){PF=null;mkForm(d.i)}}});
-D.getElementById("xt")?.after(h("button",{type:"button",id:"xe",style:"position:absolute;right:56px;top:4px;z-index:2;width:44px;height:44px;font-size:18px;cursor:pointer;color:#e8e8e0a6",title:L("Edit events","Редактировать события"),onclick:events},"✎"))}
-function mkForm(i){const q=MK[i];if(!q)return;const pt=D.getElementById("pt"),px=D.getElementById("px"),
-ch=(k,v)=>{if(v===""||v==null)delete q[k];else q[k]=v;saveMK();pt.textContent=(ru()?q.r||q.n:q.n||q.r)||""},
-num=(k,ph)=>inp(q[k],v=>ch(k,v===""?"":+v),{type:"number",ph}),
-f=h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(q.n,v=>ch("n",v))),lab(L("Name","Название")+" · RU",inp(q.r,v=>ch("r",v)))),
-h("div",{cls:"row"},lab(L("Icon","Значок"),sel(q.k==1||q.k==2?q.k:0,KINDS().map(([s,t],j)=>[j,s+" "+t]),v=>ch("k",+v||""))),
-lab(L("Font","Шрифт"),sel(q.f=="cap"?"cap":"",[["","Play"],["cap",L("Play, large, underlined (capital)","Play, крупный с подчёркиванием (столица)")]],v=>ch("f",v)))),
-h("div",{cls:"row"},lab(L("Shown from year","Видна с года"),num("y0","—")),lab(L("to year","по год"),num("y1","—"))),
-h("div",{cls:"row"},lab(L("Latitude","Широта"),num("a")),lab(L("Longitude","Долгота"),num("o"))),
-h("div",{cls:"row"},btn(L("Done","Готово"),()=>{PF?.remove();PF=null}),btn("🗑 "+L("Delete","Удалить"),()=>{MK.splice(i,1);saveMK();PF?.remove();PF=null;D.getElementById("pc").click()})));
-if(pform(f,"m"+i)&&!q.n&&!q.r)setTimeout(()=>f.querySelector("input").focus());if(!(q.pg&&MP.pageOK(q.pg)))placeNew(q,saveMK,()=>q.n||q.r,()=>q.r||q.n)}
-function mkList(){const box=h("div",{cls:"ml"}),q0=inp("",v=>rows(v),{ph:L("Search","Поиск")}),
-rows=(s="")=>box.replaceChildren(...MK.map((q,i)=>[q,i]).filter(([q])=>((q.n||"")+" "+(q.r||"")).toLowerCase().includes(s.toLowerCase())).map(([q,i])=>
-h("button",{type:"button",onclick:()=>{w.remove();MP.focus(q.o,q.a);MP.pickM(i)}},(ru()?q.r||q.n:q.n||q.r)||"—",h("small",{},q.y0!=null||q.y1!=null?`${q.y0??"…"}–${q.y1??"…"}`:""))));
-rows();const w=dialog(L("Markers","Метки")+" · "+MK.length,q0,box)}
-function events(){const box=h("div",{style:"display:flex;flex-direction:column;gap:10px"}),
-sv=()=>{EV.sort((a,b)=>a[0]-b[0]);WJ(F.ev,EV);MP.timeline()},
-rows=()=>box.replaceChildren(...EV.map((v,i)=>h("div",{cls:"row",style:"align-items:flex-end"},
-lab(L("Year","Год"),inp(v[0],x=>{v[0]=+x;WJ(F.ev,EV);MP.timeline()},{type:"number"})),
-lab("EN",inp(v[1],x=>{v[1]=x;WJ(F.ev,EV);MP.timeline()},{area:1})),lab("RU",inp(v[2],x=>{v[2]=x;WJ(F.ev,EV);MP.timeline()},{area:1})),
-btn("✕",()=>{EV.splice(i,1);sv();rows()},L("Delete","Удалить")))).map(r=>{r.firstChild.style.flex="0 0 80px";return r}));
-rows();const w=dialog(L("Timeline events","События хронологии"),box,h("div",{cls:"row"},btn("+ "+L("Event","Событие"),()=>{EV.push([MP.yr(),"",""]);WJ(F.ev,EV);rows();box.lastChild?.querySelector("textarea")?.focus()}),
-btn(L("Done","Готово"),()=>{sv();w.remove()})));w.onclick=e=>{if(e.target==w){sv();w.remove()}}}
-function coForm(r){const o=COU[r.c]=COU[r.c]||{},t0=()=>{for(const k in o)if(o[k]===""||o[k]==null||k=="lo"&&o[k]==1||(k=="lx"||k=="ly"||k=="lk")&&!o[k])delete o[k];if(!Object.keys(o).length)delete COU[r.c];WJ(F.co,COU)};let tm;
-const ch=(k,v,t=250)=>{o[k]=v;COU[r.c]=o;t0();clearTimeout(tm);tm=setTimeout(()=>MP.redraw(),t)},
-rng=(k,a,b,st,f,d=1,u=v=>Math.round(v*100)+"%")=>{const i=h("input",{type:"range",min:a,max:b,step:st,cls:"ei"}),n=h("span",{style:"text-transform:none"});i.value=o[k]??d;const sh=()=>n.textContent=" "+u(i.value);sh();
-i.oninput=()=>{sh();ch(k,+i.value,60)};return lab(h("span",{},f,n),i)};
-pform(h("div",{cls:"ef"},h("div",{cls:"row"},lab(L("Name","Название")+" · EN",inp(o.en,v=>ch("en",v),{ph:r.n0})),lab(L("Name","Название")+" · RU",inp(o.ru,v=>ch("ru",v),{ph:r.r0}))),
+async function loadSubpages() { // the published list (kids, in the page) and the draft's new / renamed / deleted subpages
+  try { subpages = JSON.parse(byId("kids")?.textContent || "[]") } catch { subpages = [] }
+  const re = new RegExp(`^content/${DIR.replace(/[/.-]/g, "\\$&")}([^/]+)/_index\\.md$`);
+  for (const path in draft) {
+    const m = path.match(re);
+    if (!m) continue;
+    const q = subpages.find(k => "content/" + k.src == path);
+    if (draft[path].del) { if (q) q.del = 1; continue }
+    let o = {};
+    try { o = JSON.parse(draft[path].t) } catch {}
+    if (q) { q.en = o.title || q.en; q.ru = o.title_ru || o.title || q.ru }
+    else subpages.push({ src: path.slice(8), en: o.title || m[1], ru: o.title_ru || o.title || m[1], nw: 1, w: o.weight || 0 });
+  }
+  subpages.sort((a, b) => (a.nw ? 1 : 0) - (b.nw ? 1 : 0));
+}
 
-h("div",{cls:"row"},rng("lz",4,150,1,L("Name size","Размер названия"),Math.round(((ru()?r.sr:r.s)||16)*.75),v=>v+" pt"),rng("lo",0,1,.05,L("Name opacity","Прозрачность названия"))),
-h("div",{cls:"row"},rng("lk",-.2,1.5,.02,L("Letter spacing","Расстояние между буквами"),0),h("div",{})),
-h("div",{cls:"row"},btn(L("Name back to its place","Вернуть название на место"),()=>{delete o.lx;delete o.ly;ch("lx",0,0)}))),"c"+r.c);if(!(o.pg&&MP.pageOK(o.pg)))placeNew(o,()=>{COU[r.c]=o;WJ(F.co,COU)},()=>o.en||r.n0||r.name,()=>o.ru||r.r0||r.ru)}
-// country names: drag in the "names" mode (the shift is stored in countries.json as lx / ly, map pixels)
-function lbInit(){const sl=D.getElementById("sl");let dg=null;
-sl.addEventListener("pointerdown",e=>{const t=e.target.closest("text[data-i]");if(!t||!LBon)return;e.stopPropagation();e.preventDefault();sl.setPointerCapture(e.pointerId);dg={t,id:+t.dataset.i,a:MP.toMap(e),mv:0}});
-sl.addEventListener("pointermove",e=>{if(!dg)return;const b=MP.toMap(e),dx=b.mx-dg.a.mx,dy=b.my-dg.a.my;dg.mv=Math.max(dg.mv,Math.abs(dx)+Math.abs(dy));dg.dx=dx;dg.dy=dy;dg.t.setAttribute("transform",`translate(${dx} ${dy})`)});
-sl.addEventListener("pointerup",()=>{if(!dg)return;const d=dg;dg=null;MP.pick(d.id);const r=MP.sel();if(!r)return;
-if(d.mv>1){const o=COU[r.c]=COU[r.c]||{};o.lx=Math.round((o.lx||0)+d.dx);o.ly=Math.round((o.ly||0)+d.dy);WJ(F.co,COU);PF?.remove();PF=null;coForm(r);MP.redraw()}})}
-let LBon=0;
+const readPage = async path => { const t = await readFile(path); if (t == null) return null; try { return JSON.parse(t) } catch { return null } };
+const slug = v => v.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+function newSubpageDialog() {
+  let en, ru, address;
+  dialog(inLang("New subpage", "Новая подстраница"),
+    label(inLang("Title", "Название") + " · EN", en = input("", v => { if (!address.dataset.t) address.value = slug(v) })),
+    label(inLang("Title", "Название") + " · RU", ru = input("", () => {})),
+    label(inLang("Address", "Адрес") + " (" + PAGES + DIR + "…)", address = input("", (v, e) => { e.dataset.t = 1 })),
+    h("div", { cls: "row" }, button(inLang("Create and open", "Создать и открыть"), async () => {
+      const s = slug(address.value);
+      if (!s || !en.value.trim()) return toast(inLang("Title (EN) and address are required", "Нужны название (EN) и адрес"), 1);
+      const path = `content/${DIR}${s}/_index.md`;
+      if (await readFile(path) != null) return toast(inLang("This address is taken", "Такой адрес уже занят"), 1);
+      if (!blocks().some(b => b.t == "links")) { blocks().push({ t: "links" }); await writeJSON(PAGE, page) } // so the new page can be reached from this one
+      await writeJSON(path, { title: en.value.trim(), title_ru: ru.value.trim(), description: "", description_ru: "", weight: (subpages.length + 1) * 10, blocks: [{ t: "head" }, { t: "p" }] });
+      await new Promise(r => setTimeout(r, 300));
+      location.href = PAGES + DIR + s + "/";
+    })));
+  en.focus();
+}
+
+async function deletePage() {
+  const up = DIR.replace(/[^/]+\/$/, "");
+  if (!up) return toast(inLang("This page cannot be deleted", "Эту страницу удалить нельзя"), 1);
+  if (liveSubpages().length) return toast(inLang("Delete its subpages first", "Сначала удалите её подстраницы"), 1);
+  if (!confirm(inLang("Delete this page when publishing?", "Удалить эту страницу при публикации?"))) return;
+  await published(PAGE);
+  if (base[PAGE] == null) delete draft[PAGE];
+  else draft[PAGE] = { del: 1 };
+  saveDraft();
+  location.href = PAGES + up;
+}
+
+function pageDialog() { // title, description, background, subpages
+  const set = (k, v) => { snapshotTyping(); if (v) page[k] = v; else delete page[k]; scheduleSave(); render() };
+  const showBg = () => doc.querySelector("main").style.setProperty("--bg", page.bg ? page.bg == "none" ? "none" : `url(${imageUrl(page.bg)})` : "");
+  dialog(inLang("Page", "Страница"),
+    h("div", { cls: "row" },
+      label(inLang("Title", "Название") + " · EN", input(page.title, v => set("title", v))),
+      label(inLang("Title", "Название") + " · RU", input(page.title_ru, v => set("title_ru", v)))),
+    h("div", { cls: "row" },
+      label(inLang("Description (also shown in link previews)", "Описание (видно и в превью ссылок)") + " · EN", input(page.description, v => set("description", v), { area: 1 })),
+      label(inLang("Description", "Описание") + " · RU", input(page.description_ru, v => set("description_ru", v), { area: 1 }))),
+    h("div", { cls: "row" }, label(inLang("Background", "Фон"), h("div", { cls: "row" },
+      button(inLang("Image…", "Изображение…"), async () => { const f = await pickFile(); if (f) { page.bg = await uploadImage(f); scheduleSave(); showBg() } }),
+      button(inLang("None", "Без фона"), () => { page.bg = "none"; scheduleSave(); showBg() }),
+      button(inLang("Default", "По умолчанию"), () => { delete page.bg; scheduleSave(); showBg() })))),
+    h("div", { style: "font-size:12px;color:#e8e8e080" }, inLang("Address: ", "Адрес: ") + PAGES + DIR),
+    h("div", { cls: "row" }, button("+ " + inLang("New subpage…", "Новая подстраница…"), newSubpageDialog), button("🗑 " + inLang("Delete page", "Удалить страницу"), deletePage)));
+}
+
+async function saveSubpageOrder() { // the order is the pages' weight
+  const list = liveSubpages(), pages = await Promise.all(list.map(q => readPage("content/" + q.src)));
+  pages.forEach((o, i) => { if (o && o.weight != (i + 1) * 10) { o.weight = (i + 1) * 10; writeJSON("content/" + list[i].src, o) } });
+}
+
+// the links block lists the subpages; "hide" (page sources) takes pages out of this list without deleting them
+const listedSubpages = b => liveSubpages().filter(q => !(b.hide || []).includes(q.src));
+
+function linksDialog(b) {
+  const box = h("div", { style: "display:flex;flex-direction:column;gap:8px" }), hiddenBox = h("div", { style: "display:flex;flex-direction:column;gap:6px" });
+  const show = (q, on) => { act(() => { b.hide = (b.hide || []).filter(x => x != q.src); if (!on) b.hide.push(q.src); if (!b.hide.length) delete b.hide }); rows() };
+  const rows = () => {
+    box.replaceChildren(...listedSubpages(b).map((q, i, list) => {
+      const rename = async (l, v) => { q[l] = v; const path = "content/" + q.src, o = await readPage(path); if (o) { o[l == "en" ? "title" : "title_ru"] = v; await writeJSON(path, o) } render() };
+      const swap = async d => {
+        if (!list[i + d]) return;
+        const j = subpages.indexOf(list[i + d]), k = subpages.indexOf(q);
+        [subpages[j], subpages[k]] = [subpages[k], subpages[j]];
+        await saveSubpageOrder();
+        rows();
+        render();
+      };
+      return h("div", { cls: "row", style: "align-items:flex-end" },
+        label("EN", input(q.en, v => rename("en", v))), label("RU", input(q.ru, v => rename("ru", v))),
+        button("↑", () => swap(-1), inLang("Up", "Выше")), button("↓", () => swap(1), inLang("Down", "Ниже")),
+        button("✕", () => show(q, false), inLang("Remove from this list (the page stays on the site)", "Убрать из списка (страница остаётся на сайте)")));
+    }));
+    const hidden = liveSubpages().filter(q => (b.hide || []).includes(q.src));
+    hiddenBox.replaceChildren(
+      ...(hidden.length ? [h("div", { style: "font:400 11px 'Exo 2',sans-serif;letter-spacing:1px;color:#e8e8e099;text-transform:uppercase;margin-top:6px" }, inLang("Not in the list", "Не в списке"))] : []),
+      ...hidden.map(q => h("div", { cls: "row" }, h("span", {}, isRu() ? q.ru || q.en : q.en), button("+ " + inLang("Add to the list", "Добавить в список"), () => show(q, true)))));
+  };
+  rows();
+  dialog(inLang("Links to subpages", "Ссылки на подстраницы"), box, hiddenBox, h("div", { cls: "row" }, button("+ " + inLang("New subpage…", "Новая подстраница…"), newSubpageDialog)));
+}
+
+function phonePreview() { // the page with the draft, in a phone-sized frame
+  const u = new URL(location.href);
+  u.searchParams.set("preview", "");
+  const w = h("div", { id: "pvw", onclick: e => { if (e.target == w) w.remove() } },
+    h("iframe", { src: u.href, title: inLang("Phone preview", "Предпросмотр на телефоне") }),
+    button(inLang("Close preview", "Закрыть предпросмотр"), () => w.remove()));
+  doc.body.append(w);
+}
+
+// ---------- the map: markers, timeline events, country names and settings ----------
+let addingMarkers = false, movingNames = false, propsWindow = null;
+const markerKinds = () => [["●", inLang("Circle", "Круг")], ["◈", inLang("Circle in a diamond", "Круг в ромбе")], ["▲", inLang("Triangle", "Треугольник")]],
+  latLonOf = (my, mx) => ({ a: +(90 - my / MAP.H * 180).toFixed(3), o: +(mx / MAP.W * 360 - 180).toFixed(3) }),
+  saveMarkers = () => { writeJSON(FILES.markers, MK); MAP.markers() },
+  closeProps = () => { propsWindow?.remove(); propsWindow = null };
+
+function openProps(content, key) { // a marker's / country's properties: a small window next to it, moved by its title row
+  if (propsWindow?.key == key && propsWindow.isConnected) return false;
+  propsWindow?.remove();
+  const title = h("h3", {}, h("span", {}, byId("pt").textContent),
+    h("button", { type: "button", cls: "x", title: inLang("Close", "Закрыть"), "aria-label": inLang("Close", "Закрыть"), onclick: closeProps }, "×"));
+  const w = propsWindow = h("div", { cls: "dlb cx", tabindex: -1 }, title, content);
+  w.key = key;
+  doc.body.append(w);
+  title.onpointerdown = e => {
+    if (e.target.closest("button")) return;
+    e.preventDefault();
+    title.setPointerCapture(e.pointerId);
+    const r = w.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    w.classList.add("mv");
+    title.onpointermove = m => {
+      w.style.left = Math.max(8, Math.min(innerWidth - w.offsetWidth - 8, m.clientX - dx)) + "px";
+      w.style.top = Math.max(8, Math.min(innerHeight - w.offsetHeight - 8, m.clientY - dy)) + "px";
+    };
+    title.onpointerup = title.onpointercancel = () => { title.onpointermove = title.onpointerup = title.onpointercancel = null; w.classList.remove("mv") };
+  };
+  const [x, y] = MAP.lp(), width = w.offsetWidth, height = w.offsetHeight, left = x + 18 + width < innerWidth ? x + 18 : x - 18 - width; // beside the click
+  w.style.left = Math.max(8, Math.min(innerWidth - width - 8, left)) + "px";
+  w.style.top = Math.max(56, Math.min(innerHeight - height - 8, y - 30)) + "px";
+  return true;
+}
+
+function offerPlacePage(o, save, en, ru) { // no page yet: the empty panel offers to create it
+  byId("px").append(h("div", { cls: "row", style: "justify-content:center;margin-top:24px" }, button("📄 " + inLang("Create its page", "Создать страницу"), async () => {
+    let s = slug(en() || "place") || "place";
+    const stem = s;
+    for (let j = 2; await readFile(`content/places/${s}/_index.md`) != null || (window.PL || []).includes(s); j++) s = stem + "-" + j;
+    await writeJSON(`content/places/${s}/_index.md`, { title: en() || ru(), title_ru: ru() || en(), description: "", description_ru: "", blocks: [{ t: "head" }, { t: "p" }] });
+    o.pg = s;
+    save();
+    MAP.panel();
+  })));
+}
+
+async function initMap() {
+  window.MK = await readJSON(FILES.markers, MK);
+  window.EV = await readJSON(FILES.events, EV);
+  window.COU = await readJSON(FILES.countries, COU);
+  MAP.redraw();
+  MAP.onTap = (mx, my, i) => { // a marker opens its form; in the new markers mode a click places one
+    if (i != null) { MAP.pickM(i); return true }
+    if (!addingMarkers) return false;
+    MK.push({ ...latLonOf(my, mx), n: "", r: "" });
+    saveMarkers();
+    MAP.pickM(MK.length - 1);
+    return true;
+  };
+  MAP.pageOK = g => (window.PL || []).includes(g) || !!draft[`content/places/${g}/_index.md`];
+  MAP.onMarker = i => markerForm(i);
+  MAP.onPanel = r => countryForm(r);
+  initNameDragging();
+  if (MAP.sel()) countryForm(MAP.sel());
+  byId("pc").addEventListener("click", () => { // closing: unnamed new markers are dropped
+    closeProps();
+    const n = MK.length;
+    window.MK = MK.filter(q => q.n || q.r || q.pg);
+    if (MK.length != n) saveMarkers();
+  });
+  const markersSvg = byId("mw");
+  let drag = null; // markers are dragged to move them
+  markersSvg.addEventListener("pointerdown", e => {
+    const g = e.target.closest("[data-m]");
+    if (!g) return;
+    e.stopPropagation();
+    markersSvg.setPointerCapture(e.pointerId);
+    drag = { i: +g.dataset.m, x: e.clientX, y: e.clientY, moved: 0 };
+  });
+  markersSvg.addEventListener("pointermove", e => {
+    if (!drag) return;
+    drag.moved += Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y);
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    if (drag.moved < 4) return;
+    const { mx, my } = MAP.toMap(e);
+    Object.assign(MK[drag.i], latLonOf(my, mx));
+    MAP.markers();
+  });
+  markersSvg.addEventListener("pointerup", () => {
+    if (!drag) return;
+    const d = drag;
+    drag = null;
+    if (d.moved < 4) return MAP.pickM(d.i);
+    saveMarkers();
+    if (propsWindow?.key == "m" + d.i) { propsWindow = null; markerForm(d.i) }
+  });
+  byId("xt")?.after(h("button", { type: "button", id: "xe", style: "position:absolute;right:56px;top:4px;z-index:2;width:44px;height:44px;font-size:18px;cursor:pointer;color:#e8e8e0a6",
+    title: inLang("Edit events", "Редактировать события"), onclick: eventsDialog }, "✎")); // in the timeline
+}
+
+function markerForm(i) {
+  const q = MK[i];
+  if (!q) return;
+  const change = (k, v) => { if (v === "" || v == null) delete q[k]; else q[k] = v; saveMarkers(); byId("pt").textContent = (isRu() ? q.r || q.n : q.n || q.r) || "" };
+  const number = (k, ph) => input(q[k], v => change(k, v === "" ? "" : +v), { type: "number", ph });
+  const form = h("div", { cls: "ef" },
+    h("div", { cls: "row" }, label(inLang("Name", "Название") + " · EN", input(q.n, v => change("n", v))), label(inLang("Name", "Название") + " · RU", input(q.r, v => change("r", v)))),
+    h("div", { cls: "row" },
+      label(inLang("Icon", "Значок"), select(q.k == 1 || q.k == 2 ? q.k : 0, markerKinds().map(([s, t], j) => [j, s + " " + t]), v => change("k", +v || ""))),
+      label(inLang("Font", "Шрифт"), select(q.f == "cap" ? "cap" : "", [["", "Play"], ["cap", inLang("Play, large, underlined (capital)", "Play, крупный с подчёркиванием (столица)")]], v => change("f", v)))),
+    h("div", { cls: "row" }, label(inLang("Shown from year", "Видна с года"), number("y0", "—")), label(inLang("to year", "по год"), number("y1", "—"))),
+    h("div", { cls: "row" }, label(inLang("Latitude", "Широта"), number("a")), label(inLang("Longitude", "Долгота"), number("o"))),
+    h("div", { cls: "row" }, button(inLang("Done", "Готово"), closeProps),
+      button("🗑 " + inLang("Delete", "Удалить"), () => { MK.splice(i, 1); saveMarkers(); closeProps(); byId("pc").click() })));
+  if (openProps(form, "m" + i) && !q.n && !q.r) setTimeout(() => form.querySelector("input").focus());
+  if (!(q.pg && MAP.pageOK(q.pg))) offerPlacePage(q, saveMarkers, () => q.n || q.r, () => q.r || q.n);
+}
+
+function markersDialog() { // all markers, with a search; a click shows one
+  const box = h("div", { cls: "ml" }), search = input("", v => rows(v), { ph: inLang("Search", "Поиск") });
+  const rows = (s = "") => box.replaceChildren(...MK.map((q, i) => [q, i])
+    .filter(([q]) => ((q.n || "") + " " + (q.r || "")).toLowerCase().includes(s.toLowerCase()))
+    .map(([q, i]) => h("button", { type: "button", onclick: () => { w.remove(); MAP.focus(q.o, q.a); MAP.pickM(i) } },
+      (isRu() ? q.r || q.n : q.n || q.r) || "—", h("small", {}, q.y0 != null || q.y1 != null ? `${q.y0 ?? "…"}–${q.y1 ?? "…"}` : ""))));
+  rows();
+  const w = dialog(inLang("Markers", "Метки") + " · " + MK.length, search, box);
+}
+
+function eventsDialog() { // timeline events: year, EN, RU
+  const box = h("div", { style: "display:flex;flex-direction:column;gap:10px" });
+  const save = () => { writeJSON(FILES.events, EV); MAP.timeline() }, sortAndSave = () => { EV.sort((a, b) => a[0] - b[0]); save() };
+  const rows = () => box.replaceChildren(...EV.map((v, i) => {
+    const row = h("div", { cls: "row", style: "align-items:flex-end" },
+      label(inLang("Year", "Год"), input(v[0], x => { v[0] = +x; save() }, { type: "number" })),
+      label("EN", input(v[1], x => { v[1] = x; save() }, { area: 1 })),
+      label("RU", input(v[2], x => { v[2] = x; save() }, { area: 1 })),
+      button("✕", () => { EV.splice(i, 1); sortAndSave(); rows() }, inLang("Delete", "Удалить")));
+    row.firstChild.style.flex = "0 0 80px";
+    return row;
+  }));
+  rows();
+  const w = dialog(inLang("Timeline events", "События хронологии"), box, h("div", { cls: "row" },
+    button("+ " + inLang("Event", "Событие"), () => { EV.push([MAP.yr(), "", ""]); writeJSON(FILES.events, EV); rows(); box.lastChild?.querySelector("textarea")?.focus() }),
+    button(inLang("Done", "Готово"), () => { sortAndSave(); w.remove() })));
+  w.onclick = e => { if (e.target == w) { sortAndSave(); w.remove() } };
+}
+
+const DEFAULT_NAME_PT = 25; // as in assets/map.js
+function countryForm(r) { // a country's names, its name's size / opacity / letter spacing, its name back to its place
+  const o = COU[r.c] = COU[r.c] || {};
+  const tidy = () => { // empty and default values are not stored
+    for (const k in o) if (o[k] === "" || o[k] == null || k == "lo" && o[k] == 1 || (k == "lx" || k == "ly" || k == "lk") && !o[k]) delete o[k];
+    if (!Object.keys(o).length) delete COU[r.c];
+    writeJSON(FILES.countries, COU);
+  };
+  let redrawTimer;
+  const change = (k, v, delay = 250) => { o[k] = v; COU[r.c] = o; tidy(); clearTimeout(redrawTimer); redrawTimer = setTimeout(() => MAP.redraw(), delay) };
+  const slider = (k, min, max, step, text, initial = 1, unit = v => Math.round(v * 100) + "%") => {
+    const e = h("input", { type: "range", min, max, step, cls: "ei" }), value = h("span", { style: "text-transform:none" });
+    e.value = o[k] ?? initial;
+    const show = () => value.textContent = " " + unit(e.value);
+    show();
+    e.oninput = () => { show(); change(k, +e.value, 60) };
+    return label(h("span", {}, text, value), e);
+  };
+  openProps(h("div", { cls: "ef" },
+    h("div", { cls: "row" },
+      label(inLang("Name", "Название") + " · EN", input(o.en, v => change("en", v), { ph: r.n0 })),
+      label(inLang("Name", "Название") + " · RU", input(o.ru, v => change("ru", v), { ph: r.r0 }))),
+    h("div", { cls: "row" },
+      slider("lz", 4, 150, 1, inLang("Name size", "Размер названия"), DEFAULT_NAME_PT, v => v + " pt"),
+      slider("lo", 0, 1, .05, inLang("Name opacity", "Прозрачность названия"))),
+    h("div", { cls: "row" }, slider("lk", -.2, 1.5, .02, inLang("Letter spacing", "Расстояние между буквами"), 0), h("div", {})),
+    h("div", { cls: "row" }, button(inLang("Name back to its place", "Вернуть название на место"), () => { delete o.lx; delete o.ly; change("lx", 0, 0) }))), "c" + r.c);
+  if (!(o.pg && MAP.pageOK(o.pg))) offerPlacePage(o, () => { COU[r.c] = o; writeJSON(FILES.countries, COU) }, () => o.en || r.n0 || r.name, () => o.ru || r.r0 || r.ru);
+}
+
+function initNameDragging() { // country names are dragged in the "names" mode (the shift is stored as lx / ly, map px)
+  const names = byId("sl");
+  let drag = null;
+  names.addEventListener("pointerdown", e => {
+    const t = e.target.closest("text[data-i]");
+    if (!t || !movingNames) return;
+    e.stopPropagation();
+    e.preventDefault();
+    names.setPointerCapture(e.pointerId);
+    drag = { t, id: +t.dataset.i, from: MAP.toMap(e), moved: 0 };
+  });
+  names.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const p = MAP.toMap(e), dx = p.mx - drag.from.mx, dy = p.my - drag.from.my;
+    drag.moved = Math.max(drag.moved, Math.abs(dx) + Math.abs(dy));
+    drag.dx = dx;
+    drag.dy = dy;
+    drag.t.setAttribute("transform", `translate(${dx} ${dy})`);
+  });
+  names.addEventListener("pointerup", () => {
+    if (!drag) return;
+    const d = drag;
+    drag = null;
+    MAP.pick(d.id);
+    const r = MAP.sel();
+    if (!r || d.moved <= 1) return;
+    const o = COU[r.c] = COU[r.c] || {};
+    o.lx = Math.round((o.lx || 0) + d.dx);
+    o.ly = Math.round((o.ly || 0) + d.dy);
+    writeJSON(FILES.countries, COU);
+    closeProps();
+    countryForm(r);
+    MAP.redraw();
+  });
+}
 
 // ---------- on / off ----------
-async function start(){on=1;TX=await J(F.text,{});
-if(PV){ED=0;HT.classList.add("pv");BT.hidden=true}else{LS.ascwEditOn=1;HT.classList.add("ed");BT.classList.add("on");
-const ib=(i,t,f,ti)=>{const b=btn(i,f,ti||t);if(t){const s=h("span",{cls:"lb"},""+t);if(t.e){s.dataset.te=t.e;s.dataset.tr=t.r}b.append(s)}return b};
-pb=h("span",{style:"display:contents"},btn("",publish,Lp("Send all changes to GitHub","Отправить все изменения на GitHub")),btn("↺",discard,Lp("Discard all unpublished changes","Отменить все неопубликованные изменения")));
-eb=h("div",{id:"eb"},...EMB?[]:[pb]);et=h("div",{id:"et",hidden:""});D.body.append(eb,et);if(draft[F.text])showText();
-if(PAGE&&!/^map\//.test(SRC)&&(PG=await pageObj(PAGE))){
-if(NEWP)D.title=(PG.title||"")+" · ASCW";
-eb.append(ubn=ib("↶","",()=>undo(1),Lp("Undo","Отменить")+" (Ctrl+Z)"),rbn=ib("↷","",()=>undo(0),Lp("Redo","Повторить")+" (Ctrl+Shift+Z)"),
-...EMB?[]:[ib("📄",Lp("Page","Страница"),settings,Lp("Title, description, background, subpages","Название, описание, фон, подстраницы")),ib("📱",Lp("Phone","Телефон"),preview,Lp("Preview on a phone screen","Как на экране телефона"))],
-stb=h("span",{cls:"st"}))}
-if(MP)eb.append(ib("📍",Lp("Add markers","Новые метки"),e=>{MKon^=1;e.currentTarget.classList.toggle("on",!!MKon);HT.classList.toggle("mke",!!MKon);if(MKon&&LBon)D.getElementById("lbb").click();
-if(MKon)toast(L("Click the map to place a marker. Drag markers to move them; click one to edit it.","Клик по карте ставит метку. Метки можно перетаскивать, клик по метке — редактировать."))},Lp("Place markers by clicking the map","Ставить метки кликом по карте")),
-ib("☰",Lp("Markers","Метки"),mkList,Lp("All markers","Все метки")),
-(b=>(b.id="lbb",b))(ib("🏷",Lp("Country names","Названия стран"),e=>{LBon^=1;e.currentTarget.classList.toggle("on",!!LBon);HT.classList.toggle("lbe",!!LBon);if(LBon&&MKon)eb.querySelector(".eb.on:not(#lbb)")?.click();
-if(LBon)toast(L("Drag country names to move them; click a name to change its size, letter spacing and opacity.","Названия стран можно перетаскивать; клик по названию — размер, расстояние между буквами и прозрачность."))},Lp("Move and adjust country names","Двигать и настраивать названия стран"))),ib("⏱",Lp("Events","События"),events,Lp("Timeline events","События хронологии")));
-if(!EMB)eb.append(ib("⚙","",token,Lp("GitHub access","Доступ к GitHub")),ib("Aa","",texts,Lp("Interface texts","Тексты интерфейса")));
-if(!EMB)editable();bar();if(!tok&&!EMB)toast(L("Edit mode. Changes stay in this browser until you publish them (⚙ — GitHub access).","Режим редактирования. Изменения хранятся в браузере, пока вы их не опубликуете (⚙ — доступ к GitHub)."))}
-if(PV&&PAGE&&!/^map\//.test(SRC))PG=draft[PAGE]&&await pageObj(PAGE);
-if(PG){if(PG.bg)D.querySelector("main").style.setProperty("--bg",PG.bg=="none"?"none":`url(${img(PG.bg)})`);
-if(!Array.isArray(PG.blocks)){PG.blocks=[{t:"head"},...(D.getElementById("kids")?[{t:"links"}]:[])];delete PG.items;delete PG.body_en;delete PG.body_ru;delete PG.width}
-DOC=D.querySelector("article.doc")||(NEWP?(D.querySelector("main>section").replaceChildren(h("article",{cls:"doc"})),D.querySelector("article.doc")):null);
-if(DOC){await initKids();if(ED)docInit();render()}}
-if(MP&&!PV)await mapInit()}
-window.EDIT={toggle(){if(on){LS.ascwEditOn="";location.reload()}else start()}};
-D.addEventListener("lang",()=>{if(!on)return;eb?.querySelectorAll("[data-te]").forEach(e=>{const v=e.dataset[ru()?"tr":"te"];if(e.classList.contains("lb"))e.textContent=v;else{e.title=v;e.setAttribute("aria-label",v)}});bar();showText();render()});
+async function start() {
+  editing = true;
+  await new Promise(r => { // the editor's styles first
+    const link = h("link", { rel: "stylesheet", href: editButton.dataset.css });
+    link.onload = link.onerror = r;
+    doc.head.append(link);
+  });
+  TEXTS = await readJSON(FILES.texts, {});
+  const notMapPage = PAGE && !/^map\//.test(SRC);
+  if (PREVIEW) {
+    editable = false;
+    editButton.hidden = true;
+  } else {
+    store.ascwEditOn = 1;
+    root.classList.add("ed");
+    editButton.classList.add("on");
+    const barButton = (icon, text, onclick, tip) => { const b = button(icon, onclick, tip || text); if (text) b.append(h("span", { cls: "lb" }, text)); return b };
+    publishButtons = h("span", { style: "display:contents" },
+      button("", publish, inLang("Send all changes to GitHub", "Отправить все изменения на GitHub")),
+      button("↺", discardAll, inLang("Discard all unpublished changes", "Отменить все неопубликованные изменения")));
+    bar = h("div", { id: "eb" }, ...EMBEDDED ? [] : [publishButtons]);
+    toastEl = h("div", { id: "et", hidden: "" });
+    doc.body.append(bar, toastEl);
+    if (draft[FILES.texts]) showTexts();
+    if (notMapPage && (page = await readPage(PAGE))) {
+      if (NEW_PAGE) doc.title = (page.title || "") + " · ASCW";
+      bar.append(
+        undoButton = barButton("↶", "", () => undo(true), inLang("Undo", "Отменить") + " (Ctrl+Z)"),
+        redoButton = barButton("↷", "", () => undo(false), inLang("Redo", "Повторить") + " (Ctrl+Shift+Z)"),
+        ...EMBEDDED ? [] : [
+          barButton("📄", inLang("Page", "Страница"), pageDialog, inLang("Title, description, background, subpages", "Название, описание, фон, подстраницы")),
+          barButton("📱", inLang("Phone", "Телефон"), phonePreview, inLang("Preview on a phone screen", "Как на экране телефона")),
+        ],
+        wordCountEl = h("span", { cls: "st" }));
+    }
+    if (MAP) {
+      const namesButton = barButton("🏷", inLang("Country names", "Названия стран"), e => {
+        movingNames = !movingNames;
+        e.currentTarget.classList.toggle("on", movingNames);
+        root.classList.toggle("lbe", movingNames);
+        if (movingNames && addingMarkers) markersButton.click();
+        if (movingNames) toast(inLang("Drag country names to move them; click a name to change its size, letter spacing and opacity.",
+          "Названия стран можно перетаскивать; клик по названию — размер, расстояние между буквами и прозрачность."));
+      }, inLang("Move and adjust country names", "Двигать и настраивать названия стран"));
+      namesButton.id = "lbb";
+      const markersButton = barButton("📍", inLang("Add markers", "Новые метки"), e => {
+        addingMarkers = !addingMarkers;
+        e.currentTarget.classList.toggle("on", addingMarkers);
+        root.classList.toggle("mke", addingMarkers);
+        if (addingMarkers && movingNames) namesButton.click();
+        if (addingMarkers) toast(inLang("Click the map to place a marker. Drag markers to move them; click one to edit it.",
+          "Клик по карте ставит метку. Метки можно перетаскивать, клик по метке — редактировать."));
+      }, inLang("Place markers by clicking the map", "Ставить метки кликом по карте"));
+      bar.append(markersButton, barButton("☰", inLang("Markers", "Метки"), markersDialog, inLang("All markers", "Все метки")), namesButton,
+        barButton("⏱", inLang("Events", "События"), eventsDialog, inLang("Timeline events", "События хронологии")));
+    }
+    if (!EMBEDDED) {
+      bar.append(barButton("⚙", "", tokenDialog, inLang("GitHub access", "Доступ к GitHub")), barButton("Aa", "", textsDialog, inLang("Interface texts", "Тексты интерфейса")));
+      makeMenuEditable();
+    }
+    updateBar();
+    if (!token && !EMBEDDED) toast(inLang("Edit mode. Changes stay in this browser until you publish them (⚙ — GitHub access).",
+      "Режим редактирования. Изменения хранятся в браузере, пока вы их не опубликуете (⚙ — доступ к GitHub)."));
+  }
+  if (PREVIEW && notMapPage) page = draft[PAGE] && await readPage(PAGE); // the preview shows a page only when the draft changed it
+  if (page) {
+    if (page.bg) doc.querySelector("main").style.setProperty("--bg", page.bg == "none" ? "none" : `url(${imageUrl(page.bg)})`);
+    page.blocks ??= [{ t: "head" }, ...(byId("kids") ? [{ t: "links" }] : [])];
+    docEl = doc.querySelector("article.doc")
+      || (NEW_PAGE ? (doc.querySelector("main>section").replaceChildren(h("article", { cls: "doc" })), doc.querySelector("article.doc")) : null);
+    if (docEl) {
+      await loadSubpages();
+      if (editable) initDocument();
+      render();
+    }
+  }
+  if (MAP && !PREVIEW) await initMap();
+}
+
+window.EDIT = { toggle() { if (editing) { store.ascwEditOn = ""; location.reload() } else start() } };
 start();

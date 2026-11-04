@@ -1,5 +1,15 @@
-{{- /* every page except the map (map/list.html) and 404.html: the page blocks; subpages are listed for the site editor */ -}}
+{{- /* Every page except the map (map/list.html) and 404.html: the page's blocks (a page without blocks: its header and the links
+   to its subpages); the subpages are listed for the site editor (#kids). */ -}}
 {{ partial "top" . }}
-<article class="doc">{{ partial "blocks" (cond (isset .Params "blocks") . (dict "Params" (dict "blocks" (slice (dict "t" "head") (dict "t" "links")) "title_ru" .Params.title_ru "description_ru" .Params.description_ru) "Title" .Title "Description" .Description "Pages" .Pages)) }}</article>
-{{- with .Pages }}{{ $k := slice }}{{ range . }}{{ $k = $k | append (dict "src" .File.Path "en" .Title "ru" (default .Title .Params.title_ru)) }}{{ end }}<script type="application/json" id="kids">{{ $k | jsonify | safeJS }}</script>{{ end }}
+{{- $content := . -}}
+{{- if not (isset .Params "blocks") -}}
+  {{- $content = dict "Params" (dict "blocks" (slice (dict "t" "head") (dict "t" "links")) "title_ru" .Params.title_ru "description_ru" .Params.description_ru)
+    "Title" .Title "Description" .Description "Pages" .Pages -}}
+{{- end }}
+<article class="doc">{{ partial "blocks" $content }}</article>
+{{- with .Pages -}}
+  {{- $list := slice -}}
+  {{- range . }}{{ $list = $list | append (dict "src" .File.Path "en" .Title "ru" (default .Title .Params.title_ru)) }}{{ end }}
+  <script type="application/json" id="kids">{{ $list | jsonify | safeJS }}</script>
+{{- end }}
 </section></main>
