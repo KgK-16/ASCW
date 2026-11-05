@@ -962,6 +962,18 @@ async function deletePage() {
 function pageDialog() { // title, description, background, subpages
   const set = (k, v) => { snapshotTyping(); if (v) page[k] = v; else delete page[k]; scheduleSave(); render() };
   const showBg = () => doc.querySelector("main").style.setProperty("--bg", page.bg ? page.bg == "none" ? "none" : `url(${imageUrl(page.bg)})` : "");
+  // background: the site's backgrounds (hugo.toml; the first is the default), the page's own picture, none, or a new picture
+  const siteBgs = editButton.dataset.bgs.split(" "), gallery = h("div", { cls: "bgs" });
+  const setBg = v => { if (v) page.bg = v; else delete page.bg; scheduleSave(); showBg(); tiles() };
+  const tile = (src, text, on, onclick) => h("button", { type: "button", cls: "bgt" + (on ? " on" : ""), title: text, "aria-label": text, "aria-pressed": on ? "true" : "false", onclick },
+    src ? h("img", { src, alt: "" }) : h("span", {}), h("small", {}, text));
+  const tiles = () => gallery.replaceChildren(
+    ...siteBgs.map((u, i) => tile(u, i ? inLang("Site background", "Фон сайта") + " " + (i + 1) : inLang("Default", "По умолчанию"),
+      i ? page.bg == u : !page.bg || page.bg == u, () => setBg(i ? u : null))),
+    ...(page.bg && page.bg != "none" && !siteBgs.includes(page.bg) ? [tile(imageUrl(page.bg), inLang("This page's own", "Своё у страницы"), true, () => {})] : []),
+    tile(null, inLang("None", "Без фона"), page.bg == "none", () => setBg("none")),
+    tile(null, "+ " + inLang("Your picture…", "Своё изображение…"), false, async () => { const f = await pickFile(); if (f) setBg(await uploadImage(f)) }));
+  tiles();
   dialog(inLang("Page", "Страница"),
     h("div", { cls: "row" },
       label(inLang("Title", "Название") + " · EN", input(page.title, v => set("title", v))),
@@ -969,10 +981,7 @@ function pageDialog() { // title, description, background, subpages
     h("div", { cls: "row" },
       label(inLang("Description (also shown in link previews)", "Описание (видно и в превью ссылок)") + " · EN", input(page.description, v => set("description", v), { area: 1 })),
       label(inLang("Description", "Описание") + " · RU", input(page.description_ru, v => set("description_ru", v), { area: 1 }))),
-    h("div", { cls: "row" }, label(inLang("Background", "Фон"), h("div", { cls: "row" },
-      button(inLang("Image…", "Изображение…"), async () => { const f = await pickFile(); if (f) { page.bg = await uploadImage(f); scheduleSave(); showBg() } }),
-      button(inLang("None", "Без фона"), () => { page.bg = "none"; scheduleSave(); showBg() }),
-      button(inLang("Default", "По умолчанию"), () => { delete page.bg; scheduleSave(); showBg() })))),
+    h("div", { style: "display:flex;flex-direction:column;gap:4px" }, h("label", {}, inLang("Background", "Фон")), gallery), // not inside the label: a label passes clicks to its first button
     h("div", { style: "font-size:12px;color:#e8e8e080" }, inLang("Address: ", "Адрес: ") + PAGES + DIR),
     h("div", { cls: "row" }, button("+ " + inLang("New subpage…", "Новая подстраница…"), newSubpageDialog), button("🗑 " + inLang("Delete page", "Удалить страницу"), deletePage)));
 }

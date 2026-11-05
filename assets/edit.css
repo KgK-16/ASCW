@@ -128,3 +128,11 @@ textarea.ei { resize: vertical; min-height: 70px; line-height: 1.5 }
 .cx h3 > span { flex: 1 }
 .cx.mv { opacity: .92 }
 .cx .ef { display: flex; flex-direction: column; gap: 8px }
+
+/* page backgrounds in the page dialog: a tile each, the chosen one outlined */
+.bgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; text-transform: none; letter-spacing: 0 }
+.bgt { display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 1px solid #6665c04d; background: #0b0b18; cursor: pointer; text-align: left }
+.bgt:hover { border-color: #8d8cf0 }
+.bgt.on { border-color: #e8b04a; box-shadow: 0 0 0 1px #e8b04a }
+.bgt img, .bgt span { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #04040a }
+.bgt small { font: 400 12px "Exo 2", sans-serif; color: #e8e8e0cc }

@@ -17,7 +17,7 @@
 <meta name="description" content="{{ . }}">{{ end }}
 
 {{- /* link previews */}}
-{{- $img := cond (and .Params.bg (ne .Params.bg "none")) .Params.bg ("bg.webp" | relURL) }}
+{{- $img := cond (and .Params.bg (ne .Params.bg "none")) .Params.bg (index site.Params.backgrounds 0 | relURL) }}
 <meta property="og:type" content="website"><meta property="og:site_name" content="ASCW"><meta property="og:title" content="{{ $title }}">
 <meta property="og:url" content="{{ .Permalink }}"><meta property="og:locale" content="{{ cond $ru "ru_RU" "en_US" }}">
 {{- with $desc }}<meta property="og:description" content="{{ . }}">{{ end }}
@@ -47,7 +47,7 @@
     <a href="{{ "map/" | relLangURL }}"{{ if eq .Section "map" }} aria-current="page"{{ end }}>{{ partial $t "nav_map" }}</a>
     {{- with partialCached "js" (resources.Get "edit.js") "edit" | fingerprint "md5" }}
     <button type="button" id="ed" class="bt" hidden data-js="{{ .RelPermalink }}"{{ with resources.Get "edit.css" | minify | fingerprint "md5" }} data-css="{{ .RelPermalink }}"{{ end }}
-      data-u="{{ "" | relURL }}" data-repo="{{ site.Params.repo }}" {{ partial $tip "tip_edit" }}>✎</button>
+      data-u="{{ "" | relURL }}" data-repo="{{ site.Params.repo }}" data-bgs="{{ range $i, $b := site.Params.backgrounds }}{{ if $i }} {{ end }}{{ $b | relURL }}{{ end }}" {{ partial $tip "tip_edit" }}>✎</button>
     {{- end }}
   </div>
 </nav>

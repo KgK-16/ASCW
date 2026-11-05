@@ -9,6 +9,7 @@ disableJS = true  # scripts are minified by esbuild (layouts/partials/js.html); 
 
 [params]
 repo = "KgK-16/ASCW"  # the site editor commits here
+backgrounds = ["bg-sky.webp", "bg.webp"]  # page backgrounds offered by the site editor; the first is the default (also in assets/s.css)
 
 # two languages: English at /ASCW/…, Russian at /ASCW/ru/…; every content file holds both (title / title_ru, en / ru fields)
 # and is built once per language (the mount below); a page shows only its own language
