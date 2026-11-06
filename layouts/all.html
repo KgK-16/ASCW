@@ -2,7 +2,9 @@
    A page with no text in this language shows the other language's note (its language is marked). */ -}}
 {{ partial "top" . }}
 <article class="doc"{{ with (partial "note" .).from }} lang="{{ . }}"{{ end }}>
-  <button type="button" id="bk" class="bt" hidden {{ partial "tip" "tip_back" }}>←</button>{{/* shown when there is a page of this site to go back to */}}
+  {{- if hasPrefix .Path "/archive/" }}{{/* inside the archive only; shown when there is a page of this site to go back to */}}
+  <button type="button" id="bk" class="bt" hidden {{ partial "tip" "tip_back" }}>←</button>
+  {{- end }}
   {{- partial "head" . -}}
   {{- partial "body" . -}}
   {{- partial "links" . -}}
