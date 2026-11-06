@@ -59,6 +59,9 @@ doc.addEventListener("click", e => {
   location.replace(to + location.search + location.hash);
 });
 
+for (const event of ["pageswap", "pagereveal"]) // a page change without its cross-fade (a hidden tab, say) is not an error
+  addEventListener(event, e => e.viewTransition?.ready.catch(() => {}));
+
 addEventListener("pageshow", () => { // also when the browser restores a page from its memory
   if (embedded) return;
   try { session.ascwDepth = depth } catch {}

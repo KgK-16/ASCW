@@ -50,7 +50,6 @@
     <a href="{{ "" | relLangURL }}"{{ if .IsHome }} aria-current="page"{{ end }}>{{ partial $t "nav_menu" }}</a>
     <a href="{{ "archive/" | relLangURL }}"{{ if eq .Section "archive" }} aria-current="page"{{ end }}>{{ partial $t "nav_archive" }}</a>
     <a href="{{ "map/" | relLangURL }}"{{ if eq .Section "map" }} aria-current="page"{{ end }}>{{ partial $t "nav_map" }}</a>
-    <button type="button" id="bk" class="bt" hidden {{ partial $tip "tip_back" }}>←</button>{{/* shown when there is a page of this site to go back to */}}
   </div>
 </nav>
 <main{{ with $bg }} style="--bg:{{ if eq . "none" }}none{{ else }}url({{ . }}){{ end }}"{{ end }}><section>
