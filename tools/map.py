@@ -3,7 +3,7 @@
 usage: python3 tools/map.py General_Map.kra
 
 Krita file layout (layer names matter):
-  top-level visible paint layers  -> the geographic base (static/map/g0..g3.webp), always shown
+  top-level visible paint layers  -> the geographic base (static/map/g1..g3.webp), always shown
   group "y<year>" (e.g. y410)     -> one map version:
       "borders"    black lines, always shown           -> static/map/<year>/b0..b3.webp
       "countries"  flat fills, one hex colour a country -> vector territories in assets/map.json
@@ -90,10 +90,12 @@ def over(dst, src, opacity=1.):
     dst[..., 3:4] = np.maximum(dst[..., 3:4], a * 255)
 
 
-def levels(img, name, lossless=False):
-    """zoom levels: 1024, 2048, 4096 (also the globe texture), full width"""
+def levels(img, name, lossless=False, first=0):
+    """zoom levels from first: 0 = 1024, 1 = 2048, 2 = 4096 (also the globe texture), 3 = full width"""
     W = img.width
     for i, w in enumerate((1024, 2048, 4096, W)):
+        if i < first:
+            continue
         im = img if w == W else img.resize((w, w // 2), Image.LANCZOS)
         if lossless and w != W:  # thin lines stay visible when downscaled: alpha = the block's max
             f = W // w
@@ -182,7 +184,7 @@ def main(src):
         elif e.get('nodetype') == 'grouplayer' and re.fullmatch(r'y-?\d+', name):
             versions[int(name[1:])] = {c.get('name'): c for c in e.find('k:layers', ns).findall('k:layer', ns)}
     os.makedirs(ROOT + '/static/map', exist_ok=True)
-    levels(Image.fromarray(geo[..., :3].round().astype(np.uint8)), ROOT + '/static/map/g')
+    levels(Image.fromarray(geo[..., :3].round().astype(np.uint8)), ROOT + '/static/map/g', first=1)  # the site never shows level 0 of the geography
     data = []
     for y in sorted(versions):
         layers = versions[y]

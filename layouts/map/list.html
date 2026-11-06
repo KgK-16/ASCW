@@ -48,7 +48,7 @@
 {{- /* places that have a page (content/places/<name>/) */}}
 {{ $places := slice }}
 {{- range site.Pages }}{{ if and (eq .Section "places") .File (ne .File.Dir "places/") }}{{ $places = $places | append (path.Base .File.Dir) }}{{ end }}{{ end }}
-{{- with partial "js" (resources.Get "map.js") }}
+{{- with partialCached "js" (resources.Get "map.js") "map" }}
 {{- $all := print "var V=" (resources.Get "map.json").Content ",MK=" (resources.Get "markers.json").Content ",EV=" (resources.Get "events.json").Content
   ",COU=" (resources.Get "countries.json").Content ",PL=" ($places | jsonify) ";" .Content }}
 <script>var U="{{ "" | relURL }}",UL="{{ "" | relLangURL }}"</script>

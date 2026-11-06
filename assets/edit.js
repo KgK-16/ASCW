@@ -22,7 +22,8 @@ const MAP = window.MAP;                                   // the map page's hook
 
 const isRu = () => root.lang == "ru",
   inLang = (en, ru) => isRu() ? ru : en,
-  esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"),
+  hash = t => { let x = 0x811c9dc5; for (let i = 0; i < t.length; i++) x = Math.imul(x ^ t.charCodeAt(i), 0x1000193); return x >>> 0 }; // FNV-1a: has a text changed
 
 function h(tag, attrs = {}, ...children) { // an element: on* attributes are handlers, cls is the class
   const e = doc.createElement(tag);
@@ -89,7 +90,7 @@ async function writeFile(path, text) {
   if (base[path] == null && Object.values(FILES).includes(path)) // never replace a data file by a partial one
     return toast(inLang("Could not read the file from GitHub, the change is not saved: ", "Не удалось прочитать файл с GitHub, изменение не сохранено: ") + path, 1);
   if (text === base[path]) delete draft[path];
-  else draft[path] = { t: text };
+  else draft[path] = { t: text, from: draft[path]?.from ?? hash(base[path] ?? "") }; // from: the published file this change started from
   saveDraft();
 }
 
@@ -107,15 +108,23 @@ async function publish() {
   toast(inLang("Publishing…", "Публикация…"));
   try {
     const head = (await github(`git/ref/heads/${BRANCH}`)).object.sha, commit = await github(`git/commits/${head}`), tree = [];
-    const listing = await github(`git/trees/${commit.tree.sha}?recursive=1`), all = listing.tree.filter(e => e.type == "blob").map(e => e.path);
-    const unused = listing.truncated ? new Set() : await unusedImages(all);
+    const listing = await github(`git/trees/${commit.tree.sha}?recursive=1`), files = listing.tree.filter(e => e.type == "blob");
+    const all = files.map(e => e.path), shaOf = Object.fromEntries(files.map(e => [e.path, e.sha]));
+    const atHead = path => shaOf[path] ? github(`git/blobs/${shaOf[path]}`, { raw: 1 }) : Promise.resolve(null); // a file as it is on GitHub now
+    // files changed on GitHub since this draft started changing them (from another browser or device): overwrite only if confirmed
+    const changed = [];
+    await Promise.all(Object.entries(draft).map(async ([path, v]) => { if ("from" in v && hash(await atHead(path) ?? "") != v.from) changed.push(path) }));
+    if (changed.length && !confirm(inLang("Changed on GitHub after you began editing them here (in another browser or on another device?):\n\n",
+      "Изменены на GitHub после того, как вы начали править их здесь (в другом браузере или на другом устройстве?):\n\n") + changed.join("\n") +
+      inLang("\n\nPublish anyway? Those changes will be lost.", "\n\nВсё равно опубликовать? Те изменения пропадут."))) return toastEl.hidden = true;
+    const unused = listing.truncated ? new Set() : await unusedImages(all, atHead);
     for (const [path, v] of Object.entries(draft)) {
       if (unused.has(path)) continue; // an image uploaded and no longer used before publishing is not published at all
-      if (v.del) { if (await published(path) != null) tree.push({ path, mode: "100644", type: "blob", sha: null }); continue }
+      if (v.del) { if (shaOf[path]) tree.push({ path, mode: "100644", type: "blob", sha: null }); continue }
       const blob = await github("git/blobs", { method: "POST", body: JSON.stringify(v.b ? { content: v.b, encoding: "base64" } : { content: v.t, encoding: "utf-8" }) });
       tree.push({ path, mode: "100644", type: "blob", sha: blob.sha });
     }
-    const removed = [...unused].filter(p => all.includes(p));
+    const removed = [...unused].filter(p => shaOf[p]);
     removed.forEach(path => tree.push({ path, mode: "100644", type: "blob", sha: null }));
     const newTree = await github("git/trees", { method: "POST", body: JSON.stringify({ base_tree: commit.tree.sha, tree }) });
     const message = "Edit via site editor" + (removed.length ? `; unused images removed: ${removed.map(p => p.slice(11)).join(", ")}` : "");
@@ -123,24 +132,26 @@ async function publish() {
     await github(`git/refs/heads/${BRANCH}`, { method: "PATCH", body: JSON.stringify({ sha: newCommit.sha }) });
     for (const [path, v] of Object.entries(draft)) base[path] = v.del ? null : v.t ?? base[path];
     removed.forEach(path => base[path] = null);
+    pending = {}; // later reads give the published texts
     draft = {};
     saveDraft();
     followBuild(newCommit.sha);
   } catch (e) {
     toast(inLang("Publish failed: ", "Ошибка публикации: ") + e.message, 1);
+  } finally {
+    button.disabled = false;
   }
-  button.disabled = false;
 }
 
-async function unusedImages(all) { // images in static/img that no page or data file mentions any more (after this publish)
+async function unusedImages(all, atHead) { // images in static/img that no page or data file mentions any more (after this publish)
   const paths = [...new Set([...all, ...Object.keys(draft)])];
   const images = new Set(paths.filter(p => p.startsWith("static/img/") && !draft[p]?.del));
   if (!images.size) return images;
   const texts = paths.filter(p => !draft[p]?.del && /^(content\/.*\.md|data\/.*\.json|assets\/(markers|events|countries)\.json|assets\/.*\.css|layouts\/.*\.html)$/.test(p));
-  const contents = await Promise.all(texts.map(readFile));
+  const contents = await Promise.all(texts.map(p => draft[p] ? draft[p].t : atHead(p).catch(() => null))); // the draft's text, or GitHub's at this moment
   if (contents.some(t => t == null)) return new Set(); // a file could not be read: nothing is removed this time
-  const all_ = contents.join("\n");
-  for (const p of images) if (all_.includes("img/" + p.slice(11))) images.delete(p);
+  const used = contents.join("\n");
+  for (const p of images) if (used.includes("img/" + p.slice(11))) images.delete(p);
   return images;
 }
 
@@ -198,7 +209,10 @@ function dialog(title, ...content) { // a modal window; Escape or a click outsid
   const box = h("div", { cls: "dlb", role: "dialog", "aria-label": title, tabindex: "-1" }, h("h3", {}, title, close), ...content);
   const w = h("div", { cls: "dl", onclick: e => { if (e.target == w) w.remove() } }, box);
   doc.body.append(w);
-  w.addEventListener("keydown", e => { if (e.key == "Escape") { e.stopPropagation(); w.remove() } });
+  doc.addEventListener("keydown", function onEscape(e) { // also when its rows were redrawn and nothing has the focus; not the map's Escape
+    if (!w.isConnected) return doc.removeEventListener("keydown", onEscape, true);
+    if (e.key == "Escape" && !e.isComposing && doc.body.lastElementChild == w) { e.stopPropagation(); w.remove() } // the topmost window only
+  }, true);
   setTimeout(() => (box.querySelector("input,textarea,select,.dlb>:not(h3) button") || box).focus());
   return w;
 }
@@ -562,8 +576,8 @@ function insertBlock(b, at, focus = true) {
   if (focus) { if (b.t == "img" && !b.src) chooseImage(b); else focusField(at, null, false) }
 }
 
-async function chooseImage(o, file) {
-  file = file || await pickFile();
+async function chooseImage(o) {
+  const file = await pickFile();
   if (!file) return;
   snapshot();
   o.src = await uploadImage(file);
@@ -725,7 +739,6 @@ function onPaste(e) { // plain text only
 }
 
 function initDocument() {
-  docEl.classList.add("edoc");
   gutter = h("div", { id: "gut", hidden: "" },
     h("button", { type: "button", title: inLang("Add a block", "Добавить блок"), "aria-label": inLang("Add a block", "Добавить блок"),
       onclick: e => { const r = e.currentTarget.getBoundingClientRect(); addMenu(+gutter.dataset.i, r.left, r.bottom + 4) } }, "+"),
@@ -822,13 +835,14 @@ function initDocument() {
   // image files dropped on the page: new image blocks where they are dropped
   docEl.addEventListener("dragover", e => { if ([...e.dataTransfer.items].some(x => x.kind == "file")) { e.preventDefault(); docEl.classList.add("dropping") } });
   docEl.addEventListener("dragleave", () => docEl.classList.remove("dropping"));
-  docEl.addEventListener("drop", e => {
+  docEl.addEventListener("drop", async e => {
     docEl.classList.remove("dropping");
-    const files = [...e.dataTransfer.files].filter(f => f.type.startsWith("image/"));
+    if (!e.dataTransfer.files.length) return; // text moved inside the page: the browser's own
+    e.preventDefault(); // other files are not opened in place of the editor either
+    const files = [...e.dataTransfer.files].filter(f => f.type.startsWith("image/")), at = blockIndexAt(e.clientY);
     if (!files.length) return;
-    e.preventDefault();
-    let at = blockIndexAt(e.clientY);
-    files.forEach(file => { const b = { t: "img", al: "center" }; blocks().splice(at++, 0, b); chooseImage(b, file) });
+    const added = await Promise.all(files.map(async f => ({ t: "img", al: "center", src: await uploadImage(f) })));
+    act(() => blocks().splice(at, 0, ...added)); // one undo step
   });
   gutter.querySelector(".hd").addEventListener("pointerdown", startBlockDrag);
   doc.addEventListener("selectionchange", updateToolbar);
@@ -954,7 +968,7 @@ async function deletePage() {
   if (!confirm(inLang("Delete this page when publishing?", "Удалить эту страницу при публикации?"))) return;
   await published(PAGE);
   if (base[PAGE] == null) delete draft[PAGE];
-  else draft[PAGE] = { del: 1 };
+  else draft[PAGE] = { del: 1, from: draft[PAGE]?.from ?? hash(base[PAGE]) };
   saveDraft();
   location.href = PAGES + up;
 }

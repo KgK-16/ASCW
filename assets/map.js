@@ -665,7 +665,7 @@ function buildTimeline() {
     [lastSide, 1 - lastSide].forEach(d => { let l = 0; while (ends[d][l] > X) l++; if (l < row) { row = l; side = d } });
     ends[side][row] = X + 210;
     lastSide = 1 - side;
-    html += `<div class="f ${side ? "d" : "u"}" data-y="${n}" style="left:${60 + X}px;height:${96 + row * 92}px"><b>${n}</b><span>${events[n].join("; ")}</span></div>`;
+    html += `<div class="f ${side ? "d" : "u"}" data-y="${n}" style="left:${60 + X}px;height:${96 + row * 92}px"><b>${n}</b><span>${esc(events[n].join("; "))}</span></div>`;
   });
   timelineTrack.querySelectorAll("i,em,.f").forEach(e => e.remove());
   yearSlider.insertAdjacentHTML("beforebegin", html);
@@ -1309,6 +1309,7 @@ function toggleGlobe() {
     dragVel = [0, 0];
     zoomAnchorG = null;
     loadGlobeBorders();
+    requestFrame();
   } else setView();
 }
 

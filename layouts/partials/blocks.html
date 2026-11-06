@@ -8,8 +8,9 @@
    links — links to the subpages (hide: page sources left out)
    Text blocks may have ta: text alignment (left | center | right | justify). Texts: partial "tx". */ -}}
 {{- $page := . -}}
-{{- range $b := .Params.blocks -}}
+{{- range $i, $b := .Params.blocks -}}
   {{- $ta := cond (isset $b "ta") (printf "ta-%s" $b.ta) "" -}}
+  {{- $top := lt $i 2 -}}{{/* images in the first blocks load at once */}}
 
   {{- if eq $b.t "head" -}}
     <header class="b-head{{ if $b.tall }} tall{{ end }}">
@@ -42,13 +43,13 @@
 
   {{- else if eq $b.t "img" -}}
     <figure class="b-img al-{{ default "center" $b.al }}"{{ with $b.w }} style="--w:{{ . }}%"{{ end }}>
-      {{- with $b.src }}{{ partial "img" . }}{{ end -}}
+      {{- with $b.src }}{{ partial "img" (dict "src" . "top" $top) }}{{ end -}}
       {{- partial "tx" (dict "b" $b "f" "cap_" "tag" "figcaption") -}}
     </figure>
 
   {{- else if eq $b.t "card" -}}
     <aside class="b-card">
-      {{- with $b.src }}{{ partial "img" . }}{{ end -}}
+      {{- with $b.src }}{{ partial "img" (dict "src" . "top" $top) }}{{ end -}}
       {{- partial "tx" (dict "b" $b "f" "t_" "tag" "h4") -}}
       {{- with $b.rows -}}
         <dl>
@@ -62,7 +63,7 @@
       {{- range $b.c -}}
         <div class="cell">
           {{- if eq .t "img" -}}
-            <figure class="b-img">{{ with .src }}{{ partial "img" . }}{{ end }}{{ partial "tx" (dict "b" . "f" "cap_" "tag" "figcaption") }}</figure>
+            <figure class="b-img">{{ with .src }}{{ partial "img" (dict "src" . "top" $top) }}{{ end }}{{ partial "tx" (dict "b" . "f" "cap_" "tag" "figcaption") }}</figure>
           {{- else -}}
             {{- partial "tx" (dict "b" . "f" "" "tag" "div") -}}
           {{- end -}}
