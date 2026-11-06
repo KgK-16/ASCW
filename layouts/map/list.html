@@ -9,11 +9,15 @@
   <div id="tw"><div id="tz"><input id="tr" type="range"></div></div>
 </div>
 
-{{- /* buttons: globe / flat map, year, country colours */}}
+{{- /* buttons: globe / flat map, year, country colours, the map editor (shown once edit mode is unlocked) */}}
 <div class="z">
   <button type="button" id="zg" {{ partial "tip" "tip_3d" }}>3D</button>
   <button type="button" id="zt" {{ partial "tip" "tip_tl" }}></button>
   <button type="button" id="zc" {{ partial "tip" "tip_col" }}><i></i></button>
+  {{- with partialCached "js" (resources.Get "edit.js") "edit" | fingerprint "md5" }}
+  <button type="button" id="ed" hidden data-js="{{ .RelPermalink }}"{{ with resources.Get "edit.css" | minify | fingerprint "md5" }} data-css="{{ .RelPermalink }}"{{ end }}
+    data-repo="{{ site.Params.repo }}" {{ partial "tip" "tip_edit" }}>✎</button>
+  {{- end }}
 </div>
 
 {{- /* the place's page (or a placeholder) */}}

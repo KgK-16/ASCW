@@ -34,7 +34,7 @@
 <link rel="preload" href="{{ "fonts/a.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
 
-{{- /* the menu: language button and brand line, then the page links and, on the map, the map editor's ✎ (shown once edit mode is unlocked) */}}
+{{- /* the menu: language button and brand line, then the page links */}}
 <nav aria-label="ASCW">
   <span class="nl">
     <button type="button" id="lq" class="bt" {{ partial $tip "tip_lang" }}>{{ if $notFound }}<span lang="en">EN</span><span lang="ru">РУ</span>{{ else }}{{ cond $ru "РУ" "EN" }}{{ end }}</button>
@@ -44,10 +44,6 @@
     <a href="{{ "" | relLangURL }}"{{ if .IsHome }} aria-current="page"{{ end }}>{{ partial $t "nav_menu" }}</a>
     <a href="{{ "archive/" | relLangURL }}"{{ if eq .Section "archive" }} aria-current="page"{{ end }}>{{ partial $t "nav_archive" }}</a>
     <a href="{{ "map/" | relLangURL }}"{{ if eq .Section "map" }} aria-current="page"{{ end }}>{{ partial $t "nav_map" }}</a>
-    {{- if eq .Section "map" }}{{ with partialCached "js" (resources.Get "edit.js") "edit" | fingerprint "md5" }}
-    <button type="button" id="ed" class="bt" hidden data-js="{{ .RelPermalink }}"{{ with resources.Get "edit.css" | minify | fingerprint "md5" }} data-css="{{ .RelPermalink }}"{{ end }}
-      data-repo="{{ site.Params.repo }}" {{ partial $tip "tip_edit" }}>✎</button>
-    {{- end }}{{ end }}
   </div>
 </nav>
 <main{{ with $bg }} style="--bg:{{ if eq . "none" }}none{{ else }}url({{ . }}){{ end }}"{{ end }}><section>

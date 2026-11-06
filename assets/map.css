@@ -105,6 +105,8 @@ main > section { width: 100%; padding: 0; border: 0; position: relative; overflo
   text-align: center; background: #020206; cursor: pointer; color: #e8e8e0a6;
 }
 .z button:hover { color: #e8e8e0 }
+.z button[hidden] { display: none }
+.z #ed.on { background: #6665c0; color: #fff } /* edit mode is on */
 @media (pointer: coarse) { .z button { width: 44px; height: 44px; line-height: 44px } }
 .z i { display: inline-block; width: 12px; height: 12px; border: 1px solid #e8e8e0a6; vertical-align: -1px }
 .z .on i { background: linear-gradient(135deg, #5e0a22 33%, #1c4690 33% 66%, #b77d2b 66%) }
