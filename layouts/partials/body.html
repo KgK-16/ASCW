@@ -1,0 +1,40 @@
+{{- /* The note's text with Obsidian's own links, which Markdown does not know (the note's file itself is never changed):
+   ![[picture.png|left|45%|caption]] — a picture; [[Note]], [[Note|text]], [[Note#Heading]], [[#Heading]] — a link.
+   A link goes to the page in this language; without its own text it shows the page's title. Names are looked up in data/notes.json. */ -}}
+{{- $html := string .Content -}}
+{{- $notes := hugo.Data.notes | default dict -}}
+{{- $lang := site.Language.Name -}}
+
+{{- /* code examples stay as they are */ -}}
+{{- range findRE `(?s)<code[^>]*>.*?</code>` $html -}}
+  {{- if strings.Contains . "[[" }}{{ $html = replace $html . (replace . "[[" "&#91;&#91;") }}{{ end -}}
+{{- end -}}
+
+{{- range findRESubmatch `<p>!\[\[([^\]\n]+)\]\]</p>|!\[\[([^\]\n]+)\]\]` $html -}}
+  {{- $parts := split (or (index . 1) (index . 2)) "|" -}}
+  {{- $file := trim (index $parts 0) " " -}}
+  {{- $src := "" }}{{ with $notes.images }}{{ $src = index . (lower (htmlUnescape $file)) }}{{ end -}}
+  {{- $out := $file -}}
+  {{- with $src }}{{ $out = partial "pic" (dict "src" (relURL .) "mods" (after 1 $parts)) }}{{ end -}}
+  {{- $html = replace $html (index . 0) (string $out) -}}
+{{- end -}}
+
+{{- range findRESubmatch `\[\[([^\]\n]+)\]\]` $html -}}
+  {{- $parts := split (index . 1) "|" -}}
+  {{- $text := delimit (after 1 $parts) "|" -}}
+  {{- $target := split (htmlUnescape (trim (index $parts 0) " ")) "#" -}}
+  {{- $name := index $target 0 }}{{ $heading := delimit (after 1 $target) "#" -}}
+  {{- $anchor := "" }}{{ with $heading }}{{ $anchor = print "#" (anchorize .) }}{{ end -}}
+  {{- $path := "" }}{{ with $notes.links }}{{ $path = index . (lower $name) }}{{ end -}}
+  {{- $out := or $text $name $heading -}}
+  {{- if $path -}}
+    {{- $title := $name }}{{ with index $notes.pages $path }}{{ with index . $lang }}{{ $title = .title }}{{ end }}{{ end -}}
+    {{- $inner := trim $path "/" }}{{ if $inner }}{{ $inner = print $inner "/" }}{{ end -}}
+    {{- $shown := $title }}{{ with $heading }}{{ $shown = print $title " › " . }}{{ end -}}
+    {{- $out = printf `<a href="%s%s">%s</a>` (relLangURL $inner) $anchor (or $text $shown) -}}
+  {{- else if and (not $name) $heading -}}
+    {{- $out = printf `<a href="%s">%s</a>` $anchor (or $text $heading) -}}
+  {{- end -}}
+  {{- $html = replace $html (index . 0) $out -}}
+{{- end -}}
+{{- $html | safeHTML -}}

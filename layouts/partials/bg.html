@@ -1,0 +1,10 @@
+{{- /* The page's background (property bg): none, one of the site's backgrounds (hugo.toml), or a picture from the vault. "" — the default. */ -}}
+{{- $bg := "" -}}
+{{- with .Params.bg -}}
+  {{- $bg = . -}}
+  {{- if in site.Params.backgrounds . }}{{ $bg = relURL . -}}
+  {{- else if ne . "none" -}}
+    {{- $bg = "" }}{{ with hugo.Data.notes }}{{ with index .images (lower $.Params.bg) }}{{ $bg = relURL . }}{{ end }}{{ end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $bg -}}

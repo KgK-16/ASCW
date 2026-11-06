@@ -1,3 +1,3 @@
 {{- /* interface text from data/text.json (key) in the page's language */ -}}
-{{- $v := index hugo.Data.text . }}{{ $l := site.Language.Name -}}<span data-k="{{ . }}" lang="{{ $l }}">{{ index $v $l | default $v.en }}</span>
+{{- $v := index hugo.Data.text . }}{{ $l := site.Language.Name -}}<span lang="{{ $l }}">{{ index $v $l | default $v.en }}</span>
 {{- /* nothing after it: it sits inside links */ -}}

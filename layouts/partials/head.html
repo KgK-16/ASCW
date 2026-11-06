@@ -1,0 +1,12 @@
+{{- /* The page header from the note's properties: kicker (default: "Work-In-Progress", empty: none), title (default: the note's name),
+   accent (second line), description, tall (a full-screen header). head: false — no header. */ -}}
+{{- if ne .Params.head false -}}
+  {{- $note := partial "note" . -}}
+  {{- $kicker := index hugo.Data.text.wip site.Language.Name -}}
+  {{- if isset .Params "kicker" }}{{ $kicker = .Params.kicker }}{{ end -}}
+  <header class="b-head{{ if .Params.tall }} tall{{ end }}">
+    {{- with $kicker }}<p class="k">{{ . }}</p>{{ end -}}
+    <h1><span>{{ $note.title | default .Title }}</span>{{ with .Params.accent }}<b><span>{{ . }}</span></b>{{ end }}</h1><hr>
+    {{- with $note.description | default .Description }}<p class="ds">{{ . }}</p>{{ end -}}
+  </header>
+{{- end -}}

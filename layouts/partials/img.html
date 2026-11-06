@@ -1,4 +1,4 @@
-{{- /* image uploaded on the site (src = site path, e.g. /ASCW/img/x.webp) with its size, so the page does not jump while it loads;
-   top: in the first blocks of the page, loaded at once (the others when scrolled near) */ -}}
+{{- /* a picture (src = site path, e.g. /ASCW/notes/x.webp) with its size, so the page does not jump while it loads;
+   loaded when scrolled near */ -}}
 {{- $f := path.Join "static" (strings.TrimPrefix (relURL "") .src) -}}
-<img src="{{ .src }}" alt=""{{ if not .top }} loading="lazy"{{ end }} decoding="async"{{ if and (findRE `(?i)\.(jpe?g|png|gif|webp)$` $f) (fileExists $f) }}{{ with imageConfig $f }} width="{{ .Width }}" height="{{ .Height }}"{{ end }}{{ end }}>
+<img src="{{ .src }}" alt="" loading="lazy" decoding="async"{{ if and (findRE `(?i)\.(jpe?g|png|gif|webp)$` $f) (fileExists $f) }}{{ with imageConfig $f }} width="{{ .Width }}" height="{{ .Height }}"{{ end }}{{ end }}>

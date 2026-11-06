@@ -21,7 +21,7 @@ jobs:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: '0.160.0'  # fixed version: the site is tested with it (a new release can change templates or minification)
+          hugo-version: '0.168.0'  # fixed version: the site is tested with it (a new release can change templates or minification)
           extended: true
 
       - name: Build

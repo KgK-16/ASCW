@@ -1,7 +1,7 @@
 // Runs in the <head> of every page, before it is shown (layouts/partials/top.html puts it into the page, minified).
 // Language: every page is built in English (/ASCW/…) and Russian (/ASCW/ru/…). A saved choice — or, on the first visit, the browser's
 // language — opens the page in that language; search robots are not redirected. The 404 page is one file for every address: it takes the
-// language of its address. The site editor (assets/edit.js) is unlocked once per browser with ?edit and loaded only in edit mode.
+// language of its address. The map editor (assets/edit.js) is unlocked once per browser with ?edit and loaded only in edit mode, on the map.
 const doc = document, root = doc.documentElement, base = root.dataset.b, path = location.pathname;
 const notFound = root.classList.contains("l2"), inRuPath = path.startsWith(base + "ru/");
 const addressIn = lang => notFound // this page in a language
@@ -17,7 +17,6 @@ try {
 if (notFound) { // the 404 page: its texts (both languages in the file) and button tips in the address's language
   const lang = inRuPath ? "ru" : "en";
   root.lang = lang;
-  doc.title = doc.querySelector("title").dataset[lang];
   doc.addEventListener("DOMContentLoaded", () => {
     doc.querySelectorAll("[data-ten]").forEach(e => {
       const tip = e.dataset[lang == "ru" ? "tru" : "ten"];

@@ -1,4 +1,4 @@
-/* The site editor (assets/edit.js): loaded only in edit mode. */
+/* The map editor (assets/edit.js): loaded only on the map, in edit mode. */
 
 /* ---------- bottom bar, messages ---------- */
 #eb { position: fixed; left: 12px; bottom: 12px; z-index: 40; display: flex; gap: 4px; flex-wrap: wrap; max-width: calc(100% - 24px); text-transform: none }
@@ -10,10 +10,9 @@
 .eb.on { background: #6665c0; color: #fff }
 .eb:disabled { opacity: .4; cursor: default }
 #eb .eb.n { border-color: #e8b04a; color: #e8b04a } /* Publish, with unpublished changes */
-#eb .st { align-self: center; padding: 0 6px; font: 400 12px "Exo 2", sans-serif; color: #e8e8e099 } /* word count */
 #eb .lb { margin-left: 5px }                                                                        /* button labels */
 @media (max-width: 700px) {
-  #eb .st, #eb .lb { display: none }
+  #eb .lb { display: none }
   #eb { left: 8px; bottom: 8px; max-width: calc(100% - 16px); gap: 3px }
   #eb .eb { padding: 6px 8px; font-size: 12px }
 }
@@ -49,73 +48,6 @@ textarea.ei { resize: vertical; min-height: 70px; line-height: 1.5 }
 .ml button:hover { background: #6665c040 }
 .ml small { color: #e8e8e080 }
 
-/* ---------- menus ---------- */
-.mn {
-  position: fixed; z-index: 46; background: #05050d; border: 1px solid #6665c0; min-width: 220px; max-height: min(70vh, 520px); overflow: auto;
-  padding: 4px; display: flex; flex-direction: column; text-transform: none; font: 400 13px "Exo 2", sans-serif; box-shadow: 0 8px 30px #000a;
-}
-.mn button { display: flex; gap: 10px; align-items: center; text-align: left; padding: 7px 10px; color: #e8e8e0; cursor: pointer; letter-spacing: .3px }
-.mn button:hover, .mn button.f { background: #6665c040 }
-.mn button i { width: 20px; text-align: center; font: 300 13px Inter, sans-serif; letter-spacing: 1px; color: #8d8cf0 }
-.mn button small { margin-left: auto; padding-left: 16px; font: 400 11px ui-monospace, monospace; color: #e8e8e066 } /* shortcut */
-.mn .on::after { content: "✓"; margin-left: auto; padding-left: 12px; color: #8d8cf0 }                              /* applied */
-.mn [hidden] { display: none }
-.mn .ei { margin-bottom: 4px }
-.mn hr { width: auto; margin: 4px 6px; opacity: .25 }
-
-/* ---------- the page being edited ---------- */
-.ed [data-k][contenteditable] { outline: 1px dashed #6665c0aa; outline-offset: 3px; cursor: text } /* interface texts in the menu */
-.ed .doc { position: relative; padding-bottom: 140px }
-.ed.ng .doc { padding-left: 40px } /* narrow screens: room for the block buttons */
-.ed .doc [contenteditable] { outline: none; cursor: text }
-.ed .doc :is([contenteditable], li[data-ph]):empty::before { content: attr(data-ph); color: #e8e8e040; font-style: italic; pointer-events: none } /* hint in an empty field */
-/* each block is a visible box: hovered dashed, current solid */
-.ed .doc [data-i] { position: relative; outline: 1px dashed transparent; outline-offset: 6px; transition: outline-color .12s }
-.ed .doc [data-i]:hover { outline-color: #6665c04d }
-.ed .doc [data-i].cur { outline: 1px solid #6665c080; background: #6665c00d }
-.ed .doc :is(.b-card, .al-left, .al-right) { z-index: 1 } /* floats stay above the text that wraps them */
-.ed .doc .b-img img, .ed .doc .b-card img { cursor: pointer }
-.ed .doc .pi { display: block; width: 100%; padding: 36px 12px; border: 1px dashed #6665c0; color: #e8e8e080; font: 400 13px "Exo 2", sans-serif; cursor: pointer; text-align: center } /* choose an image */
-.ed .doc .b-links .nw a { color: #e8b04a } /* a subpage only in the draft */
-.ed .doc .b-links a { pointer-events: none }
-.ed .doc .add { display: block; margin: 4px 0 0; font: 400 12px "Exo 2", sans-serif; color: #8d8cf0; cursor: pointer; text-transform: none; letter-spacing: .5px } /* + row */
-.ed .doc .b-cols .cell { outline: 1px dashed #6665c033; outline-offset: 6px; min-height: 40px }
-.ed .doc.dropping { outline: 1px dashed #e8b04a; outline-offset: -4px } /* an image file dragged over the page */
-
-/* image size handles */
-.ed .doc .rz {
-  display: none; position: absolute; z-index: 2; width: 16px; height: 16px; margin: -8px 0 0 -8px; background: #e8e8e0;
-  border: 2px solid #6665c0; box-shadow: 0 0 0 1px #020206, 0 2px 6px #000c; cursor: ew-resize; touch-action: none;
-}
-.ed .doc .al-left .rz[data-s=l], .ed .doc .al-right .rz[data-s=r] { visibility: hidden } /* a float grows from its free side */
-@media (min-width: 760px) { .ed .doc .b-img:is(:hover, .cur, .rzg) .rz { display: block } } /* sizes apply where images are not stacked full width */
-.ed .doc .rzg .rz::after {
-  content: attr(data-v); position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%); font: 400 12px "Exo 2", sans-serif;
-  color: #e8e8e0; background: #020206f2; border: 1px solid #6665c04d; padding: 3px 6px; white-space: nowrap;
-}
-.ed .doc .rzg img { outline: 1px solid #8d8cf0 }
-
-/* block buttons at the left (+ add, ⠿ menu / drag) and the drop line */
-#gut { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 2px; transition: top .12s }
-#gut[hidden] { display: none }
-#gut button { width: 26px; height: 26px; font: 400 15px/24px "Exo 2", sans-serif; color: #8d8cf0; background: #05050df2; border: 1px solid #6665c066; cursor: pointer; touch-action: none }
-#gut button:hover { color: #fff; border-color: #8d8cf0 }
-#gut .hd { cursor: grab }
-#dln { position: absolute; z-index: 29; height: 2px; background: #e8b04a; pointer-events: none }
-#dln[hidden] { display: none }
-
-/* formatting toolbar over selected text */
-#ift { position: absolute; z-index: 47; display: flex; flex-wrap: wrap; max-width: min(560px, calc(100vw - 16px)); gap: 2px; background: #05050d; border: 1px solid #6665c0; padding: 2px; text-transform: none }
-#ift[hidden], #ift [hidden] { display: none }
-#ift button { min-width: 30px; height: 28px; padding: 0 6px; font: 600 13px Inter, sans-serif; color: #e8e8e0; cursor: pointer }
-#ift button:hover { background: #6665c040 }
-#ift button.on { background: #6665c0; color: #fff }
-#ift .sep { width: 1px; margin: 3px 3px; background: #6665c066 }
-
-/* phone preview */
-#pvw { position: fixed; inset: 0; z-index: 55; background: #020206e6; display: flex; align-items: center; justify-content: center; gap: 16px; flex-direction: column }
-#pvw iframe { width: 390px; height: min(844px, calc(100vh - 90px)); border: 1px solid #6665c0; border-radius: 16px; background: #04040a }
-
 /* ---------- the map ---------- */
 .lbe #sl .lb text { pointer-events: auto; cursor: move } /* country names mode */
 .lbe #sl .lb text:hover { fill: #e8b04a }
@@ -129,10 +61,3 @@ textarea.ei { resize: vertical; min-height: 70px; line-height: 1.5 }
 .cx.mv { opacity: .92 }
 .cx .ef { display: flex; flex-direction: column; gap: 8px }
 
-/* page backgrounds in the page dialog: a tile each, the chosen one outlined */
-.bgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; text-transform: none; letter-spacing: 0 }
-.bgt { display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 1px solid #6665c04d; background: #0b0b18; cursor: pointer; text-align: left }
-.bgt:hover { border-color: #8d8cf0 }
-.bgt.on { border-color: #e8b04a; box-shadow: 0 0 0 1px #e8b04a }
-.bgt img, .bgt span { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #04040a }
-.bgt small { font: 400 12px "Exo 2", sans-serif; color: #e8e8e0cc }

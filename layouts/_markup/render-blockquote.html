@@ -1,0 +1,38 @@
+{{- /* Blocks of a note, written as Obsidian callouts:
+   > text                     a quote
+   > [!quote] Author          a quote signed by its author
+   > [!center]                text alignment: left | center | right | justify
+   > [!card] Title            a fact card, floating right: a picture, and a list of "Key: value" lines
+   > [!cols]                  two columns, divided by a --- line
+   > [!note] Title            any other type: a framed note */ -}}
+{{- $type := .AlertType }}{{ $text := .Text }}{{ $title := .AlertTitle -}}
+{{- if ne .Type "alert" -}}
+  <blockquote>{{ $text }}</blockquote>
+{{- else if in (slice "left" "center" "right" "justify") $type -}}
+  <div class="ta-{{ $type }}">{{ $text }}</div>
+{{- else if eq $type "quote" -}}
+  <blockquote>{{ $text }}{{ with $title }}<cite>{{ . }}</cite>{{ end }}</blockquote>
+{{- else if eq $type "card" -}}
+  {{- $lists := findRE `(?s)<ul>.*?</ul>` (string $text) 1 -}}
+  {{- $list := "" }}{{ with $lists }}{{ $list = index . 0 }}{{ end -}}
+  <aside class="b-card">
+    {{- if $list }}{{ replace (string $text) $list "" | safeHTML }}{{ else }}{{ $text }}{{ end -}}
+    {{- with $title }}<h4>{{ . }}</h4>{{ end -}}
+    {{- with $list -}}
+      <dl>
+        {{- range findRESubmatch `(?s)<li>(.*?)</li>` . -}}
+          {{- $item := replaceRE `</?p>` "" (index . 1) | strings.TrimSpace -}}
+          {{- $rows := findRESubmatch `(?s)^([^<]*?):\s*(.*)$` $item -}}
+          {{- if $rows }}{{ $row := index $rows 0 }}<div><dt>{{ index $row 1 | safeHTML }}</dt><dd>{{ index $row 2 | safeHTML }}</dd></div>
+          {{- else }}<div><dt></dt><dd>{{ $item | safeHTML }}</dd></div>{{ end -}}
+        {{- end -}}
+      </dl>
+    {{- end -}}
+  </aside>
+{{- else if eq $type "cols" -}}
+  <div class="b-cols">
+    {{- range split (string $text) "<hr>" }}<div class="cell"><div>{{ . | safeHTML }}</div></div>{{ end -}}
+  </div>
+{{- else -}}
+  <aside class="callout callout-{{ $type }}"><p class="ct">{{ $title | default (title $type) }}</p>{{ $text }}</aside>
+{{- end -}}

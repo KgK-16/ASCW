@@ -3,24 +3,28 @@ title = "ASCW"
 disableKinds = ["taxonomy", "term", "RSS", "sitemap"]
 defaultContentLanguage = "en"
 disableDefaultLanguageRedirect = true  # no /en/ copy of the home page
+disableAliases = true  # Obsidian's "aliases" property is for searching notes, not for site redirects
 
 [minify]
 disableJS = true  # scripts are minified by esbuild (layouts/partials/js.html); the HTML minifier re-minifying them breaks them
 
 [params]
-repo = "KgK-16/ASCW"  # the site editor commits here
-backgrounds = ["bg-sky.webp", "bg.webp"]  # page backgrounds offered by the site editor; the first is the default (also in assets/s.css)
+repo = "KgK-16/ASCW"  # the map editor commits here
+backgrounds = ["bg-sky.webp", "bg.webp"]  # the site's page backgrounds; the first is the default (also in assets/s.css)
 
-# two languages: English at /ASCW/…, Russian at /ASCW/ru/…; every content file holds both (title / title_ru, en / ru fields)
-# and is built once per language (the mount below); a page shows only its own language
+# Articles come from Obsidian (tools/publish.ps1) and are shown exactly as written, the way Obsidian shows them:
+[markup.goldmark.renderer]
+hardWraps = true  # a new line in a note is a new line on the page
+unsafe = true     # HTML written in a note is kept
+[markup.goldmark.parser]
+wrapStandAloneImageWithinParagraph = false  # pictures are figures
+[markup.goldmark.extensions]
+typographer.disable = true  # never touch the author's quotes, dashes and dots
+extras.mark.enable = true   # ==highlight==
+
+# two languages: English at /ASCW/…, Russian at /ASCW/ru/…; each page has one file per language (_index.en.md, _index.ru.md)
 [languages.en]
 weight = 1
 [languages.ru]
 weight = 2
 disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]  # one 404 page for every address (GitHub Pages serves only /404.html)
-
-[[module.mounts]]
-source = "content"
-target = "content"
-[module.mounts.sites.matrix]
-languages = ["**"]

@@ -1,5 +1,20 @@
 # tools
 
+## Articles: from Obsidian to the site
+
+Articles are written in the Obsidian vault next to this repository (`../Obsidian Storage`, folder `Публикация`). The author's guide is
+`Как публиковать.md` in the vault.
+
+    tools/publish.cmd          publish: pull, copy, test build, commit, push (the desktop shortcut runs this)
+    tools/publish.ps1 -Local   only update the files here
+
+`publish.ps1` generates `content/` (except `content/map/`), `static/notes/`, `data/notes.json` and `data/text.json`: do not edit them by hand.
+Notes are copied byte for byte, so their text can never change on the way. Obsidian syntax is handled at build time:
+`layouts/partials/body.html` (links, pictures) and `layouts/_markup/` (headings, pictures, callouts). The file must stay UTF-8 with a BOM:
+Windows PowerShell reads it wrongly otherwise.
+
+## The map
+
 Rebuild the map from a Krita file (8-bit RGBA, layer names as described in map.py):
 
     python3 tools/map.py General_Map.kra

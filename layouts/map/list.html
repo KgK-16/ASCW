@@ -45,9 +45,10 @@
 </div>
 </section></main>
 
-{{- /* places that have a page (content/places/<name>/) */}}
+{{- /* places that have a page (notes in the Obsidian folder of the places: content/places/<slug>/) */}}
 {{ $places := slice }}
-{{- range site.Pages }}{{ if and (eq .Section "places") .File (ne .File.Dir "places/") }}{{ $places = $places | append (path.Base .File.Dir) }}{{ end }}{{ end }}
+{{- range site.Pages }}{{ if hasPrefix .Path "/places/" }}{{ $places = $places | append (path.Base .Path) }}{{ end }}{{ end }}
+{{- $places = sort $places }}{{/* in one order: both languages share one script */}}
 {{- with partialCached "js" (resources.Get "map.js") "map" }}
 {{- $all := print "var V=" (resources.Get "map.json").Content ",MK=" (resources.Get "markers.json").Content ",EV=" (resources.Get "events.json").Content
   ",COU=" (resources.Get "countries.json").Content ",PL=" ($places | jsonify) ";" .Content }}

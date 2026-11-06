@@ -1,0 +1,5 @@
+{{- /* What tools/publish.ps1 knows about a page, in this language (data/notes.json): title, description, from (the note's language, when it
+   is not this one). Empty for pages that are not notes. */ -}}
+{{- $note := dict -}}
+{{- with hugo.Data.notes }}{{ with index .pages $.Path }}{{ $note = index . site.Language.Name | default dict }}{{ end }}{{ end -}}
+{{- return $note -}}

@@ -7,7 +7,7 @@
 //   MK  — markers, EV — timeline events [year, EN, RU], PL — places that have a page,
 //   COU — country settings made on the site, by hex colour: en / ru name, pg page,
 //         lx / ly name shift (map px), lz name size (pt), lk letter spacing (in letter heights), lo opacity
-// window.MAP connects the site editor (assets/edit.js) to the map.
+// window.MAP connects the map editor (assets/edit.js) to the map.
 //
 // Flat map layers, bottom to top:
 //   geography (static/map/g*.webp) < country colours < borders of the version (static/map/<year>/b*.webp) — these three are drawn by WebGL
@@ -545,7 +545,7 @@ function pickMarker(i) {
   drawMarkers();
 }
 
-function showPanel() { // the place's own archive page in the middle of the map (drafts too, while editing); a placeholder without one
+function showPanel() { // the place's own page in the middle of the map; a placeholder without one
   let page, placeholder = "", hook;
   if (selMarker != null && MK[selMarker]) {
     const q = MK[selMarker];
@@ -559,19 +559,19 @@ function showPanel() { // the place's own archive page in the middle of the map 
     placeholder = `<p class="ph">${inLang("Placeholder text", "Текст-заглушка")}</p>`;
     hook = () => MAP.onPanel?.(r);
   } else return;
-  const ok = page && ((window.PL || []).includes(page) || MAP.pageOK?.(page)), src = ok && UL + "places/" + page + "/?embed";
+  const ok = page && PL.includes(page), src = ok && UL + "places/" + page + "/?embed";
   panelFrame.hidden = !ok;
   panelEmpty.hidden = !!ok;
   if (ok) { if (panelFrame.dataset.s != src) { panelFrame.dataset.s = src; panelFrame.src = src } }
   else panelText.innerHTML = placeholder;
-  hook(); // the editor's hook comes last: it may add to the empty page
+  hook(); // the editor's hook: its form for this place
 }
 
 panelClose.onclick = () => { selMarker = null; pickCountry() };
 panelEl.onclick = e => { if (e.target == panelEl) panelClose.click() }; // a click on the dimmed map beside the page goes back to the map
 doc.addEventListener("pointerdown", e => { lastPointer = [e.clientX, e.clientY] }, true);
 doc.addEventListener("keydown", e => {
-  if (e.key != "Escape" || e.target.closest?.("input:not([type=range]),textarea,select,[contenteditable]")) return;
+  if (e.key != "Escape" || e.target.closest?.("input:not([type=range]),textarea,select")) return;
   if (timelineOpen()) closeTimeline(); else panelClose.click(); // closes the place's page
 });
 
@@ -701,7 +701,7 @@ doc.addEventListener("langgo", () => { // the page is about to open in the other
   try { sessionStorage.ascwMap = JSON.stringify(view) } catch {}
 });
 
-const MAP = window.MAP = { // for the site editor
+const MAP = window.MAP = { // for the map editor
   redraw() { applyNames(); buildOverlays(); drawMarkers(); showPanel(); if (timelineOpen()) buildTimeline(); if (globeOn) globeOverlayChanged() },
   markers() { drawMarkers(); if (globeOn) globeOverlayChanged() },
   timeline() { if (timelineOpen()) buildTimeline() },

@@ -8,16 +8,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
 {{- /* title and description, in this language (a missing one falls back to the other) */}}
-{{- $en := cond .IsHome "ASCW" (print .Title " · ASCW") }}
-{{- $ruTitle := cond .IsHome "ASCW" (print (default .Title .Params.title_ru) " · ASCW") }}
-{{- $title := cond $ru $ruTitle $en }}
-<title{{ if $notFound }} data-en="{{ $en }}" data-ru="{{ $ruTitle }}"{{ end }}>{{ $title }}</title>
-{{- $desc := cond $ru (.Params.description_ru | default .Description) (.Description | default .Params.description_ru) | default site.Params.description }}
+{{- $note := partial "note" . }}
+{{- $title := cond .IsHome "ASCW" (print ($note.title | default .Title) " · ASCW") }}
+<title>{{ $title }}</title>
+{{- $desc := $note.description | default .Description | default site.Params.description }}
 {{- with $desc }}
 <meta name="description" content="{{ . }}">{{ end }}
 
 {{- /* link previews */}}
-{{- $img := cond (and .Params.bg (ne .Params.bg "none")) .Params.bg (index site.Params.backgrounds 0 | relURL) }}
+{{- $bg := partial "bg" . }}
+{{- $img := cond (and $bg (ne $bg "none")) $bg (index site.Params.backgrounds 0 | relURL) }}
 <meta property="og:type" content="website"><meta property="og:site_name" content="ASCW"><meta property="og:title" content="{{ $title }}">
 <meta property="og:url" content="{{ .Permalink }}"><meta property="og:locale" content="{{ cond $ru "ru_RU" "en_US" }}">
 {{- with $desc }}<meta property="og:description" content="{{ . }}">{{ end }}
@@ -33,9 +33,8 @@
 <script>{{ (partialCached "js" (resources.Get "head.js") "head").Content | safeJS }}</script>
 <link rel="preload" href="{{ "fonts/a.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
-<meta name="src" content="{{ with .File }}{{ .Path }}{{ end }}">{{/* the page's file, for the editor */}}
 
-{{- /* the menu: language button and brand line, then the page links and the editor's ✎ (shown once edit mode is unlocked) */}}
+{{- /* the menu: language button and brand line, then the page links and, on the map, the map editor's ✎ (shown once edit mode is unlocked) */}}
 <nav aria-label="ASCW">
   <span class="nl">
     <button type="button" id="lq" class="bt" {{ partial $tip "tip_lang" }}>{{ if $notFound }}<span lang="en">EN</span><span lang="ru">РУ</span>{{ else }}{{ cond $ru "РУ" "EN" }}{{ end }}</button>
@@ -45,10 +44,10 @@
     <a href="{{ "" | relLangURL }}"{{ if .IsHome }} aria-current="page"{{ end }}>{{ partial $t "nav_menu" }}</a>
     <a href="{{ "archive/" | relLangURL }}"{{ if eq .Section "archive" }} aria-current="page"{{ end }}>{{ partial $t "nav_archive" }}</a>
     <a href="{{ "map/" | relLangURL }}"{{ if eq .Section "map" }} aria-current="page"{{ end }}>{{ partial $t "nav_map" }}</a>
-    {{- with partialCached "js" (resources.Get "edit.js") "edit" | fingerprint "md5" }}
+    {{- if eq .Section "map" }}{{ with partialCached "js" (resources.Get "edit.js") "edit" | fingerprint "md5" }}
     <button type="button" id="ed" class="bt" hidden data-js="{{ .RelPermalink }}"{{ with resources.Get "edit.css" | minify | fingerprint "md5" }} data-css="{{ .RelPermalink }}"{{ end }}
-      data-u="{{ "" | relURL }}" data-repo="{{ site.Params.repo }}" data-bgs="{{ range $i, $b := site.Params.backgrounds }}{{ if $i }} {{ end }}{{ $b | relURL }}{{ end }}" {{ partial $tip "tip_edit" }}>✎</button>
-    {{- end }}
+      data-repo="{{ site.Params.repo }}" {{ partial $tip "tip_edit" }}>✎</button>
+    {{- end }}{{ end }}
   </div>
 </nav>
-<main{{ with .Params.bg }} style="--bg:{{ if eq . "none" }}none{{ else }}url({{ . }}){{ end }}"{{ end }}><section>
+<main{{ with $bg }} style="--bg:{{ if eq . "none" }}none{{ else }}url({{ . }}){{ end }}"{{ end }}><section>

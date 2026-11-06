@@ -1,0 +1,9 @@
+{{- /* Links to the subpages, in the order of their "weight" property. links: false — no list; hide: [slug, …] — pages left out of it. */ -}}
+{{- if and .Pages (ne .Params.links false) -}}
+  {{- $hidden := .Params.hide | default slice -}}
+  <ul class="b-links">
+    {{- range .Pages -}}
+      {{- if not (in $hidden (path.Base .Path)) }}<li><a href="{{ .RelPermalink }}">{{ (partial "note" .).title | default .Title }}</a>{{ end -}}
+    {{- end -}}
+  </ul>
+{{- end -}}

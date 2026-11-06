@@ -1,0 +1,7 @@
+{{- /* ![text](file.png): the same as ![[file.png|text]]; the text may hold the same words (left, 45%, a caption) */ -}}
+{{- $src := .Destination -}}
+{{- if not (findRE `^(https?:)?//` $src) -}}
+  {{- $file := lower (path.Base (urls.Parse $src).Path) }}{{ $src = "" -}}
+  {{- with hugo.Data.notes }}{{ with index .images $file }}{{ $src = relURL . }}{{ end }}{{ end -}}
+{{- end -}}
+{{- if $src }}{{ partial "pic" (dict "src" $src "mods" (split .PlainText "|")) }}{{ else }}{{ .Text }}{{ end -}}

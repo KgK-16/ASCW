@@ -1,0 +1,14 @@
+{{- /* A picture in a note. src = site address; mods = what follows the file name in ![[…]], in any order:
+   left | right | center | full — placement; 45% or 300 — width; anything else — the caption. */ -}}
+{{- $align := "center" }}{{ $width := "" }}{{ $caption := "" -}}
+{{- range .mods -}}
+  {{- $m := trim . " " -}}
+  {{- if in (slice "left" "right" "center" "full") $m }}{{ $align = $m -}}
+  {{- else if findRE `^[0-9]+%$` $m }}{{ $width = $m -}}
+  {{- else if findRE `^[0-9]+$` $m }}{{ $width = print $m "px" -}}
+  {{- else if $m }}{{ $caption = $m }}{{ end -}}
+{{- end -}}
+<figure class="b-img al-{{ $align }}"{{ with $width }} style="--w:{{ . }}"{{ end }}>
+  {{- partial "img" (dict "src" .src) -}}
+  {{- with $caption }}<figcaption>{{ . | safeHTML }}</figcaption>{{ end -}}
+</figure>
