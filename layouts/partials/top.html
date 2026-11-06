@@ -6,6 +6,7 @@
 <html lang="{{ $lang }}" data-b="{{ "" | relURL }}"{{ if $notFound }} class="l2"{{ end }}>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
 
 {{- /* title and description, in this language (a missing one falls back to the other) */}}
 {{- $note := partial "note" . }}
@@ -32,7 +33,12 @@
 <link rel="apple-touch-icon" href="{{ "apple-touch-icon.png" | relURL }}">
 <script>{{ (partialCached "js" (resources.Get "head.js") "head").Content | safeJS }}</script>
 <link rel="preload" href="{{ "fonts/a.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
+{{- if and (ne .Section "map") (ne $bg "none") }}
+<link rel="preload" href="{{ $img }}" as="image" fetchpriority="high">{{/* the background is ready with the page's first frame */}}
+{{- end }}
 {{ with resources.Get "s.css" | minify | fingerprint "md5" }}<link href="{{ .RelPermalink }}" rel="stylesheet">{{ end }}
+{{- /* pages are fetched when a link is hovered, so they open at once (browsers without this simply ignore it) */}}
+{{ printf `<script type="speculationrules">{"prefetch":[{"where":{"href_matches":"%s*"},"eagerness":"moderate"}]}</script>` (relURL "") | safeHTML }}
 
 {{- /* the menu: language button and brand line, then the page links */}}
 <nav aria-label="ASCW">
@@ -44,6 +50,7 @@
     <a href="{{ "" | relLangURL }}"{{ if .IsHome }} aria-current="page"{{ end }}>{{ partial $t "nav_menu" }}</a>
     <a href="{{ "archive/" | relLangURL }}"{{ if eq .Section "archive" }} aria-current="page"{{ end }}>{{ partial $t "nav_archive" }}</a>
     <a href="{{ "map/" | relLangURL }}"{{ if eq .Section "map" }} aria-current="page"{{ end }}>{{ partial $t "nav_map" }}</a>
+    <button type="button" id="bk" class="bt" hidden {{ partial $tip "tip_back" }}>←</button>{{/* shown when there is a page of this site to go back to */}}
   </div>
 </nav>
 <main{{ with $bg }} style="--bg:{{ if eq . "none" }}none{{ else }}url({{ . }}){{ end }}"{{ end }}><section>

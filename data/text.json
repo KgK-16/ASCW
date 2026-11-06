@@ -1,46 +1,50 @@
 {
-    "wip":  {
-                "en":  "Work-In-Progress",
-                "ru":  "В разработке"
-            },
-    "tip_tl":  {
-                   "en":  "Timeline: choose a year",
-                   "ru":  "Хронология: выбрать год"
-               },
-    "tip_close":  {
-                      "en":  "Close",
-                      "ru":  "Закрыть"
-                  },
-    "nav_map":  {
-                    "en":  "World Map",
-                    "ru":  "Карта мира"
-                },
-    "brand":  {
-                  "en":  "Powered by Redfront Strategic Sciences",
-                  "ru":  "При поддержке Redfront Strategic Sciences"
-              },
+    "tip_edit":  {
+                     "en":  "Edit mode",
+                     "ru":  "Режим редактирования"
+                 },
     "tip_col":  {
                     "en":  "Country colours on / off",
                     "ru":  "Раскраска стран вкл / выкл"
                 },
-    "tip_edit":  {
-                     "en":  "Edit mode",
-                     "ru":  "Режим редактирования"
+    "nav_map":  {
+                    "en":  "World Map",
+                    "ru":  "Карта мира"
+                },
+    "tip_lang":  {
+                     "en":  "Switch language",
+                     "ru":  "Сменить язык"
                  },
     "nav_menu":  {
                      "en":  "Menu",
                      "ru":  "Меню"
                  },
+    "tip_back":  {
+                     "en":  "Back",
+                     "ru":  "Назад"
+                 },
     "nav_archive":  {
                         "en":  "Archive",
                         "ru":  "Архив"
                     },
-    "tip_lang":  {
-                     "en":  "Switch language",
-                     "ru":  "Сменить язык"
-                 },
+    "brand":  {
+                  "en":  "Powered by Redfront Strategic Sciences",
+                  "ru":  "При поддержке Redfront Strategic Sciences"
+              },
+    "tip_close":  {
+                      "en":  "Close",
+                      "ru":  "Закрыть"
+                  },
+    "tip_tl":  {
+                   "en":  "Timeline: choose a year",
+                   "ru":  "Хронология: выбрать год"
+               },
     "tip_3d":  {
                    "en":  "3D globe / flat map",
                    "ru":  "Глобус / плоская карта"
-               }
+               },
+    "wip":  {
+                "en":  "Work-In-Progress",
+                "ru":  "В разработке"
+            }
 }
