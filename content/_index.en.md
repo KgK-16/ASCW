@@ -1,9 +1,9 @@
 ---
 publish: true
 home: true
-title: "Archive of the"
+title: Archive of the
 kicker: ""
-accent: "SECOND CONTINENTAL WAR"
+accent: Second Continental War
 links: false
 ---
 

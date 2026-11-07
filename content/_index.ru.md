@@ -1,9 +1,9 @@
 ---
 publish: true
 home: true
-title: "архив"
+title: Архив
 kicker: ""
-accent: "второй континентальной войны"
+accent: Второй Континентальной войны
 links: false
 ---
 
