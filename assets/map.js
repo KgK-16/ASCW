@@ -4,7 +4,7 @@
 //   U   — the site's base address (pictures), UL — the pages in this language (U or U + "ru/")
 //   V   — map versions: [{y: year, b: has borders, r: [countries]}];
 //         a country: {id, c: hex colour, name, ru, d: SVG outline, x, y: where its name stands}
-//   MK  — markers, EV — timeline events [year, EN, RU], PL — places that have a page,
+//   MK  — markers, EV — timeline events [year, EN, RU], PL — places that have a page: {slug: its address after UL},
 //   COU — country settings made on the site, by hex colour: en / ru name, pg page,
 //         lx / ly name shift (map px), lz name size (pt), lk letter spacing (in letter heights), lo opacity
 // window.MAP connects the map editor (assets/edit.js) to the map.
@@ -559,7 +559,7 @@ function showPanel() { // the place's own page in the middle of the map; a place
     placeholder = `<p class="ph">${inLang("Placeholder text", "Текст-заглушка")}</p>`;
     hook = () => MAP.onPanel?.(r);
   } else return;
-  const ok = page && PL.includes(page), src = ok && UL + "places/" + page + "/?embed";
+  const ok = page && Object.hasOwn(PL, page), src = ok && UL + PL[page] + "?embed";
   panelFrame.hidden = !ok;
   panelEmpty.hidden = !!ok;
   if (ok) { if (panelFrame.dataset.s != src) { panelFrame.dataset.s = src; panelFrame.src = src } }

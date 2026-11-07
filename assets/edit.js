@@ -260,8 +260,8 @@ function openProps(content, key) { // a marker's / country's properties: a small
   return true;
 }
 
-function pageField(value, onchange) { // the place's page: one of the notes in Obsidian's folder of places
-  const pages = [...new Set([...(window.PL || []), ...value ? [value] : []])].sort();
+function pageField(value, onchange) { // the place's page: one of the notes in Obsidian's map folder (Карта), by its slug
+  const pages = [...new Set([...Object.keys(window.PL || {}), ...value ? [value] : []])].sort();
   return label(inLang("Page", "Страница"), select(value || "", [["", "—"], ...pages.map(p => [p, p])], onchange));
 }
 

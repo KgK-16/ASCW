@@ -49,10 +49,11 @@
 </div>
 </section></main>
 
-{{- /* places that have a page (notes in the Obsidian folder of the places: content/places/<slug>/) */}}
-{{ $places := slice }}
-{{- range site.Pages }}{{ if hasPrefix .Path "/places/" }}{{ $places = $places | append (path.Base .Path) }}{{ end }}{{ end }}
-{{- $places = sort $places }}{{/* in one order: both languages share one script */}}
+{{- /* places that have a page: the notes in the vault's map folder (Карта, address /places/, with Страны and Города и объекты inside),
+   by their slug -> their address in any language (markers and countries name a page by its slug; tools/publish.ps1 keeps slugs unique) */}}
+{{ $places := dict }}
+{{- range site.Pages }}{{ if and (hasPrefix .Path "/places/") .RelPermalink }}
+{{- $places = merge $places (dict (path.Base .Path) (print (strings.TrimPrefix "/" .Path) "/")) }}{{ end }}{{ end }}
 {{- with partialCached "js" (resources.Get "map.js") "map" }}
 {{- $all := print "var V=" (resources.Get "map.json").Content ",MK=" (resources.Get "markers.json").Content ",EV=" (resources.Get "events.json").Content
   ",COU=" (resources.Get "countries.json").Content ",PL=" ($places | jsonify) ";" .Content }}

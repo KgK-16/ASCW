@@ -129,6 +129,16 @@ foreach ($n in $notes) {
   }
 }
 
+# ---------- the map's pages: the map folder (Карта, its note's slug "places") and the folders in it; the map names them by slug alone ----------
+$mapFolder = '/places'
+$mapPages = @{}
+foreach ($path in @($pages.Keys) + @($sections.Keys)) {
+  if ($path -notlike "$mapFolder/*") { continue }
+  $slug = ($path -split '/')[-1]
+  if ($mapPages.ContainsKey($slug)) { [void]$errors.Add("В папке карты две страницы со slug «$slug» ($($mapPages[$slug]) и $path); карта не поймёт, какую открыть") }
+  $mapPages[$slug] = $path
+}
+
 # ---------- names -> addresses ----------
 $links = @{}
 $taken = @{}
@@ -249,6 +259,13 @@ if ($interface.ru.Count -or $interface.en.Count) {
   foreach ($k in $interface.ru.Keys) { if (-not $texts.Contains($k)) { $texts[$k] = [ordered]@{ en = $interface.ru[$k]; ru = $interface.ru[$k] } } }
   [IO.File]::WriteAllText((Join-Path $repo 'data\text.json'), ($texts | ConvertTo-Json -Depth 3), $plain)
 }
+
+# the pages the map opens (its data as on GitHub, after the pull: the map editor saves it there)
+if (-not $mapPages.Count) { [void]$warnings.Add("Нет папки карты: заметки со slug: places, названной как её папка (Карта/Карта.ру.md). Окна стран и меток будут пустыми") }
+$mapLinks = @()
+foreach ($q in (Get-Content -LiteralPath (Join-Path $repo 'assets\markers.json') -Raw -Encoding UTF8 | ConvertFrom-Json)) { if ($q.pg) { $mapLinks += , @("метка «$($q.r)»", $q.pg) } }
+foreach ($c in (Get-Content -LiteralPath (Join-Path $repo 'assets\countries.json') -Raw -Encoding UTF8 | ConvertFrom-Json).PSObject.Properties) { if ($c.Value.pg) { $mapLinks += , @("страна $($c.Name)", $c.Value.pg) } }
+foreach ($l in $mapLinks) { if (-not $mapPages.ContainsKey($l[1])) { [void]$warnings.Add("Карта: $($l[0]) открывает страницу «$($l[1])», которой нет в папке карты; её окно будет пустым") } }
 
 # ---------- check the build, then publish ----------
 Write-Host "Страниц: $($pages.Count + $sections.Count), картинок: $($images.Count), пропущено заметок без publish: true: $skipped"
