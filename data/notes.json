@@ -1,37 +1,29 @@
 {
     "pages":  {
-                  "/karta":  {
-                                 "en":  {
-                                            "title":  "Карта"
-                                        },
-                                 "ru":  {
-                                            "title":  "Карта"
-                                        }
-                             },
-                  "/karta/egnaz":  {
-                                       "en":  {
-                                                  "title":  "Egnaz"
-                                              },
-                                       "ru":  {
-                                                  "title":  "Эгназ"
-                                              }
-                                   },
-                  "/karta/port-lantau":  {
-                                             "en":  {
-                                                        "title":  "Port Lantau"
-                                                    },
-                                             "ru":  {
-                                                        "title":  "Порт Лантау"
-                                                    }
+                  "/places":  {
+                                  "en":  {
+                                             "title":  "Map"
                                          },
-                  "/karta/omis":  {
-                                      "en":  {
-                                                 "title":  "Omis"
-                                             },
-                                      "ru":  {
-                                                 "title":  "Омис"
-                                             }
-                                  },
+                                  "ru":  {
+                                             "title":  "Карта"
+                                         }
+                              },
+                  "/places/locations/equilibrium":  {
+                                                        "en":  {
+                                                                   "title":  "Equilibrium"
+                                                               },
+                                                        "ru":  {
+                                                                   "title":  "Эквилибриум"
+                                                               }
+                                                    },
+                  "/places/locations/keishi":  {
+                                                   "en":  {
+                                                              "title":  "Keishi"
+                                                          },
+                                                   "ru":  {
+                                                              "title":  "Кейши"
+                                                          }
+                                               },
                   "/archive/factions":  {
                                             "en":  {
                                                        "description":  "The major powers of the Second Continental War",
@@ -40,6 +32,14 @@
                                             "ru":  {
                                                        "description":  "Основные державы Второй континентальной войны",
                                                        "title":  "Фракции"
+                                                   }
+                                        },
+                  "/places/countries":  {
+                                            "en":  {
+                                                       "title":  "Countries"
+                                                   },
+                                            "ru":  {
+                                                       "title":  "Страны"
                                                    }
                                         },
                   "/archive/anthrite":  {
@@ -52,39 +52,40 @@
                                                        "title":  "Антрит"
                                                    }
                                         },
-                  "/karta/equilibrium":  {
-                                             "en":  {
-                                                        "title":  "Equilibrium"
-                                                    },
-                                             "ru":  {
-                                                        "title":  "Эквилибриум"
-                                                    }
-                                         },
-                  "/karta/irlit":  {
-                                       "en":  {
-                                                  "title":  "Irlit"
-                                              },
-                                       "ru":  {
-                                                  "title":  "Ирлит"
-                                              }
-                                   },
-                  "/karta/great-cascadia":  {
-                                                "en":  {
-                                                           "from":  "ru",
-                                                           "title":  "Great Cascadia"
-                                                       },
-                                                "ru":  {
-                                                           "title":  "Великая Каскадия"
-                                                       }
-                                            },
-                  "/karta/cascadia":  {
-                                          "en":  {
-                                                     "title":  "Cascadia"
+                  "/places/locations/cascadia":  {
+                                                     "en":  {
+                                                                "title":  "Cascadia"
+                                                            },
+                                                     "ru":  {
+                                                                "title":  "Каскадия"
+                                                            }
                                                  },
-                                          "ru":  {
-                                                     "title":  "Каскадия"
-                                                 }
-                                      },
+                  "/places/locations/irlit":  {
+                                                  "en":  {
+                                                             "title":  "Irlit"
+                                                         },
+                                                  "ru":  {
+                                                             "title":  "Ирлит"
+                                                         }
+                                              },
+                  "/places/locations/tornst":  {
+                                                   "en":  {
+                                                              "title":  "Tornst"
+                                                          },
+                                                   "ru":  {
+                                                              "title":  "Торнст"
+                                                          }
+                                               },
+                  "/archive/spear-75":  {
+                                            "en":  {
+                                                       "description":  "Attack frigate, model Spear V-2, serial number 75",
+                                                       "title":  "KGK-Spear-75"
+                                                   },
+                                            "ru":  {
+                                                       "description":  "Ударный фрегат, модель Spear V-2, серийный номер 75",
+                                                       "title":  "KGK-Spear-75"
+                                                   }
+                                        },
                   "/archive":  {
                                    "en":  {
                                               "title":  "Archive"
@@ -103,6 +104,47 @@
                                                     "title":  "Корабли"
                                                 }
                                      },
+                  "/places/locations/omis":  {
+                                                 "en":  {
+                                                            "title":  "Omis"
+                                                        },
+                                                 "ru":  {
+                                                            "title":  "Омис"
+                                                        }
+                                             },
+                  "/places/locations/kang-lao":  {
+                                                     "en":  {
+                                                                "title":  "Kang-Lao"
+                                                            },
+                                                     "ru":  {
+                                                                "title":  "Канг-Лао"
+                                                            }
+                                                 },
+                  "/places/countries/great-cascadia":  {
+                                                           "en":  {
+                                                                      "from":  "ru",
+                                                                      "title":  "Great Cascadia"
+                                                                  },
+                                                           "ru":  {
+                                                                      "title":  "Великая Каскадия"
+                                                                  }
+                                                       },
+                  "/places/locations/egnaz":  {
+                                                  "en":  {
+                                                             "title":  "Egnaz"
+                                                         },
+                                                  "ru":  {
+                                                             "title":  "Эгназ"
+                                                         }
+                                              },
+                  "/":  {
+                            "en":  {
+                                       "title":  "Archive of the"
+                                   },
+                            "ru":  {
+                                       "title":  "Архив"
+                                   }
+                        },
                   "/archive/timeline":  {
                                             "en":  {
                                                        "description":  "Timeline of ASCW",
@@ -113,201 +155,183 @@
                                                        "title":  "Хронология"
                                                    }
                                         },
-                  "/karta/kang-lao":  {
-                                          "en":  {
-                                                     "title":  "Kang-Lao"
-                                                 },
-                                          "ru":  {
-                                                     "title":  "Канг-Лао"
-                                                 }
-                                      },
-                  "/":  {
-                            "en":  {
-                                       "title":  "Archive of the"
-                                   },
-                            "ru":  {
-                                       "title":  "Архив"
-                                   }
-                        },
-                  "/karta/keishi":  {
-                                        "en":  {
-                                                   "title":  "Keishi"
-                                               },
-                                        "ru":  {
-                                                   "title":  "Кейши"
-                                               }
-                                    },
-                  "/archive/spear-75":  {
+                  "/places/locations/port-lantau":  {
+                                                        "en":  {
+                                                                   "title":  "Port Lantau"
+                                                               },
+                                                        "ru":  {
+                                                                   "title":  "Порт Лантау"
+                                                               }
+                                                    },
+                  "/places/locations":  {
                                             "en":  {
-                                                       "description":  "Attack frigate, model Spear V-2, serial number 75",
-                                                       "title":  "KGK-Spear-75"
+                                                       "title":  "Cities and Sites"
                                                    },
                                             "ru":  {
-                                                       "description":  "Ударный фрегат, модель Spear V-2, серийный номер 75",
-                                                       "title":  "KGK-Spear-75"
+                                                       "title":  "Города и объекты"
                                                    }
-                                        },
-                  "/karta/tornst":  {
-                                        "en":  {
-                                                   "title":  "Tornst"
-                                               },
-                                        "ru":  {
-                                                   "title":  "Торнст"
-                                               }
-                                    },
-                  "/karta/places":  {
-                                        "en":  {
-                                                   "title":  "Places"
-                                               },
-                                        "ru":  {
-                                                   "title":  "Места"
-                                               }
-                                    }
+                                        }
               },
     "links":  {
                   "публикация/архив/фракции/фракции.ру":  "/archive/factions",
-                  "timeline":  "/archive/timeline",
-                  "публикация/карта/эгназ/egnaz.en":  "/karta/egnaz",
-                  "хронология.ру":  "/archive/timeline",
+                  "публикация/карта/карта.ру":  "/places",
+                  "countries.en":  "/places/countries",
+                  "публикация/карта/города и объекты/ирлит/ирлит.ру":  "/places/locations/irlit",
+                  "карта/города и объекты/ирлит/ирлит.ру":  "/places/locations/irlit",
                   "публикация/архив/kgk-spear-75/kgk-spear-75.en":  "/archive/spear-75",
-                  "карта/порт лантау/port lantau.en":  "/karta/port-lantau",
                   "kgk-spear-75.en":  "/archive/spear-75",
-                  "публикация/архив/archive.en":  "/archive",
-                  "кейши":  "/karta/keishi",
-                  "публикация/карта/ирлит/irlit.en":  "/karta/irlit",
-                  "эгназ":  "/karta/egnaz",
+                  "карта/map.en":  "/places",
+                  "кейши":  "/places/locations/keishi",
+                  "эгназ":  "/places/locations/egnaz",
                   "anthrite":  "/archive/anthrite",
-                  "порт лантау":  "/karta/port-lantau",
-                  "port lantau.en":  "/karta/port-lantau",
+                  "порт лантау":  "/places/locations/port-lantau",
+                  "port lantau.en":  "/places/locations/port-lantau",
                   "хронология":  "/archive/timeline",
                   "anthrite.en":  "/archive/anthrite",
                   "публикация/архив/антрит/anthrite.en":  "/archive/anthrite",
-                  "великая каскадия.ру":  "/karta/great-cascadia",
+                  "великая каскадия.ру":  "/places/countries/great-cascadia",
                   "фракции":  "/archive/factions",
-                  "публикация/карта/торнст/tornst.en":  "/karta/tornst",
+                  "карта/страны/страны.ру":  "/places/countries",
                   "архив/kgk-spear-75/kgk-spear-75.ру":  "/archive/spear-75",
                   "публикация/архив/корабли/корабли.ру":  "/archive/ships",
-                  "egnaz.en":  "/karta/egnaz",
+                  "карта/города и объекты/города и объекты.ру":  "/places/locations",
+                  "map":  "/places",
                   "factions.en":  "/archive/factions",
-                  "карта/места.ру":  "/karta/places",
-                  "публикация/карта/омис/omis.en":  "/karta/omis",
-                  "omis.en":  "/karta/omis",
+                  "публикация/карта/города и объекты/канг-лао/kang-lao.en":  "/places/locations/kang-lao",
+                  "omis.en":  "/places/locations/omis",
                   "архив/фракции/factions.en":  "/archive/factions",
-                  "ирлит":  "/karta/irlit",
+                  "ирлит":  "/places/locations/irlit",
+                  "карта/города и объекты/ирлит/irlit.en":  "/places/locations/irlit",
                   "меню/меню.ру":  "/",
                   "публикация/архив/хронология/timeline.en":  "/archive/timeline",
-                  "публикация/карта/places.en":  "/karta/places",
-                  "торнст":  "/karta/tornst",
-                  "архив/хронология/хронология.ру":  "/archive/timeline",
-                  "кейши.ру":  "/karta/keishi",
-                  "меню":  "/",
-                  "места":  "/karta/places",
-                  "great cascadia.en":  "/karta/great-cascadia",
-                  "port lantau":  "/karta/port-lantau",
-                  "карта/каскадия/cascadia.en":  "/karta/cascadia",
-                  "egnaz":  "/karta/egnaz",
-                  "карта/эгназ/egnaz.en":  "/karta/egnaz",
-                  "great cascadia":  "/karta/great-cascadia",
-                  "карта/places.en":  "/karta/places",
-                  "публикация/карта/эквилибриум/эквилибриум.ру":  "/karta/equilibrium",
-                  "публикация/карта/кейши/кейши.ру":  "/karta/keishi",
-                  "irlit.en":  "/karta/irlit",
+                  "торнст":  "/places/locations/tornst",
+                  "кейши.ру":  "/places/locations/keishi",
+                  "публикация/карта/города и объекты/порт лантау/port lantau.en":  "/places/locations/port-lantau",
+                  "архив/корабли/корабли.ру":  "/archive/ships",
+                  "публикация/карта/города и объекты/эгназ/эгназ.ру":  "/places/locations/egnaz",
+                  "great cascadia.en":  "/places/countries/great-cascadia",
+                  "port lantau":  "/places/locations/port-lantau",
+                  "великая каскадия":  "/places/countries/great-cascadia",
+                  "egnaz":  "/places/locations/egnaz",
+                  "страны":  "/places/countries",
+                  "карта/города и объекты/кейши/кейши.ру":  "/places/locations/keishi",
+                  "публикация/карта/города и объекты/омис/омис.ру":  "/places/locations/omis",
+                  "great cascadia":  "/places/countries/great-cascadia",
+                  "карта/города и объекты/эквилибриум/equilibrium.en":  "/places/locations/equilibrium",
+                  "публикация/архив/archive.en":  "/archive",
+                  "карта/города и объекты/каскадия/cascadia.en":  "/places/locations/cascadia",
+                  "irlit.en":  "/places/locations/irlit",
+                  "карта/города и объекты/эгназ/egnaz.en":  "/places/locations/egnaz",
                   "архив.ру":  "/archive",
-                  "keishi":  "/karta/keishi",
-                  "порт лантау.ру":  "/karta/port-lantau",
+                  "keishi":  "/places/locations/keishi",
+                  "публикация/карта/города и объекты/канг-лао/канг-лао.ру":  "/places/locations/kang-lao",
+                  "порт лантау.ру":  "/places/locations/port-lantau",
                   "публикация/архив/антрит/антрит.ру":  "/archive/anthrite",
-                  "канг-лао.ру":  "/karta/kang-lao",
+                  "канг-лао.ру":  "/places/locations/kang-lao",
                   "ships":  "/archive/ships",
                   "публикация/архив/kgk-spear-75/kgk-spear-75.ру":  "/archive/spear-75",
-                  "архив/корабли/корабли.ру":  "/archive/ships",
+                  "публикация/карта/города и объекты/кейши/кейши.ру":  "/places/locations/keishi",
+                  "карта.ру":  "/places",
                   "menu.en":  "/",
-                  "tornst":  "/karta/tornst",
-                  "irlit":  "/karta/irlit",
-                  "карта/омис/omis.en":  "/karta/omis",
-                  "карта/торнст/tornst.en":  "/karta/tornst",
-                  "equilibrium":  "/karta/equilibrium",
+                  "tornst":  "/places/locations/tornst",
+                  "города и объекты":  "/places/locations",
+                  "irlit":  "/places/locations/irlit",
+                  "cities and sites.en":  "/places/locations",
+                  "equilibrium":  "/places/locations/equilibrium",
                   "антрит":  "/archive/anthrite",
                   "archive":  "/archive",
-                  "ирлит.ру":  "/karta/irlit",
-                  "карта/порт лантау/порт лантау.ру":  "/karta/port-lantau",
-                  "архив":  "/archive",
+                  "публикация/карта/города и объекты/cities and sites.en":  "/places/locations",
+                  "ирлит.ру":  "/places/locations/irlit",
+                  "публикация/карта/страны/countries.en":  "/places/countries",
+                  "публикация/карта/города и объекты/торнст/tornst.en":  "/places/locations/tornst",
+                  "карта/города и объекты/порт лантау/порт лантау.ру":  "/places/locations/port-lantau",
+                  "публикация/карта/города и объекты/города и объекты.ру":  "/places/locations",
                   "публикация/архив/корабли/ships.en":  "/archive/ships",
-                  "карта/великая каскадия/great cascadia.en":  "/karta/great-cascadia",
-                  "карта/каскадия/каскадия.ру":  "/karta/cascadia",
-                  "карта/эквилибриум/эквилибриум.ру":  "/karta/equilibrium",
-                  "публикация/карта/порт лантау/port lantau.en":  "/karta/port-lantau",
-                  "омис.ру":  "/karta/omis",
-                  "карта/ирлит/irlit.en":  "/karta/irlit",
-                  "карта/кейши/кейши.ру":  "/karta/keishi",
-                  "timeline.en":  "/archive/timeline",
+                  "эквилибриум.ру":  "/places/locations/equilibrium",
+                  "страны.ру":  "/places/countries",
+                  "публикация/карта/города и объекты/каскадия/каскадия.ру":  "/places/locations/cascadia",
+                  "архив/хронология/хронология.ру":  "/archive/timeline",
+                  "публикация/карта/страны/страны.ру":  "/places/countries",
+                  "карта/города и объекты/каскадия/каскадия.ру":  "/places/locations/cascadia",
+                  "публикация/карта/города и объекты/ирлит/irlit.en":  "/places/locations/irlit",
+                  "карта/города и объекты/торнст/торнст.ру":  "/places/locations/tornst",
+                  "меню":  "/",
+                  "омис.ру":  "/places/locations/omis",
                   "архив/архив.ру":  "/archive",
-                  "канг-лао":  "/karta/kang-lao",
+                  "канг-лао":  "/places/locations/kang-lao",
                   "корабли.ру":  "/archive/ships",
-                  "tornst.en":  "/karta/tornst",
-                  "фракции.ру":  "/archive/factions",
+                  "tornst.en":  "/places/locations/tornst",
+                  "публикация/карта/map.en":  "/places",
+                  "cities and sites":  "/places/locations",
                   "публикация/меню/меню.ру":  "/",
-                  "карта/кейши/keishi.en":  "/karta/keishi",
-                  "архив/kgk-spear-75/kgk-spear-75.en":  "/archive/spear-75",
+                  "карта/карта.ру":  "/places",
+                  "карта/города и объекты/эквилибриум/эквилибриум.ру":  "/places/locations/equilibrium",
                   "kgk-spear-75.ру":  "/archive/spear-75",
-                  "cascadia.en":  "/karta/cascadia",
+                  "cascadia.en":  "/places/locations/cascadia",
                   "архив/антрит/anthrite.en":  "/archive/anthrite",
-                  "каскадия.ру":  "/karta/cascadia",
+                  "архив/kgk-spear-75/kgk-spear-75.en":  "/archive/spear-75",
+                  "каскадия.ру":  "/places/locations/cascadia",
                   "kgk-spear-75":  "/archive/spear-75",
-                  "equilibrium.en":  "/karta/equilibrium",
-                  "великая каскадия":  "/karta/great-cascadia",
-                  "карта/торнст/торнст.ру":  "/karta/tornst",
+                  "equilibrium.en":  "/places/locations/equilibrium",
                   "menu":  "/",
-                  "карта/ирлит/ирлит.ру":  "/karta/irlit",
-                  "places.en":  "/karta/places",
+                  "публикация/меню/menu.en":  "/",
+                  "карта/города и объекты/канг-лао/канг-лао.ру":  "/places/locations/kang-lao",
                   "публикация/архив/фракции/factions.en":  "/archive/factions",
                   "архив/хронология/timeline.en":  "/archive/timeline",
-                  "эквилибриум.ру":  "/karta/equilibrium",
-                  "карта/эгназ/эгназ.ру":  "/karta/egnaz",
-                  "места.ру":  "/karta/places",
-                  "каскадия":  "/karta/cascadia",
+                  "карта/города и объекты/cities and sites.en":  "/places/locations",
+                  "map.en":  "/places",
+                  "карта/города и объекты/эгназ/эгназ.ру":  "/places/locations/egnaz",
+                  "каскадия":  "/places/locations/cascadia",
                   "archive.en":  "/archive",
-                  "эгназ.ру":  "/karta/egnaz",
-                  "эквилибриум":  "/karta/equilibrium",
                   "меню.ру":  "/",
-                  "публикация/карта/эквилибриум/equilibrium.en":  "/karta/equilibrium",
-                  "cascadia":  "/karta/cascadia",
-                  "карта/канг-лао/kang-lao.en":  "/karta/kang-lao",
-                  "архив/фракции/фракции.ру":  "/archive/factions",
-                  "карта/эквилибриум/equilibrium.en":  "/karta/equilibrium",
-                  "ships.en":  "/archive/ships",
-                  "антрит.ру":  "/archive/anthrite",
-                  "публикация/карта/порт лантау/порт лантау.ру":  "/karta/port-lantau",
-                  "корабли":  "/archive/ships",
-                  "публикация/карта/каскадия/каскадия.ру":  "/karta/cascadia",
-                  "kang-lao.en":  "/karta/kang-lao",
-                  "публикация/карта/канг-лао/канг-лао.ру":  "/karta/kang-lao",
-                  "публикация/архив/хронология/хронология.ру":  "/archive/timeline",
-                  "публикация/карта/великая каскадия/great cascadia.en":  "/karta/great-cascadia",
-                  "публикация/карта/эгназ/эгназ.ру":  "/karta/egnaz",
-                  "публикация/карта/торнст/торнст.ру":  "/karta/tornst",
-                  "factions":  "/archive/factions",
-                  "kang-lao":  "/karta/kang-lao",
-                  "архив/корабли/ships.en":  "/archive/ships",
-                  "публикация/карта/места.ру":  "/karta/places",
-                  "places":  "/karta/places",
-                  "keishi.en":  "/karta/keishi",
-                  "публикация/карта/омис/омис.ру":  "/karta/omis",
-                  "публикация/карта/кейши/keishi.en":  "/karta/keishi",
-                  "карта/великая каскадия/великая каскадия.ру":  "/karta/great-cascadia",
-                  "архив/archive.en":  "/archive",
-                  "карта/омис/омис.ру":  "/karta/omis",
-                  "омис":  "/karta/omis",
-                  "карта/канг-лао/канг-лао.ру":  "/karta/kang-lao",
-                  "публикация/архив/архив.ру":  "/archive",
-                  "публикация/карта/ирлит/ирлит.ру":  "/karta/irlit",
+                  "эгназ.ру":  "/places/locations/egnaz",
+                  "эквилибриум":  "/places/locations/equilibrium",
+                  "карта/города и объекты/омис/omis.en":  "/places/locations/omis",
                   "меню/menu.en":  "/",
-                  "торнст.ру":  "/karta/tornst",
-                  "публикация/карта/каскадия/cascadia.en":  "/karta/cascadia",
-                  "omis":  "/karta/omis",
-                  "публикация/меню/menu.en":  "/",
-                  "публикация/карта/великая каскадия/великая каскадия.ру":  "/karta/great-cascadia",
-                  "архив/антрит/антрит.ру":  "/archive/anthrite",
-                  "публикация/карта/канг-лао/kang-lao.en":  "/karta/kang-lao"
+                  "карта/города и объекты/порт лантау/port lantau.en":  "/places/locations/port-lantau",
+                  "cascadia":  "/places/locations/cascadia",
+                  "города и объекты.ру":  "/places/locations",
+                  "публикация/карта/города и объекты/порт лантау/порт лантау.ру":  "/places/locations/port-lantau",
+                  "карта":  "/places",
+                  "архив":  "/archive",
+                  "публикация/карта/города и объекты/омис/omis.en":  "/places/locations/omis",
+                  "ships.en":  "/archive/ships",
+                  "карта/города и объекты/торнст/tornst.en":  "/places/locations/tornst",
+                  "антрит.ру":  "/archive/anthrite",
+                  "корабли":  "/archive/ships",
+                  "публикация/карта/города и объекты/эгназ/egnaz.en":  "/places/locations/egnaz",
+                  "публикация/карта/города и объекты/каскадия/cascadia.en":  "/places/locations/cascadia",
+                  "egnaz.en":  "/places/locations/egnaz",
+                  "kang-lao.en":  "/places/locations/kang-lao",
+                  "карта/города и объекты/кейши/keishi.en":  "/places/locations/keishi",
+                  "публикация/архив/хронология/хронология.ру":  "/archive/timeline",
+                  "карта/города и объекты/канг-лао/kang-lao.en":  "/places/locations/kang-lao",
+                  "timeline.en":  "/archive/timeline",
+                  "архив/корабли/ships.en":  "/archive/ships",
+                  "хронология.ру":  "/archive/timeline",
+                  "factions":  "/archive/factions",
+                  "kang-lao":  "/places/locations/kang-lao",
+                  "фракции.ру":  "/archive/factions",
+                  "карта/города и объекты/омис/омис.ру":  "/places/locations/omis",
+                  "keishi.en":  "/places/locations/keishi",
+                  "карта/страны/великая каскадия/great cascadia.en":  "/places/countries/great-cascadia",
+                  "публикация/карта/страны/великая каскадия/великая каскадия.ру":  "/places/countries/great-cascadia",
+                  "архив/archive.en":  "/archive",
+                  "публикация/карта/города и объекты/торнст/торнст.ру":  "/places/locations/tornst",
+                  "омис":  "/places/locations/omis",
+                  "карта/страны/великая каскадия/великая каскадия.ру":  "/places/countries/great-cascadia",
+                  "публикация/карта/города и объекты/эквилибриум/эквилибриум.ру":  "/places/locations/equilibrium",
+                  "публикация/карта/города и объекты/кейши/keishi.en":  "/places/locations/keishi",
+                  "публикация/архив/архив.ру":  "/archive",
+                  "архив/фракции/фракции.ру":  "/archive/factions",
+                  "торнст.ру":  "/places/locations/tornst",
+                  "публикация/карта/страны/великая каскадия/great cascadia.en":  "/places/countries/great-cascadia",
+                  "публикация/карта/города и объекты/эквилибриум/equilibrium.en":  "/places/locations/equilibrium",
+                  "карта/страны/countries.en":  "/places/countries",
+                  "timeline":  "/archive/timeline",
+                  "omis":  "/places/locations/omis",
+                  "countries":  "/places/countries",
+                  "архив/антрит/антрит.ру":  "/archive/anthrite"
               },
     "images":  {
                    "cascadia-flag-mw1bu9n8.jpg":  "notes/cascadia-flag-mw1bu9n8-b5b76341.jpg"
