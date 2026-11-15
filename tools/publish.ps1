@@ -204,12 +204,20 @@ function Invoke-Git { # git.exe, not "git": PowerShell ignores case, so a functi
   & git.exe -C $repo -c core.safecrlf=false @args # no line-ending notes for every file
   if ($LASTEXITCODE) { Stop-With "Команда git $($args -join ' ') завершилась с ошибкой" }
 }
+$identity = '-c', 'user.name=KgK-16', '-c', 'user.email=KgK-16@users.noreply.github.com' # this computer has no git identity of its own
+function Sync-FromGitHub { # GitHub's commits first. A commit made here that never reached GitHub (a failed push) is moved on top of them:
+  $ErrorActionPreference = 'Continue' # the map editor and the notes change different files, so the two fit together
+  & git.exe -C $repo -c core.safecrlf=false @identity pull --rebase --autostash --quiet origin main
+  if (-not $LASTEXITCODE) { return }
+  if ((Test-Path -LiteralPath (Join-Path $repo '.git\rebase-merge')) -or (Test-Path -LiteralPath (Join-Path $repo '.git\rebase-apply'))) { & git.exe -C $repo rebase --abort }
+  Stop-With 'Не удалось получить изменения с GitHub (нет сети, или там и здесь по-разному изменён один и тот же файл). На сайте ничего не изменилось.'
+}
 $managed = 'content', 'data/notes.json', 'data/text.json', 'static/notes'
 if (-not $Local) {
   if ((& git.exe -C $repo branch --show-current) -ne 'main') { Stop-With 'Папка сайта не на ветке main; переключите её на main и повторите.' }
   $others = @(& git.exe -C $repo status --porcelain | Where-Object { $p = $_.Substring(3).Trim('"'); -not ($managed | Where-Object { $p -eq $_ -or $p.StartsWith("$_/") }) })
   if ($others) { Write-Host ($others -join "`n"); Stop-With 'В папке сайта есть другие незакоммиченные изменения; сначала разберитесь с ними.' }
-  Invoke-Git pull --ff-only --quiet origin main
+  Sync-FromGitHub
 }
 
 # ---------- write the files ----------
@@ -282,7 +290,7 @@ if ($Local) { Write-Host 'Файлы обновлены локально, на G
 
 Invoke-Git add -A # the check above: nothing else has changed
 & git.exe -C $repo diff --cached --quiet
-if ($LASTEXITCODE) { Invoke-Git -c 'user.name=KgK-16' -c 'user.email=KgK-16@users.noreply.github.com' commit --quiet -m 'Publish notes from Obsidian' } # this computer has no git identity of its own
+if ($LASTEXITCODE) { Invoke-Git @identity commit --quiet -m 'Publish notes from Obsidian' }
 if ([int](& git.exe -C $repo rev-list --count 'origin/main..HEAD') -eq 0) { Write-Host 'Изменений нет, сайт уже актуален.' -ForegroundColor Green; exit 0 }
 Invoke-Git push --quiet origin main # also commits an earlier run could not send
 Write-Host 'Готово: сайт обновится примерно через минуту.' -ForegroundColor Green
