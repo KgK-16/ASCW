@@ -1,0 +1,4 @@
+# for tools/map.py and tools/snap.py
+numpy
+opencv-python-headless
+Pillow

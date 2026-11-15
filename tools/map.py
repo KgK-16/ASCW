@@ -1,6 +1,6 @@
 """Builds the site map from a Krita file.
 
-usage: python3 tools/map.py General_Map.kra
+usage: python tools/map.py "General Map.kra"      (needs: pip install -r tools/requirements.txt)
 
 Krita file layout (layer names matter):
   top-level visible paint layers  -> the geographic base (static/map/g1..g3.webp), always shown
@@ -12,7 +12,7 @@ Countries are matched by hex colour from tools/labels.json (their names may be o
 unknown colours are reported. A country's name stays where it was in the previous assets/map.json; a new country's name is put in
 the middle of its territory (it is moved, sized and spaced by hand on the site).
 """
-import sys, os, re, json, zipfile, ctypes, subprocess, tempfile
+import sys, os, re, json, zipfile
 import xml.etree.ElementTree as ET
 import numpy as np, cv2
 from PIL import Image
@@ -23,28 +23,51 @@ ROOT = os.path.dirname(TOOLS)
 MAP_JSON = ROOT + '/assets/map.json'
 W4, H4 = 4096, 2048  # the map coordinate space used by the site
 
-LABELS = json.load(open(TOOLS + '/labels.json'))
-SITE = json.load(open(ROOT + '/assets/countries.json')) if os.path.exists(ROOT + '/assets/countries.json') else {}
+LABELS = json.load(open(TOOLS + '/labels.json', encoding='utf-8'))  # utf-8 by name: Windows would read the Cyrillic names in its own code page
+SITE = json.load(open(ROOT + '/assets/countries.json', encoding='utf-8')) if os.path.exists(ROOT + '/assets/countries.json') else {}
 for l in LABELS:  # names edited on the site win over labels.json
     o = SITE.get(l['hex'], {})
     l['en'] = o.get('en') or l['en']
     l['ru'] = o.get('ru') or l['ru']
 OLD_NAMES = {}  # where each country's name stood: (version, hex) -> (x, y)
 if os.path.exists(MAP_JSON):
-    for v in json.load(open(MAP_JSON)):
+    for v in json.load(open(MAP_JSON, encoding='utf-8')):
         for r in v['r']:
             if 'x' in r: OLD_NAMES[(v['y'], r['c'])] = (r['x'], r['y'])
 
 
-def load_lzf():
-    """the LZF decoder (tools/lzf.c), compiled once"""
-    so = os.path.join(tempfile.gettempdir(), 'ascw_lzf.so')
-    if not os.path.exists(so):
-        subprocess.check_call(['gcc', '-O2', '-shared', '-fPIC', '-o', so, TOOLS + '/lzf.c'])
-    lib = ctypes.CDLL(so)
-    lib.lzf_dec.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
-    return lib
-LZF = load_lzf()
+def lzf_dec(data, out_len):
+    """LZF decompression (the format of Krita's layer tiles); None on broken data"""
+    out = bytearray(out_len)
+    ip, op, n = 0, 0, len(data)
+    while ip < n:
+        ctrl = data[ip]
+        ip += 1
+        if ctrl < 32:  # a run of ctrl + 1 literal bytes
+            ctrl += 1
+            if op + ctrl > out_len or ip + ctrl > n:
+                return None
+            out[op:op + ctrl] = data[ip:ip + ctrl]
+            op += ctrl
+            ip += ctrl
+        else:  # a back reference: length (3 bits, or 7 + one more byte) and offset
+            length = ctrl >> 5
+            if ip + (length == 7) >= n:
+                return None
+            if length == 7:
+                length += data[ip]
+                ip += 1
+            ref = op - ((ctrl & 31) << 8) - data[ip] - 1
+            ip += 1
+            length += 2
+            if ref < 0 or op + length > out_len:
+                return None
+            if op - ref >= length:
+                out[op:op + length] = out[ref:ref + length]
+            else:  # the copy overlaps what it writes: the bytes between ref and op repeat
+                out[op:op + length] = (out[ref:op] * (length // (op - ref) + 1))[:length]
+            op += length
+    return bytes(out) if op == out_len else None
 
 
 def read_layer(z, path, W, H):
@@ -61,7 +84,6 @@ def read_layer(z, path, W, H):
     if ps != 4:
         sys.exit('only 8-bit RGBA Krita files are supported')
     out = np.zeros((H, W, 4), np.uint8)
-    buf = ctypes.create_string_buffer(tw * th * ps)
     for _ in range(head[b'DATA']):
         e = d.index(b'\n', p)
         x, y, _c, size = d[p:e].split(b',')
@@ -70,9 +92,9 @@ def read_layer(z, path, W, H):
         tile = d[p:p + size]
         p += size
         if tile[0]:  # compressed
-            if LZF.lzf_dec(tile[1:], len(tile) - 1, buf, len(buf)) != len(buf):
+            raw = lzf_dec(tile[1:], tw * th * ps)
+            if raw is None:
                 sys.exit('bad tile in ' + path)
-            raw = buf.raw
         else:
             raw = tile[1:]
         if x < 0 or y < 0 or x >= W or y >= H:
@@ -194,7 +216,7 @@ def main(src):
             levels(Image.fromarray(read(layers['borders'])), f'{ROOT}/static/map/{y}/b', True)
         regions = snap(countries(read(layers['countries']), y)) if 'countries' in layers else []
         data.append(dict(y=y, b=int('borders' in layers), r=regions))
-    json.dump(data, open(MAP_JSON, 'w'), separators=(',', ':'), ensure_ascii=False)
+    json.dump(data, open(MAP_JSON, 'w', encoding='utf-8'), separators=(',', ':'), ensure_ascii=False)
     print('assets/map.json', os.path.getsize(MAP_JSON), 'bytes')
 
 

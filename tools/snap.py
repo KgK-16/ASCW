@@ -2,7 +2,7 @@
 Countries are traced one by one, so a common border comes out as two slightly different lines with gaps and overlaps.
 The bigger country keeps its outline; points of the smaller one that lie near it move onto it, and between two such
 points the smaller country takes the bigger one's points, so both borders are the same line.
-usage: python3 tools/snap.py            (fixes assets/map.json in place; tools/map.py does this on every build)
+usage: python tools/snap.py            (fixes assets/map.json in place; tools/map.py does this on every build)
 """
 import os,re,json
 import numpy as np
@@ -77,6 +77,6 @@ def snap(regions):
 
 if __name__=='__main__':
     p=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'assets','map.json')
-    V=json.load(open(p))
+    V=json.load(open(p,encoding='utf-8'))
     for v in V:snap(v['r'])
-    json.dump(V,open(p,'w'),separators=(',',':'),ensure_ascii=False);print(p,os.path.getsize(p),'bytes')
+    json.dump(V,open(p,'w',encoding='utf-8'),separators=(',',':'),ensure_ascii=False);print(p,os.path.getsize(p),'bytes')
