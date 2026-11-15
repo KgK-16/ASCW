@@ -16,16 +16,24 @@
 {{- with $desc }}
 <meta name="description" content="{{ . }}">{{ end }}
 
-{{- /* link previews */}}
+{{- /* link previews: the page's own background, else the first picture of its note, else the site's background */}}
 {{- $bg := partial "bg" . }}
-{{- $img := cond (and $bg (ne $bg "none")) $bg (index site.Params.backgrounds 0 | relURL) }}
+{{- $ownBg := and $bg (ne $bg "none") }}
+{{- $img := cond $ownBg $bg (index site.Params.backgrounds 0 | relURL) }}
+{{- $preview := $img }}
+{{- if not $ownBg }}{{ range findRESubmatch `!\[\[([^\]|\n]+)` .RawContent 1 }}
+  {{- $file := lower (trim (index . 1) " ") }}
+  {{- with hugo.Data.notes }}{{ with index .images $file }}{{ $preview = relURL . }}{{ end }}{{ end }}
+{{- end }}{{ end }}
 <meta property="og:type" content="website"><meta property="og:site_name" content="ASCW"><meta property="og:title" content="{{ $title }}">
 <meta property="og:url" content="{{ .Permalink }}"><meta property="og:locale" content="{{ cond $ru "ru_RU" "en_US" }}">
 {{- with $desc }}<meta property="og:description" content="{{ . }}">{{ end }}
-<meta property="og:image" content="{{ $img | absURL }}"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="{{ $preview | absURL }}"><meta name="twitter:card" content="summary_large_image">
 
-{{- /* the page in each language (data-u: the address the language button opens) */}}
-{{- if not $notFound }}{{ range .AllTranslations }}
+{{- /* the page's one address for search engines (?embed and other variants point to it); the page in each language
+   (data-u: the address the language button opens) */}}
+{{- if not $notFound }}
+<link rel="canonical" href="{{ .Permalink }}">{{ range .AllTranslations }}
 <link rel="alternate" hreflang="{{ .Language.Name }}" href="{{ .Permalink }}" data-u="{{ .RelPermalink }}">
 {{- if eq .Language.Name "en" }}<link rel="alternate" hreflang="x-default" href="{{ .Permalink }}">{{ end }}{{ end }}{{ end }}
 

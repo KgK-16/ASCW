@@ -1,6 +1,6 @@
 baseURL = "https://kgk-16.github.io/ASCW/"
 title = "ASCW"
-disableKinds = ["taxonomy", "term", "RSS", "sitemap"]
+disableKinds = ["taxonomy", "term", "RSS"]  # sitemap.xml stays: search engines find the pages by it
 defaultContentLanguage = "en"
 disableDefaultLanguageRedirect = true  # no /en/ copy of the home page
 disableAliases = true  # Obsidian's "aliases" property is for searching notes, not for site redirects
@@ -27,4 +27,4 @@ extras.mark.enable = true   # ==highlight==
 weight = 1
 [languages.ru]
 weight = 2
-disableKinds = ["taxonomy", "term", "RSS", "sitemap", "404"]  # one 404 page for every address (GitHub Pages serves only /404.html)
+disableKinds = ["taxonomy", "term", "RSS", "404"]  # one 404 page for every address (GitHub Pages serves only /404.html)
