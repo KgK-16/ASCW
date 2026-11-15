@@ -2,8 +2,8 @@
 
 ## Articles: from Obsidian to the site
 
-Articles are written in the Obsidian vault AI Core (`C:\AI Core\2-ASCW`, folder `Публикация`). The author's guide is
-`1-ME/Как публиковать.md` in the same vault.
+Articles are written in the Obsidian vault AI Core (`C:\AI Core\02-ASCW`, folder `Публикация`). The author's guide is
+`01-ME/Как публиковать.md` in the same vault.
 
     tools/publish.cmd          publish: pull, copy, test build, commit, push (the desktop shortcut runs this)
     tools/publish.ps1 -Local   only update the files here

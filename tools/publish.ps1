@@ -1,5 +1,5 @@
 ﻿# Publishes the Obsidian vault to the site: notes go to content/ unchanged, byte for byte; everything Obsidian-specific is handled when the
-# site is built (layouts/partials/body.html, layouts/_markup/). No AI takes part. Rules for the author: "1-ME/Как публиковать.md" in AI Core.
+# site is built (layouts/partials/body.html, layouts/_markup/). No AI takes part. Rules for the author: "01-ME/Как публиковать.md" in AI Core.
 #
 #   Публикация/**.md       a note is a page when it has "publish: true". Every note carries its language in its name: "Archive.en.md",
 #                          "Архив.ру.md"; the name is its title. The two languages are equal: notes with the same "slug" are one page
@@ -15,7 +15,8 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 
 $repo = Split-Path $PSScriptRoot
-$vault = 'C:\AI Core\2-ASCW' # the site's part of the AI Core vault; pictures are looked for only here
+$vault = 'C:\AI Core\02-ASCW' # the site's part of the AI Core vault; pictures are looked for only here
+if (-not (Test-Path -LiteralPath $vault)) { $vault = 'C:\AI Core\2-ASCW' } # old folder name, before the rename
 $root = Join-Path $vault 'Публикация'
 $utf8 = New-Object Text.UTF8Encoding($false, $true)
 $imageTypes = '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.avif'
